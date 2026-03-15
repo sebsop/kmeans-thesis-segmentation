@@ -2,25 +2,22 @@
 #include <opencv2/opencv.hpp>
 #include "clustering.hpp"
 #include "utils.hpp"
+#include "enums.hpp"
+#include "constants.hpp"
+#include <cuda_runtime.h>
 #include <iostream>
 #include <string>
-#include <deque>
-#include <mpi.h>
 
 #ifdef _WIN32 // If on Windows, include Windows.h for window style manipulation
 #include <windows.h>
 #endif
 
-// Display webcam feed with real-time k-means segmentation and an adjustable 'K' parameter slider
-void showWebcamFeed()
-{
-    int rank = 0, size = 1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    cv::VideoCapture cap;
-    if (rank == 0) {
-        cap.open(0); // Open webcam only on rank 0
+namespace kmeans {
+    // Display webcam feed with real-time k-means segmentation and an adjustable 'K' parameter slider
+    void showWebcamFeed()
+    {
+        cv::VideoCapture cap;
+        cap.open(0);
         if (!cap.isOpened()) {
             std::cerr << "Error: Could not open camera." << std::endl;
             return;
@@ -28,23 +25,21 @@ void showWebcamFeed()
 
         cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
         cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-    }
 
-    cv::Mat frame;
-    int k_trackbar = 5;
-    const int k_min = 2;
-    const int k_max = 12;
-    const int sample = 2000;
-    const float color_scale = 1.0f;
-    const float spatial_scale = 0.5f;
+        unsigned char* pinned_frame_ptr;
+        int imgSize = VIDEO_WIDTH * VIDEO_HEIGHT * 3;
 
-    const std::string windowName = "Realtime Segmentation";
+        cudaHostAlloc(&pinned_frame_ptr, imgSize, cudaHostAllocDefault);
 
-    // GUI initialization only on rank 0
-    if (rank == 0) {
+        cv::Mat frame(VIDEO_WIDTH, VIDEO_HEIGHT, CV_8UC3, pinned_frame_ptr);
+
+        int k_trackbar = 5;
+
+        const std::string windowName = "Realtime Segmentation";
+
         cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
-        cv::createTrackbar("k", windowName, &k_trackbar, k_max);
-        cv::setTrackbarMin("k", windowName, k_min);
+        cv::createTrackbar("k", windowName, &k_trackbar, K_MAX);
+        cv::setTrackbarMin("k", windowName, K_MIN);
 
 #ifdef _WIN32
         // Disable window resizing and maximize button using Windows API
@@ -60,115 +55,27 @@ void showWebcamFeed()
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
         }
 #endif
-    }
 
-    int64 lastTick = cv::getTickCount();
-    double fps = 0.0;
-    std::deque<std::pair<double, double>> fpsHistory; // (timestamp, fps)
-    double minFps = 0.0, maxFps = 0.0;
+        int64 lastTick = cv::getTickCount();
+        double fps = 0.0;
+        std::deque<std::pair<double, double>> fpsHistory; // (timestamp, fps)
+        double minFps = 0.0, maxFps = 0.0;
 
-    Backend backend = BACKEND_SEQ;
-    Backend lastBackend = backend;
-    int last_k_trackbar = k_trackbar;
+        Algorithm algo = Algorithm::KMEANS_REGULAR;
+        Algorithm lastAlgo = algo;
+        int last_k_trackbar = k_trackbar;
 
-    bool useThreadPool = false; // Toggle flag for thread pool
-
-    while (true) {
-        if (rank == 0) {
+        while (true) {
             cap >> frame;
             if (frame.empty()) break; // Exit if window is closed
-        }
 
-        int k = k_trackbar;
+            int k = k_trackbar;
 
-        cv::Mat localFrame;
-        cv::Mat seg;
-        int totalRows = 0, totalCols = 0;
+            cv::Mat localFrame;
+            cv::Mat seg;
 
-        if (backend == BACKEND_MPI)
-        {
-            // Broadcast frame dimensions
-            totalRows = (rank == 0 ? frame.rows : 0);
-            totalCols = (rank == 0 ? frame.cols : 0);
-            int type = (rank == 0 ? frame.type() : 0);
+            seg = segmentFrameWithKMeans(algo, frame, k, SAMPLE_COUNT, COLOR_SCALE, SPATIAL_SCALE);
 
-            MPI_Bcast(&totalRows, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            MPI_Bcast(&totalCols, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            MPI_Bcast(&type, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            MPI_Bcast(&k, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-            if (totalRows == 0 || totalCols == 0)
-                break;
-
-            // Compute KMeans centers on rank 0
-            // We do it here since we need the centers based on the whole frame,
-            // so we cannot include it in the MPI's segment frame with K means function
-            std::vector<float> flatCenters(k * 5);
-
-            if (rank == 0) {
-                auto centers = computeKMeansCenters(frame, k, sample, color_scale, spatial_scale);
-
-                for (int i = 0; i < k; ++i)
-                    for (int d = 0; d < 5; ++d)
-                        flatCenters[static_cast<std::vector<float, std::allocator<float>>::size_type>(i) * 5 + d] = centers[i][d];
-            }
-
-            // Broadcast the centers to all ranks
-            MPI_Bcast(flatCenters.data(), k * 5, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-            // Scatter local rows to each rank
-            int rowsPerRank = totalRows / size;
-            std::vector<int> sendCounts(size), displs(size);
-
-            // Prepare arrays for Scatterv: number of elements and offsets per rank
-            for (int i = 0; i < size; ++i) {
-                int sRow = i * rowsPerRank;
-                int eRow = (i == size - 1 ? totalRows : sRow + rowsPerRank);
-                sendCounts[i] = (eRow - sRow) * totalCols * 3;
-                displs[i] = sRow * totalCols * 3;
-            }
-
-            // Calculate number of rows per rank
-            int startRow = rank * rowsPerRank;
-            int endRow = (rank == size - 1 ? totalRows : startRow + rowsPerRank);
-            int localRows = endRow - startRow;
-
-            localFrame.create(localRows, totalCols, type);
-
-            // Scatter frame chunks from rank 0 to all ranks
-            MPI_Scatterv(
-                rank == 0 ? frame.data : nullptr,  // send buffer on root
-                sendCounts.data(),                 // elements per rank
-                displs.data(),                     // offsets per rank
-                MPI_UNSIGNED_CHAR,                 // data type
-                localFrame.data,                   // receive buffer
-                sendCounts[rank],                  // elements received by this rank
-                MPI_UNSIGNED_CHAR,                 // data type
-                0,                                 // root rank
-                MPI_COMM_WORLD
-            );
-
-            // Do segmentation using localFrame + received centers
-            seg = segmentFrameWithKMeans(
-                localFrame,
-                k,
-                backend,
-                sample,
-                color_scale,
-                spatial_scale,
-                flatCenters,
-                totalRows,
-                totalCols
-            );
-        }
-        else {
-            // Only rank 0 runs segmentation for non-MPI backends
-            if (rank == 0) {
-                seg = segmentFrameWithKMeans(frame, k, backend, sample, color_scale, spatial_scale);
-            }
-        }
-
-        if (rank == 0) {
             if (seg.size() != frame.size()) {
                 cv::resize(seg, seg, frame.size(), 0, 0, cv::INTER_NEAREST);
             }
@@ -185,25 +92,19 @@ void showWebcamFeed()
             if (dt > 0) fps = 1.0 / dt;
 
             // Reset FPS history if backend changed
-            if (backend != lastBackend) {
+            if (algo != lastAlgo) {
                 fpsHistory.clear();
                 minFps = maxFps = fps;
 
-                // If we were using THRPOOL and now switched to something that's not THR, reset useThreadPool
-                if (lastBackend == BACKEND_THRPOOL && backend != BACKEND_THR) {
-                    useThreadPool = false;
-                }
-
-                lastBackend = backend;
+                lastAlgo = algo;
                 last_k_trackbar = k_trackbar;
             }
-
 
             // Reset FPS history if K changed
             if (k_trackbar != last_k_trackbar) {
                 fpsHistory.clear();
                 minFps = maxFps = fps;
-                lastBackend = backend;
+                lastAlgo = algo;
                 last_k_trackbar = k_trackbar;
             }
 
@@ -220,12 +121,11 @@ void showWebcamFeed()
                 if (p.second > maxFps) maxFps = p.second;
             }
 
-            std::string backendName =
-                (backend == BACKEND_SEQ ? "SEQ" : backend == BACKEND_THR ? "THR"
-                    : backend == BACKEND_MPI ? "MPI" : backend == BACKEND_CUDA ? "CUDA" : "THRPOOL");
+            std::string algoName =
+                (algo == Algorithm::KMEANS_REGULAR ? "KMEANS" : algo == Algorithm::KMEANS_QUANTUM ? "QUANTUM" : "UNKNOWN");
 
             std::string overlay = "k=" + std::to_string(k) +
-                "  backend=" + backendName +
+                "  backend=" + algoName +
                 "  FPS=" + cv::format("%.1f", fps) +
                 "  min=" + cv::format("%.1f", minFps) +
                 "  max=" + cv::format("%.1f", maxFps);
@@ -244,26 +144,10 @@ void showWebcamFeed()
 
             char c = (char)cv::waitKey(1);
             if (c == 27) break; // ESC
-            if (c == '1') backend = BACKEND_SEQ;
-            if (c == '2' && backend != BACKEND_THRPOOL) backend = BACKEND_THR;
-            if (c == '3') backend = BACKEND_MPI;
-            if (c == '4') backend = BACKEND_CUDA;
-
-            if (c == '*' && (backend == BACKEND_THR || backend == BACKEND_THRPOOL)) {
-                useThreadPool = !useThreadPool;
-                useThreadPool ? backend = BACKEND_THRPOOL : backend = BACKEND_THR;
-            }
+            if (c == '1') algo = Algorithm::KMEANS_REGULAR;
+            if (c == '2') algo = Algorithm::KMEANS_QUANTUM;
         }
-            // Broadcast backend and break state
-            MPI_Bcast(&backend, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            int stopFlag = 0;
-            if (rank == 0 && (cv::getWindowProperty(windowName, cv::WND_PROP_VISIBLE) < 1))
-                stopFlag = 1;
-            MPI_Bcast(&stopFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            if (stopFlag) break;
-    }
 
-    if (rank == 0) {
         cap.release(); // Clean up camera
         cv::destroyAllWindows(); // Close all OpenCV windows
     }
