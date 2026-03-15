@@ -1,6 +1,7 @@
 #include "clustering_backends.hpp"
 #include "coreset.hpp"
 #include "utils.hpp"
+#include "constants.hpp"
 #include "enums.hpp"
 #include <random>
 
@@ -9,15 +10,12 @@ namespace kmeans {
 	cv::Mat segmentFrameWithKMeans_regular(
 		const cv::Mat& frame,
 		int k,
-		int sample_size,
-		Initialization initialization,
-		float color_scale,
-		float spatial_scale)
+		Initialization initialization)
 	{
 		CV_Assert(frame.type() == CV_8UC3); // Ensure input is 3-channel BGR image
 
 		// Compute K-means centers using a coreset of the frame
-		std::vector<cv::Vec<float, 5>> centers = computeKMeansCenters(frame, k, sample_size, initialization, color_scale, spatial_scale);
+		std::vector<cv::Vec<float, 5>> centers = computeKMeansCenters(frame, k, initialization);
 
 		cv::Mat out(frame.size(), frame.type());
 
@@ -35,7 +33,7 @@ namespace kmeans {
 				float x01 = (float)c / (float)cols; // Normalized x coordinate
 
 				// Create a 5D feature vector for the pixel
-				cv::Vec<float, 5> f = makeFeature(cv::Vec3f(pix[0], pix[1], pix[2]), x01, y01, color_scale, spatial_scale);
+				cv::Vec<float, 5> f = makeFeature(cv::Vec3f(pix[0], pix[1], pix[2]), x01, y01);
 
 				int bestIdx = 0;
 				float bestDist2 = std::numeric_limits<float>::max();
@@ -52,9 +50,9 @@ namespace kmeans {
 
 				cv::Vec3b color;
 				// Determine the output pixel color as the color of the nearest center, scaled back by the color_scale factor
-				color[0] = (uchar)cv::saturate_cast<uchar>(centers[bestIdx][0] / std::max(1e-6f, color_scale));
-				color[1] = (uchar)cv::saturate_cast<uchar>(centers[bestIdx][1] / std::max(1e-6f, color_scale));
-				color[2] = (uchar)cv::saturate_cast<uchar>(centers[bestIdx][2] / std::max(1e-6f, color_scale));
+				color[0] = (uchar)cv::saturate_cast<uchar>(centers[bestIdx][0] / std::max(1e-6f, COLOR_SCALE));
+				color[1] = (uchar)cv::saturate_cast<uchar>(centers[bestIdx][1] / std::max(1e-6f, COLOR_SCALE));
+				color[2] = (uchar)cv::saturate_cast<uchar>(centers[bestIdx][2] / std::max(1e-6f, COLOR_SCALE));
 				outRow[c] = color;
 			}
 		}

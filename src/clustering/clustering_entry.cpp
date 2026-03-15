@@ -7,19 +7,14 @@ namespace kmeans {
     cv::Mat segmentFrameWithKMeans(
         Algorithm algorithm,
         const cv::Mat& frame,
-        int k,
-        int sample_size,
-        float color_scale,
-        float spatial_scale)
+        int k)
     {
         // Dispatch to the appropriate algorithm
         switch (algorithm) {
-        case Algorithm::KMEANS:
-            return segmentFrameWithKMeans_regular(frame, k, sample_size, Initialization::RANDOM, color_scale, spatial_scale);
-        case Algorithm::KMEANS_PLUSPLUS:
-            return segmentFrameWithKMeans_regular(frame, k, sample_size, Initialization::KMEANS_PLUSPLUS, color_scale, spatial_scale);
+        case Algorithm::KMEANS_REGULAR:
+            return segmentFrameWithKMeans_regular(frame, k, Initialization::RANDOM);
         case Algorithm::KMEANS_QUANTUM:
-            return segmentFrameWithKMeans_quantum(frame, k, sample_size, color_scale, spatial_scale);
+            return segmentFrameWithKMeans_quantum(frame, k);
         default:
             throw std::invalid_argument("Unknown algorithm type in segmentFrameWithKMeans");
         }

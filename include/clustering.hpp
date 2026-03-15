@@ -22,9 +22,6 @@ namespace kmeans {
 	cv::Mat segmentFrameWithKMeans(
 		Algorithm algorithm,
 		const cv::Mat& frame,
-		int k,
-		int sample_size = 0,
-		float color_scale = 1.0f,
-		float spatial_scale = 0.5f
+		int k
 	);
 }

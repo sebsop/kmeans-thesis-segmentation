@@ -34,7 +34,7 @@ struct Coreset {
 //
 // Returns:
 //   A Coreset with `sample_size` points, each with appropriate weights.
-Coreset buildCoresetFromFrame(const cv::Mat& frame, int sample_size);
+Coreset buildCoresetFromFrame(const cv::Mat& frame);
 
 // Merge two coresets into one, keeping the size bounded by `sample_size`.
 // The result is still a valid coreset approximating the union of A and B.
@@ -45,4 +45,4 @@ Coreset buildCoresetFromFrame(const cv::Mat& frame, int sample_size);
 //
 // Returns:
 //   A merged Coreset with `sample_size` points.
-Coreset mergeCoresets(const Coreset& A, const Coreset& B, int sample_size);
+Coreset mergeCoresets(const Coreset& A, const Coreset& B);

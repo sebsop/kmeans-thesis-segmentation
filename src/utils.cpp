@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include "constants.hpp"
 #include "coreset.hpp"
 
 namespace kmeans {
@@ -8,38 +9,30 @@ namespace kmeans {
 	cv::Vec<float, 5> makeFeature(
 		const cv::Vec3f& bgr,
 		float x01,
-		float y01,
-		float color_scale,
-		float spatial_scale)
+		float y01)
 	{
 		return cv::Vec<float, 5>(
-			bgr[0] * color_scale,
-			bgr[1] * color_scale,
-			bgr[2] * color_scale,
-			x01 * spatial_scale,
-			y01 * spatial_scale
+			bgr[0] * COLOR_SCALE,
+			bgr[1] * COLOR_SCALE,
+			bgr[2] * COLOR_SCALE,
+			x01 * SPATIAL_SCALE,
+			y01 * SPATIAL_SCALE
 		);
 	}
 
 	// Compute the K-means centers of a frame, by building and using a coreset of at most sample_size points
 	std::vector<cv::Vec<float, 5>> computeKMeansCenters(
 		const cv::Mat& frame,
-		int k,
-		int sample_size,
-		bool use_kmeans_plusplus,
-		float color_scale,
-		float spatial_scale)
+		int k)
 	{
 		CV_Assert(frame.type() == CV_8UC3); // We assert that the input frame is a 3-channel BGR image
-		if (k <= 0) k = 1;
-		if (sample_size <= 0) sample_size = 1024;
 
-		Coreset coreset = buildCoresetFromFrame(frame, sample_size); // Build the coreset of the frame
+		Coreset coreset = buildCoresetFromFrame(frame); // Build the coreset of the frame
 
 		cv::Mat samples(static_cast<int>(coreset.points.size()), 5, CV_32F); // Prepare a matrix to hold the 5D feature vectors
 		for (int i = 0; i < (int)coreset.points.size(); ++i) {
 			const CoresetPoint& p = coreset.points[i];
-			cv::Vec<float, 5> f = makeFeature(p.bgr, p.x, p.y, color_scale, spatial_scale); // Make the feature vector of the CoresetPoint
+			cv::Vec<float, 5> f = makeFeature(p.bgr, p.x, p.y); // Make the feature vector of the CoresetPoint
 			for (int d = 0; d < 5; ++d) samples.at<float>(i, d) = f[d]; // Copy it to the samples matrix
 		}
 

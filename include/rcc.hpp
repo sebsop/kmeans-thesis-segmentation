@@ -48,7 +48,7 @@ public:
 	// 
 	// Returns:
 	//   A new RCCNode whose coreset is the merged coreset of A and B, with A and B as children
-    RCCNode* mergeNodes(RCCNode* nodeA, RCCNode* nodeB, int sample_size);
+    RCCNode* mergeNodes(RCCNode* nodeA, RCCNode* nodeB);
 
 	// Get the coreset at the root of the RCC tree
 	// 

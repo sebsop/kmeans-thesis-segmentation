@@ -23,8 +23,8 @@ namespace kmeans {
             return;
         }
 
-        cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-        cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+        cap.set(cv::CAP_PROP_FRAME_WIDTH, VIDEO_WIDTH);
+        cap.set(cv::CAP_PROP_FRAME_HEIGHT, VIDEO_HEIGHT);
 
         unsigned char* pinned_frame_ptr;
         int imgSize = VIDEO_WIDTH * VIDEO_HEIGHT * 3;

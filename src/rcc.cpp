@@ -27,7 +27,7 @@ void RCC::insertLeaf(const Coreset& leafCoreset, int sample_size)
             carry = nullptr;
             break;
         } else {
-			carry = mergeNodes(levels[lvl], carry, sample_size); // Merge carry with existing node at this level
+			carry = mergeNodes(levels[lvl], carry); // Merge carry with existing node at this level
             levels[lvl] = nullptr;
         }
     }
@@ -36,7 +36,7 @@ void RCC::insertLeaf(const Coreset& leafCoreset, int sample_size)
     if (carry) {
         // bounded cap: merge into top level and replace
         if (levels.back()) {
-			carry = mergeNodes(levels.back(), carry, sample_size); // Merge with existing top level
+			carry = mergeNodes(levels.back(), carry); // Merge with existing top level
 			deleteSubtree(levels.back()); // Delete the old top level subtree to avoid memory leak
         }
         levels.back() = carry;
@@ -48,19 +48,19 @@ void RCC::insertLeaf(const Coreset& leafCoreset, int sample_size)
         if (!levels[lvl]) continue;
 
         // Merge into new root if not null, else set as root
-		newRoot = newRoot ? mergeNodes(newRoot, levels[lvl], sample_size) : levels[lvl];
+		newRoot = newRoot ? mergeNodes(newRoot, levels[lvl]) : levels[lvl];
     }
     root = newRoot;
 }
 
 // Merge two RCC nodes A and B into one by merging their coresets and creating a new parent node
 // having A and B as children
-RCCNode* RCC::mergeNodes(RCCNode* nodeA, RCCNode* nodeB, int sample_size) 
+RCCNode* RCC::mergeNodes(RCCNode* nodeA, RCCNode* nodeB) 
 {
     if (!nodeA) return nodeB;
     if (!nodeB) return nodeA;
 
-	Coreset merged = mergeCoresets(nodeA->coreset, nodeB->coreset, sample_size); // Merge the coresets of A and B
+	Coreset merged = mergeCoresets(nodeA->coreset, nodeB->coreset); // Merge the coresets of A and B
 	RCCNode* parent = new RCCNode(merged); // Create a new parent node with the merged coreset
     parent->left = nodeA;
     parent->right = nodeB;

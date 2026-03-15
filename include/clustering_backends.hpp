@@ -11,17 +11,11 @@ namespace kmeans
 	cv::Mat segmentFrameWithKMeans_regular(
 		const cv::Mat& frame,
 		int k,
-		int sample_size,
 		Initialization initialization,
-		float color_scale = 1.0f,
-		float spatial_scale = 0.5f
 	);
 
 	cv::Mat segmentFrameWithKMeans_quantum(
 		const cv::Mat& frame,
 		int k,
-		int sample_size,
-		float color_scale = 1.0f,
-		float spatial_scale = 0.5f
 	);
 }
