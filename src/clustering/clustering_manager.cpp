@@ -39,7 +39,8 @@ namespace clustering {
             centers,
             result
         );
-
+        
+        m_centers = centers;
         return result;
     }
 

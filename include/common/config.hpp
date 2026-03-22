@@ -3,7 +3,7 @@
 
 namespace kmeans {
     struct SegmentationConfig {
-        Algorithm algorithm = Algorithm::KMEANS_REGULAR;
+        AlgorithmType algorithm = AlgorithmType::KMEANS_REGULAR;
         InitializationType init = InitializationType::RANDOM;
         DataStrategy strategy = DataStrategy::RCC_TREES;
         int k = 5;

@@ -24,13 +24,16 @@ namespace clustering {
         std::unique_ptr<KMeansEngine> m_clusteringEngine;
 
         SegmentationConfig m_prevConfig;
+        std::vector<cv::Vec<float, 5>> m_centers;
 
     public:
         ClusteringManager();
         ~ClusteringManager() = default;
 
         SegmentationConfig& getConfig() { return m_config; }
+        const SegmentationConfig& getConfig() const { return m_config; }
         
+        const std::vector<cv::Vec<float, 5>>& getCenters() const { return m_centers; }
         // Factory setup function to inject strategies based on config
         void updateStategyImplementations();
 

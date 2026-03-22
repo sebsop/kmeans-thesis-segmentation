@@ -2,7 +2,7 @@
 
 namespace kmeans
 {
-    enum class Algorithm : int
+    enum class AlgorithmType : int
     {
         KMEANS_REGULAR = 0,
         KMEANS_QUANTUM = 1

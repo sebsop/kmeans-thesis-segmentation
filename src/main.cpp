@@ -1,25 +1,20 @@
-#include "io/video_io.hpp"
+#include <iostream>
+#include <vector>
+#include <string>
+
 #include "core/coreset.hpp"
-#include <opencv2/opencv.hpp>
+#include "common/config.hpp"
+#include "io/application.hpp"
+
+using namespace kmeans;
 
 // Entry point
-int main(int argc, char** argv) 
+int main() 
 {
-	// Prevent OpenCV from inserting logs in the console
-	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
-
-	std::cout << "Starting application..." << std::endl << std::endl;
-	std::cout << "Press 'Esc' to quit." << std::endl;
-	std::cout << "Press '1' to use the regular k-means algorithm." << std::endl;
-	std::cout << "Press '2' to use the k-means++ algorithm" << std::endl;
-	std::cout << "Press '3' to use the quantum k-means algorithm" << std::endl << std::endl;
-
-	std::cout << "Hint: use the 'k' slider to adjust the number of segments." << std::endl;
-
-	// Display the webcam feed using OpenCV
-	kmeans::showWebcamFeed();
-
-	std::cout << std::endl << std::endl << "Shutting down..." << std::endl;
-
+    std::cout << "Starting K-Means Clustering for Thesis - ImGui Application..." << std::endl;
+    
+    io::Application app;
+    app.run();
+    
     return 0;
 }
