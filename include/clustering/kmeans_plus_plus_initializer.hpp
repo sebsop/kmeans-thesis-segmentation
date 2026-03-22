@@ -10,7 +10,7 @@ namespace clustering {
         KMeansPlusPlusInitializer() = default;
         ~KMeansPlusPlusInitializer() override = default;
 
-        std::vector<cv::Vec<float, 5>> initialize(const cv::Mat& samples, int k) override;
+        std::vector<cv::Vec<float, 5>> initialize(const cv::Mat& samples, int k) const override;
     };
 
 }

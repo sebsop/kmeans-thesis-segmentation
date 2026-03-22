@@ -3,7 +3,8 @@
 namespace kmeans {
 namespace clustering {
 
-    std::vector<cv::Vec<float, 5>> RandomInitializer::initialize(const cv::Mat& samples, int k) {
+    std::vector<cv::Vec<float, 5>> RandomInitializer::initialize(const cv::Mat& samples, int k) const {
+        CV_Assert(!samples.empty() && k > 0 && k <= samples.rows);
         std::vector<cv::Vec<float, 5>> centers;
         std::mt19937 gen(std::random_device{}());
         std::uniform_int_distribution<> dis(0, samples.rows - 1);

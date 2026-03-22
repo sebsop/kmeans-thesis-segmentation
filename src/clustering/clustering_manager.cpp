@@ -1,14 +1,9 @@
 #include "clustering/clustering_manager.hpp"
+#include "clustering/clustering_factory.hpp"
 #include "common/enums.hpp"
 #include "common/config.hpp"
 #include "common/constants.hpp"
 #include "opencv2/core.hpp"
-
-#include "clustering/flat_data_preprocessor.hpp"
-#include "clustering/rcc_data_preprocessor.hpp"
-#include "clustering/random_initializer.hpp"
-#include "clustering/kmeans_plus_plus_initializer.hpp"
-#include "clustering/classical_engine.hpp"
 
 namespace kmeans {
 namespace clustering {
@@ -18,34 +13,16 @@ namespace clustering {
     }
 
     void ClusteringManager::updateStategyImplementations() {
-        // Data Preparation Strategy
-        if (m_config.strategy == DataStrategy::RCC_TREES) {
-            if (!dynamic_cast<RccDataPreprocessor*>(m_dataPreprocessor.get())) {
-                m_dataPreprocessor = std::make_unique<RccDataPreprocessor>();
-            }
-        } else {
-            if (!dynamic_cast<FlatDataPreprocessor*>(m_dataPreprocessor.get())) {
-                m_dataPreprocessor = std::make_unique<FlatDataPreprocessor>();
-            }
+        if (!m_dataPreprocessor || m_config.strategy != m_prevConfig.strategy) {
+            m_dataPreprocessor = ClusteringFactory::createDataPreprocessor(m_config);
         }
-
-        // Initializer
-        if (m_config.init == InitializationType::KMEANS_PLUSPLUS) {
-            if (!dynamic_cast<KMeansPlusPlusInitializer*>(m_initializer.get())) {
-                m_initializer = std::make_unique<KMeansPlusPlusInitializer>();
-            }
-        } else {
-            if (!dynamic_cast<RandomInitializer*>(m_initializer.get())) {
-                m_initializer = std::make_unique<RandomInitializer>();
-            }
+        if (!m_initializer || m_config.init != m_prevConfig.init) {
+            m_initializer = ClusteringFactory::createInitializer(m_config);
         }
-
-        // Execution Engine
-        // if (m_config.algorithm == AlgorithmType::QUANTUM) { ... } else {
-            if (!dynamic_cast<ClassicalEngine*>(m_clusteringEngine.get())) {
-                m_clusteringEngine = std::make_unique<ClassicalEngine>();
-            }
-        // }
+        if (!m_clusteringEngine) {
+            m_clusteringEngine = ClusteringFactory::createEngine(m_config);
+        }
+        m_prevConfig = m_config;
     }
 
     cv::Mat ClusteringManager::segmentFrame(const cv::Mat& frame) {
@@ -67,6 +44,9 @@ namespace clustering {
     }
 
     std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& frame) {
+        CV_Assert(!frame.empty() && "Input frame is empty in ClusteringManager::computeCenters");
+        CV_Assert(m_config.k > 0 && "Number of clusters 'k' must be greater than 0");
+
         updateStategyImplementations(); // Allow hot-swapping if config changed
 
         bool shouldUpdate = (m_frameCount % m_config.learningInterval == 0) || !m_hasPrevious;

@@ -1,0 +1,11 @@
+---
+Checks: 'clang-analyzer-*,cppcoreguidelines-*,modernize-*,readability-*'
+SystemHeaders: false
+
+# Don't treat warnings as errors
+WarningsAsErrors: ''
+
+# Suppress the exceptions-disabled diagnostic
+CheckOptions:
+  - key: modernize-use-noexcept.UseNoexcept
+    value: false

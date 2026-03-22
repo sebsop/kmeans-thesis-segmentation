@@ -5,6 +5,7 @@ namespace kmeans {
 namespace clustering {
 
     cv::Mat RccDataPreprocessor::prepare(const cv::Mat& frame) {
+        CV_Assert(!frame.empty());
         Coreset leaf = buildCoresetFromFrame(frame);
         
         m_rcc.insertLeaf(leaf, SAMPLE_COUNT);

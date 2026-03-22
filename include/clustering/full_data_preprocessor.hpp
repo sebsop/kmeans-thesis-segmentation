@@ -4,10 +4,10 @@
 namespace kmeans {
 namespace clustering {
 
-    class FlatDataPreprocessor : public DataPreprocessor {
+    class FullDataPreprocessor : public DataPreprocessor {
     public:
-        FlatDataPreprocessor() = default;
-        ~FlatDataPreprocessor() override = default;
+        FullDataPreprocessor() = default;
+        ~FullDataPreprocessor() override = default;
 
         cv::Mat prepare(const cv::Mat& frame) override;
     };

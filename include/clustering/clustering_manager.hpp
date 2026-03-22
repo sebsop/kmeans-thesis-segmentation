@@ -23,6 +23,8 @@ namespace clustering {
         std::unique_ptr<Initializer> m_initializer;
         std::unique_ptr<KMeansEngine> m_clusteringEngine;
 
+        SegmentationConfig m_prevConfig;
+
     public:
         ClusteringManager();
         ~ClusteringManager() = default;

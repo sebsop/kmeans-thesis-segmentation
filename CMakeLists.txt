@@ -7,7 +7,7 @@ find_package(CUDA REQUIRED)
 
 enable_language(CUDA)
 
-set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--checks=clang-analyzer-*,cppcoreguidelines-*,modernize-*,readability-*")
+set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
 
 # Include directories
 include_directories(
@@ -21,7 +21,8 @@ add_library(kmeans_core
     src/backend/cuda_kernels.cu
     src/clustering/classical_engine.cpp
     src/clustering/clustering_manager.cpp
-    src/clustering/flat_data_preprocessor.cpp
+    src/clustering/clustering_factory.cpp
+    src/clustering/full_data_preprocessor.cpp
     src/clustering/rcc_data_preprocessor.cpp
     src/clustering/random_initializer.cpp
     src/clustering/kmeans_plus_plus_initializer.cpp

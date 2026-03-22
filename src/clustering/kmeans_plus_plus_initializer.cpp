@@ -4,7 +4,8 @@
 namespace kmeans {
 namespace clustering {
 
-    std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::Mat& samples, int k) {
+    std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::Mat& samples, int k) const {
+        CV_Assert(!samples.empty() && k > 0 && k <= samples.rows);
         std::vector<cv::Vec<float, 5>> centers;
         centers.reserve(k);
 

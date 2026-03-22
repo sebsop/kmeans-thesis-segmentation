@@ -1,10 +1,11 @@
-#include "clustering/flat_data_preprocessor.hpp"
+#include "clustering/full_data_preprocessor.hpp"
 #include "common/constants.hpp"
 
 namespace kmeans {
 namespace clustering {
 
-    cv::Mat FlatDataPreprocessor::prepare(const cv::Mat& frame) {
+    cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
+        CV_Assert(!frame.empty());
         int rows = frame.rows;
         int cols = frame.cols;
         int totalPixels = rows * cols;
