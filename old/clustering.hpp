@@ -1,6 +1,6 @@
 #pragma once
 #include <opencv2/core.hpp>
-#include "enums.hpp"
+#include "common/enums.hpp"
 
 namespace kmeans {
 	// Segment a frame using k-means clustering with the specified backend

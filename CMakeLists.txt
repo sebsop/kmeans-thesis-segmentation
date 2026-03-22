@@ -15,16 +15,18 @@ include_directories(
 )
 
 # Core Logic Library
-add_library(kmeans_core STATIC
-    src/video_io.cpp
+add_library(kmeans_core
+    src/backend/cuda_kernels.cu
+    src/clustering/ClusteringManager.cpp
+    src/clustering/KMeansClassical.cpp
+    src/clustering/KMeansQuantum.cpp
     src/coreset.cpp
     src/rcc.cpp
     src/utils.cpp
-    src/clustering/clustering_entry.cpp
-    src/clustering/kmeans_regular.cpp  
+    src/video_io.cpp
 )
 
-set_source_files_properties(src/BACKEND/CudaKernels.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/backend/cuda_kernels.cu PROPERTIES LANGUAGE CUDA)
 set_target_properties(kmeans_core PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON       # Enable separable compilation for CUDA (different from .cpp files)
     CUDA_STANDARD 14                    # Use C++14 standard for CUDA files

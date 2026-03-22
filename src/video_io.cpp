@@ -1,9 +1,9 @@
 #include "video_io.hpp"
 #include <opencv2/opencv.hpp>
-#include "clustering.hpp"
 #include "utils.hpp"
-#include "enums.hpp"
-#include "constants.hpp"
+#include "common/enums.hpp"
+#include "common/constants.hpp"
+#include "clustering/ClusteringManager.hpp"
 #include <cuda_runtime.h>
 #include <iostream>
 #include <string>
@@ -65,16 +65,22 @@ namespace kmeans {
         Algorithm lastAlgo = algo;
         int last_k_trackbar = k_trackbar;
 
+        ClusteringManager manager;
+        SegmentationConfig& config = manager.getConfig();
+
         while (true) {
             cap >> frame;
             if (frame.empty()) break; // Exit if window is closed
 
             int k = k_trackbar;
 
+            config.algorithm = algo;
+            config.k = k;
+
             cv::Mat localFrame;
             cv::Mat seg;
 
-            seg = segmentFrameWithKMeans(algo, frame, k, SAMPLE_COUNT, COLOR_SCALE, SPATIAL_SCALE);
+            seg = manager.segmentFrame(frame);
 
             if (seg.size() != frame.size()) {
                 cv::resize(seg, seg, frame.size(), 0, 0, cv::INTER_NEAREST);

@@ -1,5 +1,5 @@
 #include "utils.hpp"
-#include "constants.hpp"
+#include "common/constants.hpp"
 #include "coreset.hpp"
 
 namespace kmeans {

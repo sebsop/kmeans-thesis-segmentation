@@ -1,8 +1,8 @@
 #include "clustering_backends.hpp"
 #include "coreset.hpp"
 #include "utils.hpp"
-#include "constants.hpp"
-#include "enums.hpp"
+#include "common/constants.hpp"
+#include "common/enums.hpp"
 #include <random>
 
 namespace kmeans {

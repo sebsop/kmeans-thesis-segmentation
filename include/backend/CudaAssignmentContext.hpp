@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/core.hpp>
+#include "cuda_runtime.h"
 #include <vector>
 
 namespace kmeans {
@@ -22,10 +23,11 @@ namespace kmeans {
         CudaAssignmentContext(const CudaAssignmentContext&) = delete;
         CudaAssignmentContext& operator=(const CudaAssignmentContext&) = delete;
 
+        int getWidth();
+        int getK();
+
         void run(const cv::Mat& frame,
             const std::vector<cv::Vec<float, 5>>& centers,
-            cv::Mat& output,
-            float color_scale,
-            float spatial_scale);
-    }
+            cv::Mat& output);
+    };
 }

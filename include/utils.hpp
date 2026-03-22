@@ -1,7 +1,6 @@
 #pragma once
 #include <opencv2/core.hpp>
-#include "clustering_backends.hpp"
-#include "enums.hpp"
+#include "common/enums.hpp"
 
 namespace kmeans {
 	// Create a 5D feature vector from BGR color and normalized spatial coordinates, scaled by the color_scale and

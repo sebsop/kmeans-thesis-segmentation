@@ -1,6 +1,6 @@
 #include "clustering.hpp"
 #include "clustering_backends.hpp"
-#include "enums.hpp"
+#include "common/enums.hpp"
 
 namespace kmeans {
     // Entry point to segment a frame using K-means clustering with different algorithms

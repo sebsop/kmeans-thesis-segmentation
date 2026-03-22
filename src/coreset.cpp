@@ -1,5 +1,5 @@
 #include "coreset.hpp"
-#include "constants.hpp"
+#include "common/constants.hpp"
 #include <opencv2/opencv.hpp>
 #include <random>
 #include <iostream>

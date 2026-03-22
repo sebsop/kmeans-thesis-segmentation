@@ -2,9 +2,13 @@
 #include <device_launch_parameters.h>
 #include "backend/CudaAssignmentContext.hpp"
 #include <opencv2/core.hpp>
+#include "common/constants.hpp"
 #include <vector>
 
 namespace kmeans {
+    int CudaAssignmentContext::getWidth() { return this.m_width; }
+    int  CudaAssignmentContext::getK() { return this.m_k; }
+
     CudaAssignmentContext::CudaAssignmentContext(int width, int height, int k) 
         : m_width(width), m_height(height), m_k(k) 
     {
@@ -79,9 +83,7 @@ namespace kmeans {
 
     void CudaAssignmentContext::run(const cv::Mat& frame, 
                                     const std::vector<cv::Vec<float, 5>>& centers, 
-                                    cv::Mat& output,
-                                    float color_scale, 
-                                    float spatial_scale) 
+                                    cv::Mat& output) 
     {
         cudaMemcpyAsync(d_input, frame.data, m_imgSize, cudaMemcpyHostToDevice, m_stream);
         
@@ -99,7 +101,7 @@ namespace kmeans {
         int blocksPerGrid = (m_width * m_height + threadsPerBlock - 1) / threadsPerBlock;
         
         assignPixelsKernel<<<blocksPerGrid, threadsPerBlock, 0, m_stream>>>(
-            d_input, d_output, m_width, m_height, d_centers, m_k, color_scale, spatial_scale
+            d_input, d_output, m_width, m_height, d_centers, m_k, COLOR_SCALE, SPATIAL_SCALE
         );
 
         // 3. Async Download
