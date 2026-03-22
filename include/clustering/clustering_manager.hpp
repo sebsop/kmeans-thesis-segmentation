@@ -1,12 +1,16 @@
 #pragma once
 #include <opencv2/core.hpp>
 #include <memory>
-#include "backend/CudaAssignmentContext.hpp"
+#include <vector>
+#include "backend/cuda_assignment_context.hpp"
 #include "common/config.hpp"
-#include "coreset.hpp"
-#include "rcc.hpp"
+#include "clustering/data_preprocessor.hpp"
+#include "clustering/initializer.hpp"
+#include "clustering/kmeans_engine.hpp"
 
 namespace kmeans {
+namespace clustering {
+
     class ClusteringManager {
     private:
         std::vector<cv::Vec<float, 5>> m_previousCenters;
@@ -14,16 +18,23 @@ namespace kmeans {
         int m_frameCount = 0;
         std::unique_ptr<CudaAssignmentContext> m_cudaContext;
         SegmentationConfig m_config;
-        RCC m_rcc;
+
+        std::unique_ptr<DataPreprocessor> m_dataPreprocessor;
+        std::unique_ptr<Initializer> m_initializer;
+        std::unique_ptr<KMeansEngine> m_clusteringEngine;
 
     public:
+        ClusteringManager();
+        ~ClusteringManager() = default;
+
         SegmentationConfig& getConfig() { return m_config; }
+        
+        // Factory setup function to inject strategies based on config
+        void updateStategyImplementations();
+
         cv::Mat segmentFrame(const cv::Mat& frame);
         std::vector<cv::Vec<float, 5>> computeCenters(const cv::Mat& frame);
-        cv::Mat prepareData(const cv::Mat& frame);
-        cv::Mat ClusteringManager::convertCoresetToMat(const Coreset& coreset);
-        cv::Mat ClusteringManager::flattenFrameTo5D(const cv::Mat& frame);
-        std::vector<cv::Vec<float, 5>> selectInitialCenters(const cv::Mat& samples);
-        std::vector<cv::Vec<float, 5>> executeClustering(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& initialCenters);
     };
+
+}
 }

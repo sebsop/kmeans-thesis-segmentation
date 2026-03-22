@@ -8,7 +8,7 @@ namespace kmeans
         KMEANS_QUANTUM = 1
     };
 
-    enum class Initialization : int
+    enum class InitializationType : int
     {
         RANDOM = 0,
         KMEANS_PLUSPLUS = 1
