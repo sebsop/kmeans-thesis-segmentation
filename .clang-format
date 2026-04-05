@@ -24,9 +24,6 @@ FixNamespaceComments: true
 # Short one-liners can stay on one line (e.g. simple getters)
 AllowShortFunctionsOnASingleLine: Inline
 
-# Prevents clang-format from deleting your manual blank lines at the top of namespaces!
-KeepEmptyLinesAtTheStartOfBlocks: false
-
 # --- Include Sorting & Grouping ---
 # Automatically sort includes and insert blank lines between the categories below
 SortIncludes: true
