@@ -258,7 +258,15 @@ void Application::renderUI() {
 void Application::run() {
     m_running = true;
     m_workerThread = std::thread([this]() {
-        cv::VideoCapture cap(0);
+        // Try hardware accelerated capture first (Windows)
+        cv::VideoCapture cap(0, cv::CAP_MSMF);
+        if (cap.isOpened()) {
+            cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY);
+        } else {
+            // Fallback
+            cap.open(0);
+        }
+        
         if (!cap.isOpened()) {
             std::cerr << "Failed to open webcam inside worker thread." << std::endl;
             return;

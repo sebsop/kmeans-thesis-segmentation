@@ -1,20 +1,15 @@
 #pragma once
 
 #include <memory>
-#include <zmq.hpp>
+#include <vector>
 
 #include "clustering/engines/kmeans_engine.hpp"
 
 namespace kmeans::clustering {
 
 class QuantumEngine final : public KMeansEngine {
-  private:
-    zmq::context_t m_context;
-    zmq::socket_t m_socket;
-    bool m_connected = false;
-
   public:
-    QuantumEngine();
+    QuantumEngine() = default;
     ~QuantumEngine() = default;
 
     [[nodiscard]] std::vector<cv::Vec<float, 5>>
