@@ -32,6 +32,9 @@ if(MSVC)
         "$<$<CONFIG:Release>:/O2>"
         "$<$<CONFIG:Release>:/fp:fast>"
         "$<$<CONFIG:Release>:/arch:AVX2>"
+        # Suppress warnings in external headers (like OpenCV/CUDA), but only for CXX to not confuse NVCC
+        "$<$<COMPILE_LANGUAGE:CXX>:/external:W0>"
+        "$<$<COMPILE_LANGUAGE:CXX>:/external:anglebrackets>"
     )
 else()
     add_compile_options(
@@ -44,14 +47,45 @@ endif()
 # CUDA Optimizations (Only applied in Release mode)
 set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -O3 -use_fast_math")
 
-# Include directories
+# Project include directories
 include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+# External (SYSTEM) include directories to suppress compiler/analysis warnings
+include_directories(SYSTEM
     ${OpenCV_INCLUDE_DIRS}
     ${CUDA_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src/vendor/imgui
     ${CMAKE_SOURCE_DIR}/src/vendor/imgui/backends
 )
+
+# Enable Clang-Tidy during build if available
+find_program(CLANG_TIDY_EXE NAMES "clang-tidy" "clang-tidy.exe")
+if(CLANG_TIDY_EXE)
+    message(STATUS "clang-tidy found: ${CLANG_TIDY_EXE}")
+    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
+    set(CMAKE_CUDA_CLANG_TIDY "${CLANG_TIDY_EXE}")
+else()
+    message(WARNING "clang-tidy not found. Code analysis during build is disabled.")
+endif()
+
+# Custom target to format all source files (excluding vendor libraries)
+find_program(CLANG_FORMAT_EXE NAMES "clang-format" "clang-format.exe")
+if(CLANG_FORMAT_EXE)
+    file(GLOB_RECURSE ALL_SOURCE_FILES
+        "src/*.cpp" "src/*.hpp" "src/*.cu" "src/*.cuh"
+        "include/*.cpp" "include/*.hpp" "include/*.cu" "include/*.cuh"
+    )
+    # Remove all files inside src/vendor/ from the list
+    list(FILTER ALL_SOURCE_FILES EXCLUDE REGEX ".*/vendor/.*")
+    
+    add_custom_target(
+        format
+        COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${ALL_SOURCE_FILES}
+        COMMENT "Formatting all source files (excluding vendor) with clang-format..."
+    )
+endif()
 
 # Core Logic Library
 add_library(kmeans_core
@@ -100,6 +134,9 @@ target_link_libraries(imgui PUBLIC glfw)
 if (WIN32)
     target_link_libraries(imgui PUBLIC opengl32)
 endif()
+
+# Disable Clang-Tidy for third-party libraries
+set_target_properties(imgui PROPERTIES CXX_CLANG_TIDY "" CUDA_CLANG_TIDY "")
 
 # Bind ImGui exactly into the core logic library so application.cpp can inherit the headers
 target_link_libraries(kmeans_core PUBLIC imgui)

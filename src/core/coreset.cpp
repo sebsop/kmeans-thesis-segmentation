@@ -16,36 +16,36 @@ Coreset buildCoresetFromFrame(const cv::Mat& frame) {
     int cols = frame.cols;
     int total_pixels = rows * cols;
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    std::random_device random_device_instance;
+    std::mt19937 gen(random_device_instance());
     std::uniform_int_distribution<> row_dist(0, rows - 1);
     std::uniform_int_distribution<> col_dist(0, cols - 1);
 
     coreset.points.reserve(constants::SAMPLE_COUNT);
 
     for (int i = 0; i < constants::SAMPLE_COUNT; ++i) {
-        int r = row_dist(gen);
-        int c = col_dist(gen);
-        cv::Vec3b pixel = frame.at<cv::Vec3b>(r, c);
+        int sampled_row = row_dist(gen);
+        int sampled_col = col_dist(gen);
+        cv::Vec3b pixel = frame.at<cv::Vec3b>(sampled_row, sampled_col);
 
-        CoresetPoint pt;
-        pt.bgr = cv::Vec3f(pixel[0], pixel[1], pixel[2]);
-        pt.weight = static_cast<float>(total_pixels) / static_cast<float>(constants::SAMPLE_COUNT);
-        pt.x = static_cast<float>(c) / static_cast<float>(cols);
-        pt.y = static_cast<float>(r) / static_cast<float>(rows);
+        CoresetPoint point;
+        point.bgr = cv::Vec3f(pixel[0], pixel[1], pixel[2]);
+        point.weight = static_cast<float>(total_pixels) / static_cast<float>(constants::SAMPLE_COUNT);
+        point.x = static_cast<float>(sampled_col) / static_cast<float>(cols);
+        point.y = static_cast<float>(sampled_row) / static_cast<float>(rows);
 
-        coreset.points.push_back(pt);
+        coreset.points.push_back(point);
     }
 
     return coreset;
 }
 
-Coreset mergeCoresets(const Coreset& A, const Coreset& B) {
+Coreset mergeCoresets(const Coreset& CoresetA, const Coreset& CoresetB) {
     Coreset merged;
 
-    merged.points.reserve(A.points.size() + B.points.size());
-    merged.points.insert(merged.points.end(), A.points.begin(), A.points.end());
-    merged.points.insert(merged.points.end(), B.points.begin(), B.points.end());
+    merged.points.reserve(CoresetA.points.size() + CoresetB.points.size());
+    merged.points.insert(merged.points.end(), CoresetA.points.begin(), CoresetA.points.end());
+    merged.points.insert(merged.points.end(), CoresetB.points.begin(), CoresetB.points.end());
 
     // If the merged coreset exceeds the sample size, randomly downsample it
     if (merged.points.size() > constants::SAMPLE_COUNT) {
