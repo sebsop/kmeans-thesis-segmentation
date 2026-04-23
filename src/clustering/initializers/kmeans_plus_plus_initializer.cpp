@@ -15,7 +15,7 @@ std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::M
 
     // First center random
     int firstIdx = dis(gen);
-    const float* firstPtr = samples.ptr<float>(firstIdx);
+    const auto* firstPtr = samples.ptr<float>(firstIdx);
     centers.emplace_back(firstPtr[0], firstPtr[1], firstPtr[2], firstPtr[3], firstPtr[4]);
 
     std::vector<float> distances(numPoints, std::numeric_limits<float>::max());
@@ -24,7 +24,7 @@ std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::M
         float sumDistSq = 0.0f;
 
         for (int p = 0; p < numPoints; ++p) {
-            const float* pPtr = samples.ptr<float>(p);
+            const auto* pPtr = samples.ptr<float>(p);
             float currDistSq = 0.0f;
             const auto& lastCenter = centers.back();
 
@@ -33,26 +33,24 @@ std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::M
                 currDistSq += diff * diff;
             }
 
-            if (currDistSq < distances[p]) {
-                distances[p] = currDistSq;
-            }
+            distances[p] = std::min(currDistSq, distances[p]);
             sumDistSq += distances[p];
         }
 
-        std::uniform_real_distribution<float> fdis(0.0f, sumDistSq);
+        std::uniform_real_distribution<float> fdis(0.0F, sumDistSq);
         float target = fdis(gen);
-        float cumulative = 0.0f;
+        float cumulative = 0.0F;
         int selectedIdx = numPoints - 1;
 
-        for (int p = 0; p < numPoints; ++p) {
-            cumulative += distances[p];
+        for (int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
+            cumulative += distances[pointIdx];
             if (cumulative >= target) {
-                selectedIdx = p;
+                selectedIdx = pointIdx;
                 break;
             }
         }
 
-        const float* selPtr = samples.ptr<float>(selectedIdx);
+        const auto* selPtr = samples.ptr<float>(selectedIdx);
         centers.emplace_back(selPtr[0], selPtr[1], selPtr[2], selPtr[3], selPtr[4]);
     }
 

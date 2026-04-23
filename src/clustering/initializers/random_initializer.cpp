@@ -11,7 +11,7 @@ std::vector<cv::Vec<float, 5>> RandomInitializer::initialize(const cv::Mat& samp
 
     for (int i = 0; i < k; ++i) {
         int randIdx = dis(gen);
-        const float* rowPtr = samples.ptr<float>(randIdx);
+        const auto* rowPtr = samples.ptr<float>(randIdx);
         centers[i] = cv::Vec<float, 5>(rowPtr[0], rowPtr[1], rowPtr[2], rowPtr[3], rowPtr[4]);
     }
 

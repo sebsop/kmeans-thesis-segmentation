@@ -32,9 +32,16 @@ if(MSVC)
         "$<$<CONFIG:Release>:/O2>"
         "$<$<CONFIG:Release>:/fp:fast>"
         "$<$<CONFIG:Release>:/arch:AVX2>"
-        # Suppress warnings in external headers (like OpenCV/CUDA), but only for CXX to not confuse NVCC
+        # Suppress warnings and code analysis in external headers
         "$<$<COMPILE_LANGUAGE:CXX>:/external:W0>"
         "$<$<COMPILE_LANGUAGE:CXX>:/external:anglebrackets>"
+        "$<$<COMPILE_LANGUAGE:CXX>:/analyze:external->"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/external:W0>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/external:anglebrackets>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/analyze:external->"
+        # Ensure exceptions are enabled for clang-tidy
+        "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/EHsc>"
     )
 else()
     add_compile_options(
@@ -64,8 +71,8 @@ include_directories(SYSTEM
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy" "clang-tidy.exe")
 if(CLANG_TIDY_EXE)
     message(STATUS "clang-tidy found: ${CLANG_TIDY_EXE}")
-    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
-    set(CMAKE_CUDA_CLANG_TIDY "${CLANG_TIDY_EXE}")
+    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};--extra-arg=/EHsc")
+    set(CMAKE_CUDA_CLANG_TIDY "${CLANG_TIDY_EXE};--extra-arg=/EHsc")
 else()
     message(WARNING "clang-tidy not found. Code analysis during build is disabled.")
 endif()
@@ -130,6 +137,9 @@ add_library(imgui STATIC
     src/vendor/imgui/backends/imgui_impl_opengl3.cpp
 )
 target_include_directories(imgui PUBLIC src/vendor/imgui src/vendor/imgui/backends)
+if (MSVC)
+    target_compile_options(imgui PRIVATE /analyze-)
+endif()
 target_link_libraries(imgui PUBLIC glfw)
 if (WIN32)
     target_link_libraries(imgui PUBLIC opengl32)

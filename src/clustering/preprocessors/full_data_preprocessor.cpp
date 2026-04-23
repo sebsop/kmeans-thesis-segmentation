@@ -10,11 +10,11 @@ cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
 
     int idx = 0;
     for (int r = 0; r < frame.rows; ++r) {
-        const cv::Vec3b* rowPtr = frame.ptr<cv::Vec3b>(r);
+        const auto* rowPtr = frame.ptr<cv::Vec3b>(r);
         for (int c = 0; c < frame.cols; ++c) {
             const cv::Vec3b& bgr = rowPtr[c];
-            float x01 = static_cast<float>(c) / frame.cols;
-            float y01 = static_cast<float>(r) / frame.rows;
+            float x01 = static_cast<float>(c) / static_cast<float>(frame.cols);
+            float y01 = static_cast<float>(r) / static_cast<float>(frame.rows);
 
             cv::Vec<float, 5> feature = common::makeFeature(cv::Vec3f(bgr[0], bgr[1], bgr[2]), x01, y01);
 

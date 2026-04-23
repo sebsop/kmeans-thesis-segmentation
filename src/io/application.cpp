@@ -16,16 +16,14 @@
 
 // Windows <GL/gl.h> strictly supports OpenGL 1.1.
 #ifndef GL_CLAMP_TO_EDGE
-#define GL_CLAMP_TO_EDGE 0x812F
+constexpr int GL_CLAMP_TO_EDGE = 0x812F;
 #endif
 
 namespace kmeans::io {
 
-Application::Application() {
+Application::Application() : m_uiConfig(m_manager.getConfig()), m_initialized(true) {
     initWindow();
     initImGui();
-    m_uiConfig = m_manager.getConfig();
-    m_initialized = true;
 }
 
 Application::~Application() noexcept {
@@ -35,8 +33,8 @@ Application::~Application() noexcept {
 }
 
 void Application::initWindow() {
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW. Application cannot start." << std::endl;
+    if (glfwInit() == 0) {
+        std::cerr << "Failed to initialize GLFW. Application cannot start.\n";
         exit(EXIT_FAILURE);
     }
 
@@ -45,9 +43,9 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    m_window = glfwCreateWindow(1400, 438, "K-Means Segmentation Thesis - ImGui Dashboard", NULL, NULL);
-    if (m_window == NULL) {
-        std::cerr << "Failed to create window using GLFW." << std::endl;
+    m_window = glfwCreateWindow(1400, 438, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
+    if (m_window == nullptr) {
+        std::cerr << "Failed to create window using GLFW.\n";
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -80,8 +78,9 @@ void Application::cleanup() noexcept {
 }
 
 void Application::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {
-    if (mat.empty())
+    if (mat.empty()) {
         return;
+    }
 
     cv::Mat rgbMat;
     cv::cvtColor(mat, rgbMat, cv::COLOR_BGR2RGBA);
@@ -187,10 +186,8 @@ void Application::renderUI() {
         float maxFps = algoFpsHistory[0];
         float sumFps = 0.0f;
         for (float f : algoFpsHistory) {
-            if (f < minFps)
-                minFps = f;
-            if (f > maxFps)
-                maxFps = f;
+            minFps = std::min(f, minFps);
+            maxFps = std::max(f, maxFps);
             sumFps += f;
         }
         float avgFps = sumFps / static_cast<float>(algoFpsHistory.size());
@@ -199,8 +196,8 @@ void Application::renderUI() {
         ImGui::Text("Camera Pipeline: %.1f FPS", workerFps);
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg: %.1f | Min: %.1f | Max: %.1f", avgFps, minFps, maxFps);
 
-        ImGui::PlotLines("##Pipeline History", algoFpsHistory.data(), static_cast<int>(algoFpsHistory.size()), 0, NULL,
-                         0.0f, maxFps * 1.5f + 5.0f, ImVec2(0, 80));
+        ImGui::PlotLines("##Pipeline History", algoFpsHistory.data(), static_cast<int>(algoFpsHistory.size()), 0, nullptr,
+                         0.0f, (maxFps * 1.5f) + 5.0f, ImVec2(0, 80));
     }
 
     ImGui::End();
@@ -229,7 +226,7 @@ void Application::renderUI() {
         ImGui::BeginGroup();
         ImGui::Text("Original Frame");
         ImVec2 imgSize(static_cast<float>(localOriginal.cols) * 0.8f, static_cast<float>(localOriginal.rows) * 0.8f);
-        ImGui::Image((void*)(intptr_t)m_originalTexture.id, imgSize);
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_originalTexture.id)), imgSize);
         ImGui::EndGroup();
 
         ImGui::SameLine();
@@ -237,7 +234,7 @@ void Application::renderUI() {
         ImGui::BeginGroup();
         ImGui::Text("Clustered Frame");
         ImVec2 segSize(static_cast<float>(localSegmented.cols) * 0.8f, static_cast<float>(localSegmented.rows) * 0.8f);
-        ImGui::Image((void*)(intptr_t)m_segmentedTexture.id, segSize);
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_segmentedTexture.id)), segSize);
         ImGui::EndGroup();
     } else {
         ImGui::Text("Warming up camera thread...");
@@ -247,7 +244,8 @@ void Application::renderUI() {
 
     // Rendering commands
     ImGui::Render();
-    int display_w, display_h;
+    int display_w = 0;
+    int display_h = 0;
     glfwGetFramebufferSize(m_window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -275,8 +273,9 @@ void Application::run() {
         while (m_running) {
             cv::Mat frame;
             cap >> frame;
-            if (frame.empty())
+            if (frame.empty()) {
                 continue;
+            }
 
             // Safely ingest latest config from UI panel
             common::SegmentationConfig currentConfig;
@@ -306,15 +305,15 @@ void Application::run() {
             }
             m_lastWorkerTime = endAlgo;
 
-            auto& centers = m_manager.getCenters();
+            const auto& centers = m_manager.getCenters();
 
             cv::Mat displaySegmented;
             cv::resize(segmented, displaySegmented, frame.size(), 0, 0, cv::INTER_NEAREST);
 
             if (m_showCentroids) {
                 for (const auto& c : centers) {
-                    cv::Point centerPt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * frame.cols),
-                                       static_cast<int>((c[4] / constants::SPATIAL_SCALE) * frame.rows));
+                    cv::Point centerPt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
+                                       static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
                     cv::circle(displaySegmented, centerPt, 6, color, -1);
@@ -336,7 +335,7 @@ void Application::run() {
     });
 
     // Natively uncapped ImGui loop
-    while (!glfwWindowShouldClose(m_window)) {
+    while (glfwWindowShouldClose(m_window) == 0) {
         glfwPollEvents();
         renderUI();
         glfwSwapBuffers(m_window);

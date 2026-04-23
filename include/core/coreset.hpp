@@ -12,8 +12,8 @@ namespace kmeans::core {
 //    (e.g., if we sampled 1,000 out of 1,000,000 pixels, each sampled point has weight ~1000).
 struct CoresetPoint {
     cv::Vec3f bgr;
-    float x, y;
-    float weight;
+    float x = 0.f, y = 0.f;
+    float weight = 0.f;
 };
 
 // A coreset is a small, weighted subset of points that approximates the original dataset.

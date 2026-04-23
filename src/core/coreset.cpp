@@ -26,7 +26,7 @@ Coreset buildCoresetFromFrame(const cv::Mat& frame) {
     for (int i = 0; i < constants::SAMPLE_COUNT; ++i) {
         int sampled_row = row_dist(gen);
         int sampled_col = col_dist(gen);
-        cv::Vec3b pixel = frame.at<cv::Vec3b>(sampled_row, sampled_col);
+        const auto& pixel = frame.at<cv::Vec3b>(sampled_row, sampled_col);
 
         CoresetPoint point;
         point.bgr = cv::Vec3f(pixel[0], pixel[1], pixel[2]);

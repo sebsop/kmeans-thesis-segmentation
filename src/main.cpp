@@ -19,6 +19,9 @@ int main(int argc, char** argv) {
     } catch (const std::exception& e) {
         std::cerr << "Fatal UI Error: " << e.what() << "\n";
         return EXIT_FAILURE;
+    } catch (...) {
+        std::cerr << "Fatal Unknown Error!\n";
+        return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
 }

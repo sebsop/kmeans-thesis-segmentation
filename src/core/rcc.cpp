@@ -6,6 +6,25 @@
 
 namespace kmeans::core {
 
+namespace {
+std::unique_ptr<RCCNode> mergeNodes(std::unique_ptr<RCCNode> nodeA, std::unique_ptr<RCCNode> nodeB) {
+    if (!nodeA) {
+        return nodeB;
+    }
+
+    if (!nodeB) {
+        return nodeA;
+    }
+
+    Coreset merged = mergeCoresets(nodeA->coreset, nodeB->coreset);
+    auto parent = std::make_unique<RCCNode>(merged);
+    parent->left = std::move(nodeA);
+    parent->right = std::move(nodeB);
+
+    return parent;
+}
+} // namespace
+
 RCC::RCC(int maxLevels) : max_levels(maxLevels) {
     levels.resize(std::max(1, max_levels));
 }
@@ -17,37 +36,18 @@ void RCC::insertLeaf(const Coreset& leafCoreset) {
         levels.resize(std::max(1, this->max_levels));
     }
 
-    for (int lvl = 0; lvl < static_cast<int>(levels.size()); ++lvl) {
-        if (!levels[lvl]) {
-            levels[lvl] = std::move(carry);
-            break;
-        } else {
-            carry = mergeNodes(std::move(levels[lvl]), std::move(carry));
+    for (auto& level : levels) {
+        if (!level) {
+            level = std::move(carry);
+            return;
         }
+        carry = mergeNodes(std::move(level), std::move(carry));
     }
 
-    if (carry) {
-        if (levels.back()) {
-            Coreset merged = mergeCoresets(levels.back()->coreset, carry->coreset);
-            carry = std::make_unique<RCCNode>(merged);
-        }
-        levels.back() = std::move(carry);
-    }
+    levels.back() = std::move(carry);
 }
 
-std::unique_ptr<RCCNode> RCC::mergeNodes(std::unique_ptr<RCCNode> nodeA, std::unique_ptr<RCCNode> nodeB) {
-    if (!nodeA)
-        return std::move(nodeB);
-    if (!nodeB)
-        return std::move(nodeA);
 
-    Coreset merged = mergeCoresets(nodeA->coreset, nodeB->coreset);
-    auto parent = std::make_unique<RCCNode>(merged);
-    parent->left = std::move(nodeA);
-    parent->right = std::move(nodeB);
-
-    return parent;
-}
 
 Coreset RCC::getRootCoreset() const {
     Coreset final_coreset;

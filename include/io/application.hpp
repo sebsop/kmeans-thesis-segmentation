@@ -65,7 +65,7 @@ class Application {
     void cleanup() noexcept;
 
     void renderUI();
-    void matToTexture(const cv::Mat& mat, TextureResource& textureRes);
+    static void matToTexture(const cv::Mat& mat, TextureResource& textureRes);
 
   public:
     Application();

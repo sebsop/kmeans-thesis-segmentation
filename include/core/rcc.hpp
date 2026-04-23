@@ -40,14 +40,7 @@ class RCC {
     //   leafCoreset: the new coreset to insert as a leaf
     void insertLeaf(const Coreset& leafCoreset);
 
-    // Merge two RCC nodes into one by merging their coresets and creating a new parent node
-    //
-    // Args:
-    //   nodeA, nodeB: the two RCC nodes to merge
-    //
-    // Returns:
-    //   A new RCCNode whose coreset is the merged coreset of A and B, with A and B as children
-    std::unique_ptr<RCCNode> mergeNodes(std::unique_ptr<RCCNode> nodeA, std::unique_ptr<RCCNode> nodeB);
+
 
     // Get the coreset at the root of the RCC tree
     //
