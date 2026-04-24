@@ -196,16 +196,17 @@ void Application::renderUI() {
         ImGui::Text("Camera Pipeline: %.1f FPS", workerFps);
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg: %.1f | Min: %.1f | Max: %.1f", avgFps, minFps, maxFps);
 
-        ImGui::PlotLines("##Pipeline History", algoFpsHistory.data(), static_cast<int>(algoFpsHistory.size()), 0, nullptr,
-                         0.0f, (maxFps * 1.5f) + 5.0f, ImVec2(0, 80));
+        ImGui::PlotLines("##Pipeline History", algoFpsHistory.data(), static_cast<int>(algoFpsHistory.size()), 0,
+                         nullptr, 0.0f, (maxFps * 1.5f) + 5.0f, ImVec2(0, 80));
     }
 
     ImGui::End();
 
     // 2. Video Feed Window
     ImGui::SetNextWindowPos(ImVec2(constants::UI_PANEL_WIDTH, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x - constants::UI_PANEL_WIDTH, ImGui::GetIO().DisplaySize.y),
-                             ImGuiCond_Always);
+    ImGui::SetNextWindowSize(
+        ImVec2(ImGui::GetIO().DisplaySize.x - constants::UI_PANEL_WIDTH, ImGui::GetIO().DisplaySize.y),
+        ImGuiCond_Always);
     ImGui::Begin("Video Segmentation Feed", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
@@ -264,7 +265,7 @@ void Application::run() {
             // Fallback
             cap.open(0);
         }
-        
+
         if (!cap.isOpened()) {
             std::cerr << "Failed to open webcam inside worker thread." << std::endl;
             return;
@@ -312,8 +313,9 @@ void Application::run() {
 
             if (m_showCentroids) {
                 for (const auto& c : centers) {
-                    cv::Point centerPt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
-                                       static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
+                    cv::Point centerPt(
+                        static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
+                        static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
                     cv::circle(displaySegmented, centerPt, 6, color, -1);

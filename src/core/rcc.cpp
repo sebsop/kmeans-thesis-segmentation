@@ -47,8 +47,6 @@ void RCC::insertLeaf(const Coreset& leafCoreset) {
     levels.back() = std::move(carry);
 }
 
-
-
 Coreset RCC::getRootCoreset() const {
     Coreset final_coreset;
     bool empty = true;

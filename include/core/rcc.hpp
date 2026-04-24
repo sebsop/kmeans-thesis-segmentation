@@ -40,8 +40,6 @@ class RCC {
     //   leafCoreset: the new coreset to insert as a leaf
     void insertLeaf(const Coreset& leafCoreset);
 
-
-
     // Get the coreset at the root of the RCC tree
     //
     // Returns:

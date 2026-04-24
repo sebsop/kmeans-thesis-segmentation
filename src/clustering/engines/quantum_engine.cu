@@ -1,15 +1,14 @@
-#include "clustering/engines/quantum_engine.hpp"
-
-#include <iostream>
-#include <vector>
 #include <cmath>
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+#include <iostream>
 #include <limits>
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
+#include "clustering/engines/quantum_engine.hpp"
 
 #define CUDA_CHECK(call)                                                                                               \
     do {                                                                                                               \
@@ -22,9 +21,9 @@
 
 namespace kmeans::clustering {
 
-__global__ static void quantumAssignKernel(const float* __restrict__ samples, int numPoints, 
-                                           const float* __restrict__ centers, int k,
-                                           int* __restrict__ labels, int* __restrict__ changed, float scale_factor) {
+__global__ static void quantumAssignKernel(const float* __restrict__ samples, int numPoints,
+                                           const float* __restrict__ centers, int k, int* __restrict__ labels,
+                                           int* __restrict__ changed, float scale_factor) {
     extern __shared__ float s_centers[];
 
     int tid = threadIdx.x;
@@ -34,10 +33,11 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     __syncthreads();
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numPoints) return;
+    if (idx >= numPoints)
+        return;
 
     float p[5];
-    #pragma unroll
+#pragma unroll
     for (int d = 0; d < 5; ++d) {
         p[d] = samples[idx * 5 + d];
     }
@@ -47,7 +47,7 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
 
     for (int j = 0; j < k; ++j) {
         float target_prob = 1.0f;
-        #pragma unroll
+#pragma unroll
         for (int d = 0; d < 5; ++d) {
             float c_scaled = s_centers[j * 5 + d] * scale_factor;
             float s_scaled = p[d] * scale_factor;
@@ -68,9 +68,9 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     }
 }
 
-__global__ static void quantumUpdateKernel(const float* __restrict__ samples, int numPoints, 
-                                           const int* __restrict__ labels, int k,
-                                           float* __restrict__ newSums, int* __restrict__ counts) {
+__global__ static void quantumUpdateKernel(const float* __restrict__ samples, int numPoints,
+                                           const int* __restrict__ labels, int k, float* __restrict__ newSums,
+                                           int* __restrict__ counts) {
     extern __shared__ float s_mem[];
     float* s_sums = s_mem;
     int* s_counts = (int*)&s_mem[k * 5];
@@ -87,7 +87,7 @@ __global__ static void quantumUpdateKernel(const float* __restrict__ samples, in
         int cluster = labels[idx];
         if (cluster >= 0 && cluster < k) {
             atomicAdd(&s_counts[cluster], 1);
-            #pragma unroll
+#pragma unroll
             for (int d = 0; d < 5; ++d) {
                 atomicAdd(&s_sums[cluster * 5 + d], samples[idx * 5 + d]);
             }
@@ -98,7 +98,7 @@ __global__ static void quantumUpdateKernel(const float* __restrict__ samples, in
     if (tid < k) {
         if (s_counts[tid] > 0) {
             atomicAdd(&counts[tid], s_counts[tid]);
-            #pragma unroll
+#pragma unroll
             for (int d = 0; d < 5; ++d) {
                 atomicAdd(&newSums[tid * 5 + d], s_sums[tid * 5 + d]);
             }
@@ -109,7 +109,8 @@ __global__ static void quantumUpdateKernel(const float* __restrict__ samples, in
 std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
                                                   const std::vector<cv::Vec<float, 5>>& initialCenters, int k) {
     int numPoints = samples.rows;
-    if (numPoints == 0 || k <= 0) return initialCenters;
+    if (numPoints == 0 || k <= 0)
+        return initialCenters;
 
     // 1. Calculate scale factor (based on global range) on CPU
     float max_range = 0.0f;
@@ -119,8 +120,10 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
         for (int i = 0; i < numPoints; ++i) {
             const float* rowPtr = samples.ptr<float>(i);
             float val = rowPtr[d];
-            if (val < min_val) min_val = val;
-            if (val > max_val) max_val = val;
+            if (val < min_val)
+                min_val = val;
+            if (val > max_val)
+                max_val = val;
         }
         float range = max_val - min_val;
         if (range > max_range) {
@@ -167,7 +170,7 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
 
     std::vector<float> h_newSums(k * 5);
     std::vector<int> h_counts(k);
-    
+
     std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
@@ -175,7 +178,8 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
 
-        quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedAssignSize>>>(d_samples, numPoints, d_centers, k, d_labels, d_changed, scale_factor);
+        quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedAssignSize>>>(d_samples, numPoints, d_centers, k,
+                                                                                  d_labels, d_changed, scale_factor);
         CUDA_CHECK(cudaPeekAtLastError());
         CUDA_CHECK(cudaDeviceSynchronize());
 
@@ -187,7 +191,8 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
         CUDA_CHECK(cudaMemset(d_newSums, 0, centersSize));
         CUDA_CHECK(cudaMemset(d_counts, 0, k * sizeof(int)));
 
-        quantumUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedUpdateSize>>>(d_samples, numPoints, d_labels, k, d_newSums, d_counts);
+        quantumUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedUpdateSize>>>(d_samples, numPoints, d_labels, k,
+                                                                                  d_newSums, d_counts);
         CUDA_CHECK(cudaPeekAtLastError());
         CUDA_CHECK(cudaDeviceSynchronize());
 
