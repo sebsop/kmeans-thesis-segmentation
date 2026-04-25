@@ -12,8 +12,6 @@ int main(int argc, char** argv) {
     try {
         cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);
 
-        std::cout << "Starting K-Means Clustering for Thesis - ImGui Application...\n";
-
         io::Application app;
         app.run();
     } catch (const std::exception& e) {
@@ -23,5 +21,6 @@ int main(int argc, char** argv) {
         std::cerr << "Fatal Unknown Error!\n";
         return EXIT_FAILURE;
     }
+
     return EXIT_SUCCESS;
 }

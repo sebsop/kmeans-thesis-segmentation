@@ -101,28 +101,45 @@ __global__ static void classicalUpdateKernel(const float* __restrict__ samples, 
     }
 }
 
+ClassicalEngine::~ClassicalEngine() {
+    if (d_samples) cudaFree(d_samples);
+    if (d_centers) cudaFree(d_centers);
+    if (d_labels) cudaFree(d_labels);
+    if (d_newSums) cudaFree(d_newSums);
+    if (d_counts) cudaFree(d_counts);
+    if (d_changed) cudaFree(d_changed);
+}
+
 std::vector<cv::Vec<float, 5>> ClassicalEngine::run(const cv::Mat& samples,
                                                     const std::vector<cv::Vec<float, 5>>& initialCenters, int k) {
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
-    float* d_samples;
-    float* d_centers;
-    int* d_labels;
-    float* d_newSums;
-    int* d_counts;
-    int* d_changed;
-
     size_t samplesSize = numPoints * 5 * sizeof(float);
     size_t centersSize = k * 5 * sizeof(float);
 
-    CUDA_CHECK(cudaMalloc(&d_samples, samplesSize));
-    CUDA_CHECK(cudaMalloc(&d_centers, centersSize));
-    CUDA_CHECK(cudaMalloc(&d_labels, numPoints * sizeof(int)));
-    CUDA_CHECK(cudaMalloc(&d_newSums, centersSize));
-    CUDA_CHECK(cudaMalloc(&d_counts, k * sizeof(int)));
-    CUDA_CHECK(cudaMalloc(&d_changed, sizeof(int)));
+    if (numPoints > m_maxPoints || k > m_maxK) {
+        if (d_samples) cudaFree(d_samples);
+        if (d_centers) cudaFree(d_centers);
+        if (d_labels) cudaFree(d_labels);
+        if (d_newSums) cudaFree(d_newSums);
+        if (d_counts) cudaFree(d_counts);
+        if (d_changed) cudaFree(d_changed);
+
+        m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
+        m_maxK = std::max(m_maxK, k);
+
+        size_t maxSamplesSize = m_maxPoints * 5 * sizeof(float);
+        size_t maxCentersSize = m_maxK * 5 * sizeof(float);
+
+        CUDA_CHECK(cudaMalloc(&d_samples, maxSamplesSize));
+        CUDA_CHECK(cudaMalloc(&d_centers, maxCentersSize));
+        CUDA_CHECK(cudaMalloc(&d_labels, m_maxPoints * sizeof(int)));
+        CUDA_CHECK(cudaMalloc(&d_newSums, maxCentersSize));
+        CUDA_CHECK(cudaMalloc(&d_counts, m_maxK * sizeof(int)));
+        CUDA_CHECK(cudaMalloc(&d_changed, sizeof(int)));
+    }
 
     std::vector<float> h_centers(k * 5);
     for (int i = 0; i < k; ++i) {
@@ -193,13 +210,6 @@ std::vector<cv::Vec<float, 5>> ClassicalEngine::run(const cv::Mat& samples,
             finalCenters[i][d] = h_centers[i * 5 + d];
         }
     }
-
-    cudaFree(d_samples);
-    cudaFree(d_centers);
-    cudaFree(d_labels);
-    cudaFree(d_newSums);
-    cudaFree(d_counts);
-    cudaFree(d_changed);
 
     return finalCenters;
 }

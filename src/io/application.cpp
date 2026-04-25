@@ -227,7 +227,7 @@ void Application::renderUI() {
         ImGui::BeginGroup();
         ImGui::Text("Original Frame");
         ImVec2 imgSize(static_cast<float>(localOriginal.cols) * 0.8f, static_cast<float>(localOriginal.rows) * 0.8f);
-        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_originalTexture.id)), imgSize);
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_originalTexture.id)), imgSize, ImVec2(1, 0), ImVec2(0, 1));
         ImGui::EndGroup();
 
         ImGui::SameLine();
@@ -235,7 +235,7 @@ void Application::renderUI() {
         ImGui::BeginGroup();
         ImGui::Text("Clustered Frame");
         ImVec2 segSize(static_cast<float>(localSegmented.cols) * 0.8f, static_cast<float>(localSegmented.rows) * 0.8f);
-        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_segmentedTexture.id)), segSize);
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_segmentedTexture.id)), segSize, ImVec2(1, 0), ImVec2(0, 1));
         ImGui::EndGroup();
     } else {
         ImGui::Text("Warming up camera thread...");
@@ -268,6 +268,7 @@ void Application::run() {
 
         if (!cap.isOpened()) {
             std::cerr << "Failed to open webcam inside worker thread." << std::endl;
+
             return;
         }
 

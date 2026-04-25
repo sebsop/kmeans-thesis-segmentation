@@ -151,8 +151,11 @@ set_target_properties(imgui PROPERTIES CXX_CLANG_TIDY "" CUDA_CLANG_TIDY "")
 # Bind ImGui exactly into the core logic library so application.cpp can inherit the headers
 target_link_libraries(kmeans_core PUBLIC imgui)
 
-# Main Executable
-add_executable(kmeans_thesis_segmentation src/main.cpp)
+add_executable(kmeans_thesis_segmentation WIN32 src/main.cpp)
+
+if(MSVC)
+    target_link_options(kmeans_thesis_segmentation PRIVATE "/ENTRY:mainCRTStartup")
+endif()
 
 # Set CUDA properties for the main executable
 set_target_properties(kmeans_thesis_segmentation PROPERTIES

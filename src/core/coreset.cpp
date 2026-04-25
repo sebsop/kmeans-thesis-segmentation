@@ -16,23 +16,28 @@ Coreset buildCoresetFromFrame(const cv::Mat& frame) {
     int cols = frame.cols;
     int total_pixels = rows * cols;
 
-    std::random_device random_device_instance;
-    std::mt19937 gen(random_device_instance());
+    thread_local static std::random_device rd;
+    thread_local static std::mt19937 gen(rd());
     std::uniform_int_distribution<> row_dist(0, rows - 1);
     std::uniform_int_distribution<> col_dist(0, cols - 1);
+
+    float weight = static_cast<float>(total_pixels) / static_cast<float>(constants::SAMPLE_COUNT);
+    float invCols = 1.0f / static_cast<float>(cols);
+    float invRows = 1.0f / static_cast<float>(rows);
 
     coreset.points.reserve(constants::SAMPLE_COUNT);
 
     for (int i = 0; i < constants::SAMPLE_COUNT; ++i) {
         int sampled_row = row_dist(gen);
         int sampled_col = col_dist(gen);
-        const auto& pixel = frame.at<cv::Vec3b>(sampled_row, sampled_col);
+        const auto* rowPtr = frame.ptr<cv::Vec3b>(sampled_row);
+        const auto& pixel = rowPtr[sampled_col];
 
         CoresetPoint point;
         point.bgr = cv::Vec3f(pixel[0], pixel[1], pixel[2]);
-        point.weight = static_cast<float>(total_pixels) / static_cast<float>(constants::SAMPLE_COUNT);
-        point.x = static_cast<float>(sampled_col) / static_cast<float>(cols);
-        point.y = static_cast<float>(sampled_row) / static_cast<float>(rows);
+        point.weight = weight;
+        point.x = static_cast<float>(sampled_col) * invCols;
+        point.y = static_cast<float>(sampled_row) * invRows;
 
         coreset.points.push_back(point);
     }
@@ -49,7 +54,9 @@ Coreset mergeCoresets(const Coreset& CoresetA, const Coreset& CoresetB) {
 
     // If the merged coreset exceeds the sample size, randomly downsample it
     if (merged.points.size() > constants::SAMPLE_COUNT) {
-        std::shuffle(merged.points.begin(), merged.points.end(), std::mt19937{std::random_device{}()});
+        thread_local static std::random_device rd;
+        thread_local static std::mt19937 gen(rd());
+        std::shuffle(merged.points.begin(), merged.points.end(), gen);
         merged.points.resize(constants::SAMPLE_COUNT);
     }
 
