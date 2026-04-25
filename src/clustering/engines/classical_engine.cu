@@ -102,12 +102,18 @@ __global__ static void classicalUpdateKernel(const float* __restrict__ samples, 
 }
 
 ClassicalEngine::~ClassicalEngine() {
-    if (d_samples) cudaFree(d_samples);
-    if (d_centers) cudaFree(d_centers);
-    if (d_labels) cudaFree(d_labels);
-    if (d_newSums) cudaFree(d_newSums);
-    if (d_counts) cudaFree(d_counts);
-    if (d_changed) cudaFree(d_changed);
+    if (d_samples)
+        cudaFree(d_samples);
+    if (d_centers)
+        cudaFree(d_centers);
+    if (d_labels)
+        cudaFree(d_labels);
+    if (d_newSums)
+        cudaFree(d_newSums);
+    if (d_counts)
+        cudaFree(d_counts);
+    if (d_changed)
+        cudaFree(d_changed);
 }
 
 std::vector<cv::Vec<float, 5>> ClassicalEngine::run(const cv::Mat& samples,
@@ -120,12 +126,18 @@ std::vector<cv::Vec<float, 5>> ClassicalEngine::run(const cv::Mat& samples,
     size_t centersSize = k * 5 * sizeof(float);
 
     if (numPoints > m_maxPoints || k > m_maxK) {
-        if (d_samples) cudaFree(d_samples);
-        if (d_centers) cudaFree(d_centers);
-        if (d_labels) cudaFree(d_labels);
-        if (d_newSums) cudaFree(d_newSums);
-        if (d_counts) cudaFree(d_counts);
-        if (d_changed) cudaFree(d_changed);
+        if (d_samples)
+            cudaFree(d_samples);
+        if (d_centers)
+            cudaFree(d_centers);
+        if (d_labels)
+            cudaFree(d_labels);
+        if (d_newSums)
+            cudaFree(d_newSums);
+        if (d_counts)
+            cudaFree(d_counts);
+        if (d_changed)
+            cudaFree(d_changed);
 
         m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
         m_maxK = std::max(m_maxK, k);
