@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 
 #include "clustering/clustering_factory.hpp"
+#include "clustering/preprocessors/full_data_preprocessor.hpp"
 #include "common/config.hpp"
 #include "common/constants.hpp"
 #include "common/enums.hpp"
@@ -54,16 +55,36 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& 
         return m_previousCenters;
     }
 
-    cv::Mat samples = m_dataPreprocessor->prepare(frame);
-
     std::vector<cv::Vec<float, 5>> initialCenters;
-    if (m_hasPrevious && static_cast<int>(m_previousCenters.size()) == m_config.k) {
-        initialCenters = m_previousCenters;
-    } else {
-        initialCenters = m_initializer->initialize(samples, m_config.k);
-    }
+    std::vector<cv::Vec<float, 5>> finalCenters;
 
-    std::vector<cv::Vec<float, 5>> finalCenters = m_clusteringEngine->run(samples, initialCenters, m_config.k);
+    // GPU-direct path: FullDataPreprocessor can hand off device-side samples directly,
+    // eliminating the D2H+H2D round-trip (saves ~6MB PCIe traffic per processed frame).
+    if (auto* fdp = dynamic_cast<FullDataPreprocessor*>(m_dataPreprocessor.get())) {
+        int numPoints = 0;
+        float* d_samples = fdp->prepareDevice(frame, numPoints);
+
+        if (m_hasPrevious && static_cast<int>(m_previousCenters.size()) == m_config.k) {
+            initialCenters = m_previousCenters;
+        } else {
+            // Initializer still needs CPU samples for K-Means++ (tiny, one-time cost)
+            cv::Mat cpuSamples = fdp->download();
+            initialCenters = m_initializer->initialize(cpuSamples, m_config.k);
+        }
+
+        finalCenters = m_clusteringEngine->runOnDevice(d_samples, numPoints, initialCenters, m_config.k);
+    } else {
+        // CPU path (RCC coreset preprocessor or future preprocessors)
+        cv::Mat samples = m_dataPreprocessor->prepare(frame);
+
+        if (m_hasPrevious && static_cast<int>(m_previousCenters.size()) == m_config.k) {
+            initialCenters = m_previousCenters;
+        } else {
+            initialCenters = m_initializer->initialize(samples, m_config.k);
+        }
+
+        finalCenters = m_clusteringEngine->run(samples, initialCenters, m_config.k);
+    }
 
     m_previousCenters = finalCenters;
     m_hasPrevious = true;
@@ -71,4 +92,4 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& 
     return m_previousCenters;
 }
 
-} // namespace kmeans::clustering
+} // namespace kmeans::clustering

@@ -1,5 +1,7 @@
 #include "io/application.hpp"
 
+#include <deque>
+
 #include <iostream>
 
 #include <opencv2/imgproc.hpp>
@@ -87,14 +89,14 @@ void Application::matToTexture(const cv::Mat& mat, TextureResource& textureRes) 
 
     if (textureRes.id == 0) {
         glGenTextures(1, &textureRes.id);
+        glBindTexture(GL_TEXTURE_2D, textureRes.id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, textureRes.id);
     }
-
-    glBindTexture(GL_TEXTURE_2D, textureRes.id);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rgbMat.cols, rgbMat.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgbMat.ptr());
 }
@@ -112,9 +114,12 @@ void Application::renderUI() {
 
     bool configChanged = false;
 
+    // Work on a local copy so ImGui writes never race with the worker thread
+    common::SegmentationConfig pendingConfig = m_uiConfig;
+
     ImGui::Text("Core Hyperparameters");
-    configChanged |= ImGui::SliderInt("Clusters (k)", &m_uiConfig.k, constants::K_MIN, constants::K_MAX);
-    configChanged |= ImGui::SliderInt("Learning Interval", &m_uiConfig.learningInterval, constants::LEARN_INTERVAL_MIN,
+    configChanged |= ImGui::SliderInt("Clusters (k)", &pendingConfig.k, constants::K_MIN, constants::K_MAX);
+    configChanged |= ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval, constants::LEARN_INTERVAL_MIN,
                                       constants::LEARN_INTERVAL_MAX);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(
@@ -126,31 +131,32 @@ void Application::renderUI() {
     ImGui::Text("Architecture Strategy");
 
     const char* preprocessors[] = {"Full Data (Flatten)", "RCC Tree (Coreset)"};
-    int currentPreprocessor = (m_uiConfig.strategy == common::DataStrategy::FULL_DATA) ? 0 : 1;
+    int currentPreprocessor = (pendingConfig.strategy == common::DataStrategy::FULL_DATA) ? 0 : 1;
     if (ImGui::Combo("Data Preprocessor", &currentPreprocessor, preprocessors, 2)) {
-        m_uiConfig.strategy =
+        pendingConfig.strategy =
             (currentPreprocessor == 0) ? common::DataStrategy::FULL_DATA : common::DataStrategy::RCC_TREES;
         configChanged = true;
     }
 
     const char* initializers[] = {"K-Means++", "Random"};
-    int currentInit = (m_uiConfig.init == common::InitializationType::KMEANS_PLUSPLUS) ? 0 : 1;
+    int currentInit = (pendingConfig.init == common::InitializationType::KMEANS_PLUSPLUS) ? 0 : 1;
     if (ImGui::Combo("Initialization", &currentInit, initializers, 2)) {
-        m_uiConfig.init =
+        pendingConfig.init =
             (currentInit == 0) ? common::InitializationType::KMEANS_PLUSPLUS : common::InitializationType::RANDOM;
         configChanged = true;
     }
 
     const char* engines[] = {"Classical (CPU)", "Quantum"};
-    int currentEngine = (m_uiConfig.algorithm == common::AlgorithmType::KMEANS_REGULAR) ? 0 : 1;
+    int currentEngine = (pendingConfig.algorithm == common::AlgorithmType::KMEANS_REGULAR) ? 0 : 1;
     if (ImGui::Combo("Execution Engine", &currentEngine, engines, 2)) {
-        m_uiConfig.algorithm =
+        pendingConfig.algorithm =
             (currentEngine == 0) ? common::AlgorithmType::KMEANS_REGULAR : common::AlgorithmType::KMEANS_QUANTUM;
         configChanged = true;
     }
 
     if (configChanged) {
         std::scoped_lock<std::mutex> lock(m_configMutex);
+        m_uiConfig = pendingConfig; // flush pending changes atomically
     }
 
     ImGui::Separator();
@@ -166,7 +172,7 @@ void Application::renderUI() {
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "UI Render Speed: %.1f FPS", ImGui::GetIO().Framerate);
 
     static uint32_t lastProcessedFrames = 0;
-    static std::vector<float> algoFpsHistory;
+    static std::deque<float> algoFpsHistory;
 
     const auto [workerFps, algoTimeMs, currentFrames] = [this]() {
         std::scoped_lock<std::mutex> lock(m_dataMutex);
@@ -175,7 +181,7 @@ void Application::renderUI() {
 
     if (currentFrames != lastProcessedFrames) {
         if (algoFpsHistory.size() >= constants::FPS_HISTORY_WINDOW) {
-            algoFpsHistory.erase(algoFpsHistory.begin());
+            algoFpsHistory.pop_front(); // O(1) vs O(n) erase(begin())
         }
         algoFpsHistory.push_back(workerFps);
         lastProcessedFrames = currentFrames;
@@ -196,7 +202,9 @@ void Application::renderUI() {
         ImGui::Text("Camera Pipeline: %.1f FPS", workerFps);
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg: %.1f | Min: %.1f | Max: %.1f", avgFps, minFps, maxFps);
 
-        ImGui::PlotLines("##Pipeline History", algoFpsHistory.data(), static_cast<int>(algoFpsHistory.size()), 0,
+        // PlotLines needs contiguous memory; copy deque to temp vector
+        std::vector<float> fpsPlotBuf(algoFpsHistory.begin(), algoFpsHistory.end());
+        ImGui::PlotLines("##Pipeline History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0,
                          nullptr, 0.0f, (maxFps * 1.5f) + 5.0f, ImVec2(0, 80));
     }
 

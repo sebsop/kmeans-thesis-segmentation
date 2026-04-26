@@ -6,7 +6,7 @@ std::vector<cv::Vec<float, 5>> RandomInitializer::initialize(const cv::Mat& samp
     std::vector<cv::Vec<float, 5>> centers(k);
     int numPoints = samples.rows;
 
-    std::mt19937 gen(std::random_device{}());
+    thread_local static std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
     for (int i = 0; i < k; ++i) {

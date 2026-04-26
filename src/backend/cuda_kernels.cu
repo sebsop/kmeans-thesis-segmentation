@@ -60,6 +60,16 @@ CudaAssignmentContext::~CudaAssignmentContext() noexcept {
 
 __global__ static void assignPixelsKernel(const unsigned char* input, unsigned char* output, int width, int height,
                                           const float* centers, int k, float color_scale, float spatial_scale) {
+    extern __shared__ float s_centers[];
+
+    // Load centers cooperatively into shared memory (100 floats at k=20, trivially fits)
+    int tid = threadIdx.x;
+    int centersCount = k * 5;
+    for (int i = tid; i < centersCount; i += blockDim.x) {
+        s_centers[i] = centers[i];
+    }
+    __syncthreads();
+
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int total = width * height;
     if (idx >= total)
@@ -81,7 +91,7 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
     for (int ci = 0; ci < k; ++ci) {
         float d2 = 0.0f;
         for (int d = 0; d < 5; ++d) {
-            float diff = f[d] - centers[ci * 5 + d];
+            float diff = f[d] - s_centers[ci * 5 + d]; // shared memory read
             d2 += diff * diff;
         }
         if (d2 < bestDist2) {
@@ -91,9 +101,9 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
     }
 
     float inv_scale = 1.0f / fmaxf(1e-6f, color_scale);
-    output[offset + 0] = (unsigned char)fminf(255.0f, centers[bestIdx * 5 + 0] * inv_scale);
-    output[offset + 1] = (unsigned char)fminf(255.0f, centers[bestIdx * 5 + 1] * inv_scale);
-    output[offset + 2] = (unsigned char)fminf(255.0f, centers[bestIdx * 5 + 2] * inv_scale);
+    output[offset + 0] = (unsigned char)fminf(255.0f, s_centers[bestIdx * 5 + 0] * inv_scale);
+    output[offset + 1] = (unsigned char)fminf(255.0f, s_centers[bestIdx * 5 + 1] * inv_scale);
+    output[offset + 2] = (unsigned char)fminf(255.0f, s_centers[bestIdx * 5 + 2] * inv_scale);
 }
 
 void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<cv::Vec<float, 5>>& centers, cv::Mat& output) {
@@ -114,8 +124,9 @@ void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<cv::Vec<
     // 2. Launch Kernel on Stream
     int threadsPerBlock = 256;
     int blocksPerGrid = (m_width * m_height + threadsPerBlock - 1) / threadsPerBlock;
+    size_t sharedSize = static_cast<size_t>(m_k) * 5 * sizeof(float);
 
-    assignPixelsKernel<<<blocksPerGrid, threadsPerBlock, 0, m_stream>>>(
+    assignPixelsKernel<<<blocksPerGrid, threadsPerBlock, sharedSize, m_stream>>>(
         d_input, d_output, m_width, m_height, d_centers, m_k, constants::COLOR_SCALE, constants::SPATIAL_SCALE);
     CUDA_CHECK(cudaPeekAtLastError());
 

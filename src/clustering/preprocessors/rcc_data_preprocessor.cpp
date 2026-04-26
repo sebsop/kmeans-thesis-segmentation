@@ -22,8 +22,9 @@ cv::Mat RccDataPreprocessor::prepare(const cv::Mat& frame) {
         const auto& pt = m_currentCoreset.points[i];
         cv::Vec<float, 5> feature = common::makeFeature(pt.bgr, pt.x, pt.y);
 
+        float* row = samples.ptr<float>(i);
         for (int d = 0; d < 5; ++d) {
-            samples.at<float>(i, d) = feature[d];
+            row[d] = feature[d];
         }
     }
 

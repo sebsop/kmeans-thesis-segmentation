@@ -54,11 +54,12 @@ void FullDataPreprocessor::reset() {
     m_cached_n = 0;
 }
 
-cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
+// Shared setup: uploads frame to GPU and runs the feature kernel.
+// Does NOT download the results — callers decide what to do next.
+void FullDataPreprocessor::uploadAndRun(const cv::Mat& frame) {
     CV_Assert(frame.type() == CV_8UC3 && frame.isContinuous());
 
     int n = frame.rows * frame.cols;
-    cv::Mat samples(n, 5, CV_32F);
 
     float invCols = 1.0f / static_cast<float>(frame.cols);
     float invRows = 1.0f / static_cast<float>(frame.rows);
@@ -80,9 +81,30 @@ cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
         invRows, kmeans::constants::COLOR_SCALE, kmeans::constants::SPATIAL_SCALE);
 
     CUDA_CHECK_PREP(cudaDeviceSynchronize());
+}
 
+cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
+    uploadAndRun(frame);
+
+    int n = m_cached_n;
+    cv::Mat samples(n, 5, CV_32F);
     CUDA_CHECK_PREP(cudaMemcpy(samples.ptr<float>(), m_d_samples, n * 5 * sizeof(float), cudaMemcpyDeviceToHost));
 
+    return samples;
+}
+
+float* FullDataPreprocessor::prepareDevice(const cv::Mat& frame, int& outNumPoints) {
+    uploadAndRun(frame);
+    outNumPoints = m_cached_n;
+    // Return device pointer directly — no D2H download
+    return static_cast<float*>(m_d_samples);
+}
+
+cv::Mat FullDataPreprocessor::download() const {
+    cv::Mat samples(m_cached_n, 5, CV_32F);
+    if (m_cached_n > 0 && m_d_samples) {
+        CUDA_CHECK_PREP(cudaMemcpy(samples.ptr<float>(), m_d_samples, m_cached_n * 5 * sizeof(float), cudaMemcpyDeviceToHost));
+    }
     return samples;
 }
 

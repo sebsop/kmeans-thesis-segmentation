@@ -33,7 +33,7 @@ std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::M
     centers.reserve(k);
     int numPoints = samples.rows;
 
-    std::mt19937 gen(std::random_device{}());
+    thread_local static std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
     // First center random
@@ -45,13 +45,12 @@ std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::M
         return centers;
     }
 
-    // Allocate and copy data to device
-    float* d_samples = nullptr;
-    cudaMalloc(&d_samples, numPoints * 5 * sizeof(float));
-    cudaMemcpy(d_samples, samples.ptr<float>(), numPoints * 5 * sizeof(float), cudaMemcpyHostToDevice);
+    // Use thrust::device_vector for automatic RAII (no manual cudaFree / leak risk)
+    thrust::device_vector<float> d_samples_vec(numPoints * 5);
+    cudaMemcpy(thrust::raw_pointer_cast(d_samples_vec.data()), samples.ptr<float>(),
+               numPoints * 5 * sizeof(float), cudaMemcpyHostToDevice);
 
-    float* d_latestCenter = nullptr;
-    cudaMalloc(&d_latestCenter, 5 * sizeof(float));
+    thrust::device_vector<float> d_latestCenter_vec(5);
 
     // Distances initialized to MAX_FLOAT
     thrust::device_vector<float> d_distances(numPoints, std::numeric_limits<float>::max());
@@ -60,15 +59,24 @@ std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::M
     int blockSize = 256;
     int gridSize = (numPoints + blockSize - 1) / blockSize;
 
-    for (int i = 1; i < k; ++i) {
-        // Copy latest center to device
-        const auto& latestCenter = centers.back();
-        cudaMemcpy(d_latestCenter, &latestCenter[0], 5 * sizeof(float), cudaMemcpyHostToDevice);
+    // Dedicated stream so we only synchronize this work, not the entire GPU
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
 
-        // Update minimum distances
-        compute_min_distances_kernel<<<gridSize, blockSize>>>(d_samples, numPoints, d_latestCenter,
-                                                              thrust::raw_pointer_cast(d_distances.data()));
-        cudaDeviceSynchronize();
+    for (int i = 1; i < k; ++i) {
+        // Copy latest center to device (only 5 floats = 20 bytes)
+        const auto& latestCenter = centers.back();
+        cudaMemcpyAsync(thrust::raw_pointer_cast(d_latestCenter_vec.data()), &latestCenter[0],
+                        5 * sizeof(float), cudaMemcpyHostToDevice, stream);
+
+        // Update minimum distances on GPU
+        compute_min_distances_kernel<<<gridSize, blockSize, 0, stream>>>(
+            thrust::raw_pointer_cast(d_samples_vec.data()), numPoints,
+            thrust::raw_pointer_cast(d_latestCenter_vec.data()),
+            thrust::raw_pointer_cast(d_distances.data()));
+
+        // Wait only for this stream's work (not the full device)
+        cudaStreamSynchronize(stream);
 
         // Inclusive scan for cumulative probabilities
         thrust::inclusive_scan(d_distances.begin(), d_distances.end(), d_cumulative_distances.begin());
@@ -94,8 +102,7 @@ std::vector<cv::Vec<float, 5>> KMeansPlusPlusInitializer::initialize(const cv::M
         centers.emplace_back(selPtr[0], selPtr[1], selPtr[2], selPtr[3], selPtr[4]);
     }
 
-    cudaFree(d_samples);
-    cudaFree(d_latestCenter);
+    cudaStreamDestroy(stream);
 
     return centers;
 }
