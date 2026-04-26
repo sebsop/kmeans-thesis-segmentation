@@ -142,7 +142,7 @@ void ClassicalEngine::ensureBuffers(int numPoints, int k) {
 // and avoids the per-iteration kernel launch overhead of a GPU divide kernel.
 std::vector<cv::Vec<float, 5>> ClassicalEngine::runInternal(float* d_samp, int numPoints,
                                                              const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                             int k) {
+                                                             int k, int maxIterations) {
     size_t centersSize = static_cast<size_t>(k) * 5 * sizeof(float);
 
     std::vector<float> h_centers(k * 5);
@@ -165,7 +165,7 @@ std::vector<cv::Vec<float, 5>> ClassicalEngine::runInternal(float* d_samp, int n
     std::vector<int>   h_counts(k);
 
     int iter = 0;
-    for (; iter < 20; ++iter) {
+    for (; iter < maxIterations; ++iter) {
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
 
@@ -214,19 +214,19 @@ std::vector<cv::Vec<float, 5>> ClassicalEngine::runInternal(float* d_samp, int n
 }
 
 std::vector<cv::Vec<float, 5>> ClassicalEngine::run(const cv::Mat& samples,
-                                                     const std::vector<cv::Vec<float, 5>>& initialCenters, int k) {
+                                                     const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations) {
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
     ensureBuffers(numPoints, k);
     CUDA_CHECK(cudaMemcpy(d_samples, samples.ptr<float>(0), numPoints * 5 * sizeof(float), cudaMemcpyHostToDevice));
-    return runInternal(d_samples, numPoints, initialCenters, k);
+    return runInternal(d_samples, numPoints, initialCenters, k, maxIterations);
 }
 
 std::vector<cv::Vec<float, 5>> ClassicalEngine::runOnDevice(float* d_samples_ext, int numPoints,
                                                              const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                             int k) {
+                                                             int k, int maxIterations) {
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
@@ -251,7 +251,7 @@ std::vector<cv::Vec<float, 5>> ClassicalEngine::runOnDevice(float* d_samples_ext
     }
 
     // Use the external device pointer — no H2D upload of samples needed
-    return runInternal(d_samples_ext, numPoints, initialCenters, k);
+    return runInternal(d_samples_ext, numPoints, initialCenters, k, maxIterations);
 }
 
 } // namespace kmeans::clustering

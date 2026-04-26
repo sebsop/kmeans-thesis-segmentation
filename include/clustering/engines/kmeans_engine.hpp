@@ -28,7 +28,7 @@ class KMeansEngine {
      * Use this when the sample data lives in host memory.
      */
     [[nodiscard]] virtual std::vector<cv::Vec<float, 5>>
-    run(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& initialCenters, int k) = 0;
+    run(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations) = 0;
 
     /**
      * @brief GPU-direct path: samples already reside on the device.
@@ -37,7 +37,7 @@ class KMeansEngine {
      */
     [[nodiscard]] virtual std::vector<cv::Vec<float, 5>>
     runOnDevice(float* /*d_samples_ext*/, int /*numPoints*/,
-                const std::vector<cv::Vec<float, 5>>& /*initialCenters*/, int /*k*/) {
+                const std::vector<cv::Vec<float, 5>>& /*initialCenters*/, int /*k*/, int /*maxIterations*/) {
         // Default: subclass must override if GPU-direct path is desired
         return {};
     }

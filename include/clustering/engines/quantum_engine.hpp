@@ -23,17 +23,17 @@ class QuantumEngine final : public KMeansEngine {
     ~QuantumEngine();
 
     [[nodiscard]] std::vector<cv::Vec<float, 5>>
-    run(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& initialCenters, int k) override final;
+    run(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations) override final;
 
     [[nodiscard]] std::vector<cv::Vec<float, 5>>
     runOnDevice(float* d_samples_ext, int numPoints, const std::vector<cv::Vec<float, 5>>& initialCenters,
-                int k) override final;
+                int k, int maxIterations) override final;
 
   private:
     void ensureBuffers(int numPoints, int k);
     [[nodiscard]] std::vector<cv::Vec<float, 5>> runInternal(float* d_samp, int numPoints,
                                                               const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                              int k, float scale_factor);
+                                                              int k, int maxIterations, float scale_factor);
 };
 
 } // namespace kmeans::clustering

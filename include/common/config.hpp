@@ -10,6 +10,7 @@ struct SegmentationConfig {
 
     int k = 3;
     int learningInterval = 15;
+    int maxIterations = 20;
 };
 
 } // namespace kmeans::common

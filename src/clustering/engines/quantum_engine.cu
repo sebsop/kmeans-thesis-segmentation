@@ -142,8 +142,8 @@ void QuantumEngine::ensureBuffers(int numPoints, int k) {
 }
 
 std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int numPoints,
-                                                           const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                           int k, float scale_factor) {
+                                                          const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations,
+                                                          float scale_factor) {
     size_t centersSize = static_cast<size_t>(k) * 5 * sizeof(float);
 
     std::vector<float> h_centers(k * 5);
@@ -166,7 +166,7 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int num
     std::vector<int>   h_counts(k);
 
     int iter = 0;
-    for (; iter < 20; ++iter) {
+    for (; iter < maxIterations; ++iter) {
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
 
@@ -241,7 +241,7 @@ static float computeScaleFactor(const cv::Mat& samples) {
 }
 
 std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
-                                                   const std::vector<cv::Vec<float, 5>>& initialCenters, int k) {
+                                                  const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations) {
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
         return initialCenters;
@@ -251,12 +251,11 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
     ensureBuffers(numPoints, k);
     CUDA_CHECK(cudaMemcpy(d_samples, samples.ptr<float>(0), numPoints * 5 * sizeof(float), cudaMemcpyHostToDevice));
 
-    return runInternal(d_samples, numPoints, initialCenters, k, scale_factor);
+    return runInternal(d_samples, numPoints, initialCenters, k, maxIterations, scale_factor);
 }
 
 std::vector<cv::Vec<float, 5>> QuantumEngine::runOnDevice(float* d_samples_ext, int numPoints,
-                                                           const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                           int k) {
+                                                          const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations) {
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
@@ -296,7 +295,7 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runOnDevice(float* d_samples_ext, 
         CUDA_CHECK(cudaMalloc(&d_changed, sizeof(int)));
     }
 
-    return runInternal(d_samples_ext, numPoints, initialCenters, k, scale_factor);
+    return runInternal(d_samples_ext, numPoints, initialCenters, k, maxIterations, scale_factor);
 }
 
 } // namespace kmeans::clustering

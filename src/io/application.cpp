@@ -1,4 +1,4 @@
-﻿#include "io/application.hpp"
+#include "io/application.hpp"
 
 #include <deque>
 
@@ -512,6 +512,7 @@ void Application::run() {
                     std::scoped_lock<std::mutex> lock(m_configMutex);
                     benchConfig = m_uiConfig;
                 }
+                benchConfig.maxIterations = 1000; // Let benchmark run until true convergence
                 
                 m_benchmarkFuture = std::async(std::launch::async, [benchFrame, benchConfig]() {
                     BenchmarkComparisonResult result;
