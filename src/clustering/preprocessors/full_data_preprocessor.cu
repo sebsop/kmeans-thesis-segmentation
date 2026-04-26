@@ -75,10 +75,9 @@ cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
     dim3 blockSize(16, 16);
     dim3 gridSize((frame.cols + blockSize.x - 1) / blockSize.x, (frame.rows + blockSize.y - 1) / blockSize.y);
 
-    preprocess_features_kernel<<<gridSize, blockSize>>>(static_cast<uchar3*>(m_d_frame_data),
-                                                        static_cast<float*>(m_d_samples), frame.cols, frame.rows,
-                                                        invCols, invRows, kmeans::constants::COLOR_SCALE,
-                                                        kmeans::constants::SPATIAL_SCALE);
+    preprocess_features_kernel<<<gridSize, blockSize>>>(
+        static_cast<uchar3*>(m_d_frame_data), static_cast<float*>(m_d_samples), frame.cols, frame.rows, invCols,
+        invRows, kmeans::constants::COLOR_SCALE, kmeans::constants::SPATIAL_SCALE);
 
     CUDA_CHECK_PREP(cudaDeviceSynchronize());
 
