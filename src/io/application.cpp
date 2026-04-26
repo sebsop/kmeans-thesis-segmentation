@@ -22,6 +22,8 @@
 #include <windows.h>
 #undef min
 #undef max
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #endif
 
 #include <algorithm>
@@ -51,7 +53,7 @@ void Application::initWindow() {
     {
         // Look for an existing window by the app title
         int retries = 0;
-        while (HWND prev = FindWindowA(nullptr, "K-Means Segmentation Thesis - ImGui Dashboard")) {
+        while (HWND prev = FindWindowA(nullptr, "Real-Time Quantum-Classical Image Segmentation: Performance Benchmarking")) {
             DWORD pid = 0;
             GetWindowThreadProcessId(prev, &pid);
             
@@ -91,12 +93,46 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    m_window = glfwCreateWindow(1750, 670, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
+    m_window = glfwCreateWindow(1750, 670, "Real-Time Quantum-Classical Image Segmentation: Performance Benchmarking", nullptr, nullptr);
     if (m_window == nullptr) {
         std::cerr << "Failed to create window using GLFW.\n";
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+
+#ifdef _WIN32
+    // Dynamically resolve the absolute path to the icon to avoid working directory issues
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(NULL, exePath, MAX_PATH);
+    std::string path(exePath);
+    std::string iconPath = "assets/icon.ico"; // Fallback to relative
+
+    size_t lastSlash = path.find_last_of("\\/");
+    if (lastSlash != std::string::npos) {
+        std::string dir = path.substr(0, lastSlash);
+        // Search up to 4 directory levels up (for out/build/x64-Release/ etc)
+        for (int i = 0; i < 4; ++i) {
+            std::string testPath = dir + "\\assets\\icon.ico";
+            if (GetFileAttributesA(testPath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                iconPath = testPath;
+                break;
+            }
+            size_t slash = dir.find_last_of("\\/");
+            if (slash == std::string::npos) break;
+            dir = dir.substr(0, slash);
+        }
+    }
+
+    // Set taskbar and window icon natively from .ico file
+    HWND hwnd = glfwGetWin32Window(m_window);
+    HICON hIcon = (HICON)LoadImageA(NULL, iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+    if (hIcon) {
+        SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+        SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    } else {
+        std::cerr << "Warning: Could not load " << iconPath << " for window icon.\n";
+    }
+#endif
 
     glfwMakeContextCurrent(m_window);
     glfwSwapInterval(0); // Disable vsync to uncap from monitor refresh rate
@@ -136,7 +172,7 @@ void Application::applyPremiumTheme() {
     colors[ImGuiCol_FrameBg]                = ImVec4(0.16f, 0.16f, 0.18f, 1.00f);
     colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
     colors[ImGuiCol_FrameBgActive]          = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
-    colors[ImGuiCol_TitleBg]                = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
+    colors[ImGuiCol_TitleBg]                = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
     colors[ImGuiCol_TitleBgActive]          = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
     colors[ImGuiCol_Button]                 = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
     colors[ImGuiCol_ButtonHovered]          = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
@@ -144,7 +180,7 @@ void Application::applyPremiumTheme() {
     colors[ImGuiCol_Header]                 = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
     colors[ImGuiCol_HeaderHovered]          = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
     colors[ImGuiCol_HeaderActive]           = ImVec4(0.45f, 0.45f, 0.50f, 1.00f);
-    colors[ImGuiCol_CheckMark]              = ImVec4(0.60f, 0.40f, 0.90f, 1.00f); // Vibrant purple accent
+    colors[ImGuiCol_CheckMark]              = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
     colors[ImGuiCol_SliderGrab]             = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
     colors[ImGuiCol_SliderGrabActive]       = ImVec4(0.70f, 0.50f, 1.00f, 1.00f);
     colors[ImGuiCol_PlotLines]              = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
@@ -193,9 +229,6 @@ void Application::renderUI() {
     // Left-aligned control panel: center settings vertically and align to left
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(panelWidth, ImGui::GetIO().DisplaySize.y), ImGuiCond_Always);
-    // Make the titlebar darker for this controls panel only
-    ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.02f, 0.02f, 0.02f, 0.95f));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.03f, 0.03f, 0.03f, 0.95f));
     ImGui::Begin("Clustering Controls", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
     // Ensure content is left aligned
@@ -392,7 +425,7 @@ void Application::renderUI() {
     }
 
     ImGui::End();
-    ImGui::PopStyleColor(2); // restore titlebar colors
+
 
     // 2. Video Feed Window
     ImGui::SetNextWindowPos(ImVec2(panelWidth, 0), ImGuiCond_Always);
