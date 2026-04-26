@@ -426,11 +426,11 @@ void Application::renderUI() {
             ImGui::TableSetColumnIndex(0);
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Metrics Guide:");
-            ImGui::Text("WCSS (Inertia): ↓ Lower is better");
-            ImGui::Text("Davies-Bouldin: ↓ Lower is better");
-            ImGui::Text("Silhouette: ↑ Higher is better");
-            ImGui::Text("Iterations: ↓ Lower is better");
-            ImGui::Text("Latency: ↓ Lower is better");
+            ImGui::Text("WCSS (Inertia): < Lower is better");
+            ImGui::Text("Davies-Bouldin: < Lower is better");
+            ImGui::Text("Silhouette: > Higher is better");
+            ImGui::Text("Iterations: < Lower is better");
+            ImGui::Text("Latency: < Lower is better");
             ImGui::TableSetColumnIndex(1);
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Performance Metrics:");
