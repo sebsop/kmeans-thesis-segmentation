@@ -36,8 +36,8 @@ class KMeansEngine {
      * Engines that support this override it; default falls back to run() via D2H.
      */
     [[nodiscard]] virtual std::vector<cv::Vec<float, 5>>
-    runOnDevice(float* /*d_samples_ext*/, int /*numPoints*/,
-                const std::vector<cv::Vec<float, 5>>& /*initialCenters*/, int /*k*/, int /*maxIterations*/) {
+    runOnDevice(float* /*d_samples_ext*/, int /*numPoints*/, const std::vector<cv::Vec<float, 5>>& /*initialCenters*/,
+                int /*k*/, int /*maxIterations*/) {
         // Default: subclass must override if GPU-direct path is desired
         return {};
     }

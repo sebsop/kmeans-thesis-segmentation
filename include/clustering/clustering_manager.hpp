@@ -31,7 +31,7 @@ class ClusteringManager {
 
     // Concrete Preprocessor (No longer a strategy)
     std::unique_ptr<StridedDataPreprocessor> m_dataPreprocessor;
-    
+
     // Active Strategy Implementations
     std::unique_ptr<Initializer> m_initializer;
     std::unique_ptr<KMeansEngine> m_clusteringEngine;

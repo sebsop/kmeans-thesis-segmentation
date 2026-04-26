@@ -72,7 +72,8 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& 
             initialCenters = m_initializer->initialize(cpuSamples, m_config.k);
         }
 
-        finalCenters = m_clusteringEngine->runOnDevice(d_samples, numPoints, initialCenters, m_config.k, m_config.maxIterations);
+        finalCenters =
+            m_clusteringEngine->runOnDevice(d_samples, numPoints, initialCenters, m_config.k, m_config.maxIterations);
     } else {
         // CPU path (RCC coreset preprocessor or future preprocessors)
         cv::Mat samples = m_dataPreprocessor->prepare(frame);

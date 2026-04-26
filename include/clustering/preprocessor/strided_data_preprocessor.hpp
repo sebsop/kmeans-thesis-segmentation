@@ -1,12 +1,13 @@
 #pragma once
 
 #include <memory>
+
 #include <opencv2/core/mat.hpp>
 
 namespace kmeans::clustering {
 
 class StridedDataPreprocessor {
-public:
+  public:
     StridedDataPreprocessor() = default;
     ~StridedDataPreprocessor();
 
@@ -22,7 +23,7 @@ public:
     // Advanced: Downloads the previously computed GPU result
     cv::Mat download() const;
 
-private:
+  private:
     void uploadAndRun(const cv::Mat& frame, int stride);
 
     void* m_d_frame_data = nullptr; // uchar3 pointer

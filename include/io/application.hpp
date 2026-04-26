@@ -9,13 +9,13 @@
 
 // Include GLFW wrapper
 #include <chrono>
+#include <future>
+#include <optional>
 
 #include <GLFW/glfw3.h>
 
 #include "clustering/clustering_manager.hpp"
 #include "clustering/metrics.hpp"
-#include <future>
-#include <optional>
 
 namespace kmeans::io {
 
@@ -84,7 +84,7 @@ class Application {
     TextureResource m_benchClassicalTexture;
     TextureResource m_benchQuantumTexture;
     bool m_benchTexturesLoaded = false;
-    
+
     // UI Theming
     void applyPremiumTheme();
 

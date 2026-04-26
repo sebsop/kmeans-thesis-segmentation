@@ -1,7 +1,6 @@
 #include "io/application.hpp"
 
 #include <deque>
-
 #include <iostream>
 
 #include <opencv2/imgproc.hpp>
@@ -10,7 +9,6 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-
 #include "imgui_internal.h"
 
 // Backend configurations
@@ -53,18 +51,20 @@ void Application::initWindow() {
     {
         // Look for an existing window by the app title
         int retries = 0;
-        while (HWND prev = FindWindowA(nullptr, "Real-Time Quantum-Classical Image Segmentation: Performance Benchmarking")) {
+        while (HWND prev =
+                   FindWindowA(nullptr, "Real-Time Quantum-Classical Image Segmentation: Performance Benchmarking")) {
             DWORD pid = 0;
             GetWindowThreadProcessId(prev, &pid);
-            
+
             // Protect against killing ourselves if something weird happens
-            if (pid == GetCurrentProcessId()) break;
+            if (pid == GetCurrentProcessId())
+                break;
 
             if (retries == 0) {
                 // Request graceful shutdown
                 PostMessageA(prev, WM_CLOSE, 0, 0);
             }
-            
+
             Sleep(100); // Wait 100ms
             retries++;
 
@@ -93,7 +93,8 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    m_window = glfwCreateWindow(1750, 670, "Real-Time Quantum-Classical Image Segmentation: Performance Benchmarking", nullptr, nullptr);
+    m_window = glfwCreateWindow(1750, 670, "Real-Time Quantum-Classical Image Segmentation: Performance Benchmarking",
+                                nullptr, nullptr);
     if (m_window == nullptr) {
         std::cerr << "Failed to create window using GLFW.\n";
         glfwTerminate();
@@ -118,14 +119,16 @@ void Application::initWindow() {
                 break;
             }
             size_t slash = dir.find_last_of("\\/");
-            if (slash == std::string::npos) break;
+            if (slash == std::string::npos)
+                break;
             dir = dir.substr(0, slash);
         }
     }
 
     // Set taskbar and window icon natively from .ico file
     HWND hwnd = glfwGetWin32Window(m_window);
-    HICON hIcon = (HICON)LoadImageA(NULL, iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+    HICON hIcon =
+        (HICON)LoadImageA(NULL, iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
     if (hIcon) {
         SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
         SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
@@ -165,35 +168,35 @@ void Application::applyPremiumTheme() {
     ImVec4* colors = style.Colors;
 
     // Premium Dark / Glassmorphism theme
-    colors[ImGuiCol_Text]                   = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-    colors[ImGuiCol_WindowBg]               = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_PopupBg]                = ImVec4(0.12f, 0.12f, 0.12f, 0.94f);
-    colors[ImGuiCol_Border]                 = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-    colors[ImGuiCol_FrameBg]                = ImVec4(0.16f, 0.16f, 0.18f, 1.00f);
-    colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
-    colors[ImGuiCol_FrameBgActive]          = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
-    colors[ImGuiCol_TitleBg]                = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
-    colors[ImGuiCol_TitleBgActive]          = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
-    colors[ImGuiCol_Button]                 = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
-    colors[ImGuiCol_ButtonHovered]          = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
-    colors[ImGuiCol_ButtonActive]           = ImVec4(0.45f, 0.45f, 0.50f, 1.00f);
-    colors[ImGuiCol_Header]                 = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
-    colors[ImGuiCol_HeaderHovered]          = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
-    colors[ImGuiCol_HeaderActive]           = ImVec4(0.45f, 0.45f, 0.50f, 1.00f);
-    colors[ImGuiCol_CheckMark]              = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
-    colors[ImGuiCol_SliderGrab]             = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
-    colors[ImGuiCol_SliderGrabActive]       = ImVec4(0.70f, 0.50f, 1.00f, 1.00f);
-    colors[ImGuiCol_PlotLines]              = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
-    colors[ImGuiCol_PlotLinesHovered]       = ImVec4(0.70f, 0.50f, 1.00f, 1.00f);
+    colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+    colors[ImGuiCol_PopupBg] = ImVec4(0.12f, 0.12f, 0.12f, 0.94f);
+    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.16f, 0.18f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
+    colors[ImGuiCol_Button] = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.45f, 0.45f, 0.50f, 1.00f);
+    colors[ImGuiCol_Header] = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(0.45f, 0.45f, 0.50f, 1.00f);
+    colors[ImGuiCol_CheckMark] = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.70f, 0.50f, 1.00f, 1.00f);
+    colors[ImGuiCol_PlotLines] = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
+    colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.70f, 0.50f, 1.00f, 1.00f);
 
-    style.WindowRounding    = 8.0f;
-    style.ChildRounding     = 6.0f;
-    style.FrameRounding     = 6.0f;
-    style.PopupRounding     = 6.0f;
-    style.GrabRounding      = 6.0f;
-    style.FramePadding      = ImVec2(10.0f, 6.0f);
-    style.WindowPadding     = ImVec2(12.0f, 12.0f);
-    style.ItemSpacing       = ImVec2(8.0f, 8.0f);
+    style.WindowRounding = 8.0f;
+    style.ChildRounding = 6.0f;
+    style.FrameRounding = 6.0f;
+    style.PopupRounding = 6.0f;
+    style.GrabRounding = 6.0f;
+    style.FramePadding = ImVec2(10.0f, 6.0f);
+    style.WindowPadding = ImVec2(12.0f, 12.0f);
+    style.ItemSpacing = ImVec2(8.0f, 8.0f);
 }
 
 void Application::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {
@@ -247,27 +250,27 @@ void Application::renderUI() {
         const float plotH = 60.0f; // PlotLines height used below
 
         float contentH = 0.0f;
-        contentH += textH;            // Core Hyperparameters title
-        contentH += frameH * 2.0f;   // 2 sliders
+        contentH += textH;         // Core Hyperparameters title
+        contentH += frameH * 2.0f; // 2 sliders
         contentH += sepH;
 
-        contentH += textH;            // Architecture Strategy title
-        contentH += frameH;          // Stride
-        contentH += frameH;          // Combo
+        contentH += textH;  // Architecture Strategy title
+        contentH += frameH; // Stride
+        contentH += frameH; // Combo
         contentH += sepH;
 
-        contentH += textH;           // Visualization Overlays title
-        contentH += frameH;          // Checkbox
-        contentH += frameH;          // Reset button
+        contentH += textH;  // Visualization Overlays title
+        contentH += frameH; // Checkbox
+        contentH += frameH; // Reset button
         contentH += sepH * 2.0f;
 
-        contentH += textH;           // Performance Dashboard title
-        contentH += textH;           // UI Render FPS
-        contentH += plotH;           // PlotLines
+        contentH += textH; // Performance Dashboard title
+        contentH += textH; // UI Render FPS
+        contentH += plotH; // PlotLines
         contentH += sepH;
 
-        contentH += textH;           // Static Benchmarking title
-        contentH += frameH;          // Capture button
+        contentH += textH;  // Static Benchmarking title
+        contentH += frameH; // Capture button
 
         // Add inter-item spacing (approximate)
         const int gaps = 12; // number of vertical gaps between above items
@@ -278,11 +281,13 @@ void Application::renderUI() {
 
         // Use available content region height for centering (excludes title bar).
         float availH = ImGui::GetContentRegionAvail().y;
-        if (availH <= 0.0f) availH = ImGui::GetWindowHeight() - style.WindowPadding.y * 2.0f;
+        if (availH <= 0.0f)
+            availH = ImGui::GetWindowHeight() - style.WindowPadding.y * 2.0f;
 
         float curY = ImGui::GetCursorPosY();
         float offset = (availH - contentH) * 0.5f;
-        if (offset < 0.0f) offset = 0.0f;
+        if (offset < 0.0f)
+            offset = 0.0f;
         ImGui::SetCursorPosY(curY + offset);
     }
 
@@ -293,8 +298,8 @@ void Application::renderUI() {
 
     ImGui::Text("Core Hyperparameters");
     configChanged |= ImGui::SliderInt("Clusters (k)", &pendingConfig.k, constants::K_MIN, constants::K_MAX);
-    configChanged |= ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval, constants::LEARN_INTERVAL_MIN,
-                                      constants::LEARN_INTERVAL_MAX);
+    configChanged |= ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
+                                      constants::LEARN_INTERVAL_MIN, constants::LEARN_INTERVAL_MAX);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(
             "How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
@@ -306,7 +311,8 @@ void Application::renderUI() {
 
     configChanged |= ImGui::SliderInt("Stride", &pendingConfig.stride, 1, 16);
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
+        ImGui::SetTooltip(
+            "Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
     }
 
     const char* engines[] = {"Classical (CPU)", "Quantum"};
@@ -332,7 +338,7 @@ void Application::renderUI() {
     ImGui::Separator();
     ImGui::Separator();
     ImGui::Text("Performance Dashboard");
-    
+
     static float displayUIRenderFPS = 0.0f;
     static auto lastUIUpdateTime = std::chrono::high_resolution_clock::now();
     auto uiNow = std::chrono::high_resolution_clock::now();
@@ -391,16 +397,16 @@ void Application::renderUI() {
         int window = 15;
         for (int i = 0; i < static_cast<int>(algoFpsHistory.size()); ++i) {
             float m = 0;
-            int start = std::max(0, i - window/2);
-            int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + window/2);
-            for(int j = start; j <= end; ++j) {
+            int start = std::max(0, i - window / 2);
+            int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + window / 2);
+            for (int j = start; j <= end; ++j) {
                 m = std::max(m, algoFpsHistory[j]);
             }
             fpsPlotBuf.push_back(m);
         }
 
-        ImGui::PlotLines("##Pipeline History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0,
-                         nullptr, 0.0f, (maxFps * 1.5f) + 5.0f, ImVec2(0, 60));
+        ImGui::PlotLines("##Pipeline History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0, nullptr, 0.0f,
+                         (maxFps * 1.5f) + 5.0f, ImVec2(0, 60));
     }
 
     ImGui::Separator();
@@ -414,7 +420,8 @@ void Application::renderUI() {
         ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "%s", m_benchmarkStatusText.c_str());
     } else if (m_benchmarkState == BenchmarkState::COMPUTING) {
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.9f, 1.0f), "%s", m_benchmarkStatusText.c_str());
-        if (m_benchmarkFuture.valid() && m_benchmarkFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        if (m_benchmarkFuture.valid() &&
+            m_benchmarkFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             m_benchmarkResults = m_benchmarkFuture.get();
             m_benchTexturesLoaded = false;
             m_benchmarkState = BenchmarkState::DONE;
@@ -426,12 +433,10 @@ void Application::renderUI() {
 
     ImGui::End();
 
-
     // 2. Video Feed Window
     ImGui::SetNextWindowPos(ImVec2(panelWidth, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(
-        ImVec2(ImGui::GetIO().DisplaySize.x - panelWidth, ImGui::GetIO().DisplaySize.y),
-        ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x - panelWidth, ImGui::GetIO().DisplaySize.y),
+                             ImGuiCond_Always);
     ImGui::Begin("Video Segmentation Feed", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
@@ -456,24 +461,23 @@ void Application::renderUI() {
         float offsetX = (ImGui::GetWindowWidth() - totalWidth) * 0.5f;
         float offsetY = (ImGui::GetWindowHeight() - imgSize.y - ImGui::GetTextLineHeightWithSpacing()) * 0.5f;
 
-        if (offsetX > 0) ImGui::SetCursorPosX(offsetX);
-        if (offsetY > 0) ImGui::SetCursorPosY(offsetY);
+        if (offsetX > 0)
+            ImGui::SetCursorPosX(offsetX);
+        if (offsetY > 0)
+            ImGui::SetCursorPosY(offsetY);
 
         ImVec2 startPos = ImGui::GetCursorScreenPos();
         ImU32 accentColor = ImGui::GetColorU32(ImVec4(0.60f, 0.40f, 0.90f, 1.00f));
 
         // Top Border
-        ImGui::GetWindowDrawList()->AddLine(
-            ImVec2(startPos.x, startPos.y - 10.0f),
-            ImVec2(startPos.x + totalWidth, startPos.y - 10.0f),
-            accentColor, 5.0f);
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(startPos.x, startPos.y - 10.0f),
+                                            ImVec2(startPos.x + totalWidth, startPos.y - 10.0f), accentColor, 5.0f);
 
         // Bottom Border
         float contentHeight = ImGui::GetTextLineHeightWithSpacing() + imgSize.y;
-        ImGui::GetWindowDrawList()->AddLine(
-            ImVec2(startPos.x, startPos.y + contentHeight + 10.0f),
-            ImVec2(startPos.x + totalWidth, startPos.y + contentHeight + 10.0f),
-            accentColor, 5.0f);
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(startPos.x, startPos.y + contentHeight + 10.0f),
+                                            ImVec2(startPos.x + totalWidth, startPos.y + contentHeight + 10.0f),
+                                            accentColor, 5.0f);
 
         ImGui::BeginGroup();
         ImGui::Text("Original Frame");
@@ -495,21 +499,23 @@ void Application::renderUI() {
     ImGui::End();
 
     // 3. Full Screen Benchmark Overlay
-    if ((m_benchmarkState == BenchmarkState::DONE || m_benchmarkState == BenchmarkState::COMPUTING || m_benchmarkState == BenchmarkState::RECOMPUTING) && m_benchmarkResults) {
+    if ((m_benchmarkState == BenchmarkState::DONE || m_benchmarkState == BenchmarkState::COMPUTING ||
+         m_benchmarkState == BenchmarkState::RECOMPUTING) &&
+        m_benchmarkResults) {
         if (!m_benchTexturesLoaded) {
             auto drawCentroids = [](cv::Mat& img, const std::vector<cv::Vec<float, 5>>& centers) {
                 for (const auto& c : centers) {
-                    cv::Point pt(
-                        static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(img.cols)),
-                        static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(img.rows)));
-                    cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE, c[2] / constants::COLOR_SCALE);
+                    cv::Point pt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(img.cols)),
+                                 static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(img.rows)));
+                    cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
+                                     c[2] / constants::COLOR_SCALE);
                     cv::circle(img, pt, 6, color, -1);
                     cv::circle(img, pt, 8, cv::Scalar(255, 255, 255), 2);
                 }
             };
             drawCentroids(m_benchmarkResults->classicalSegmented, m_benchmarkResults->classicalCenters);
             drawCentroids(m_benchmarkResults->quantumSegmented, m_benchmarkResults->quantumCenters);
-            
+
             matToTexture(m_benchmarkResults->originalFrame, m_benchOriginalTexture);
             matToTexture(m_benchmarkResults->classicalSegmented, m_benchClassicalTexture);
             matToTexture(m_benchmarkResults->quantumSegmented, m_benchQuantumTexture);
@@ -520,26 +526,45 @@ void Application::renderUI() {
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
         // Disable scrollbars for this full-screen comparison window
         ImGui::Begin("Side-by-Side Algorithm Comparison", nullptr,
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
-        
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+                         ImGuiWindowFlags_NoScrollbar);
+
         // Calculate metric styles (colors and % differences)
-        struct MetricStyle { ImVec4 c1; ImVec4 c2; std::string t1; std::string t2; };
+        struct MetricStyle {
+            ImVec4 c1;
+            ImVec4 c2;
+            std::string t1;
+            std::string t2;
+        };
         auto getStyle = [](float v1, float v2, bool lowerIsBetter, bool isInt = false) -> MetricStyle {
             MetricStyle s;
             char b1[64], b2[64];
-            if (isInt) { snprintf(b1, sizeof(b1), "%d", (int)v1); snprintf(b2, sizeof(b2), "%d", (int)v2); }
-            else if (v1 > 10.0f || v2 > 10.0f) { snprintf(b1, sizeof(b1), "%.2f", v1); snprintf(b2, sizeof(b2), "%.2f", v2); }
-            else { snprintf(b1, sizeof(b1), "%.4f", v1); snprintf(b2, sizeof(b2), "%.4f", v2); }
-            s.t1 = b1; s.t2 = b2;
-            s.c1 = ImVec4(1,1,1,1); s.c2 = ImVec4(1,1,1,1);
+            if (isInt) {
+                snprintf(b1, sizeof(b1), "%d", (int)v1);
+                snprintf(b2, sizeof(b2), "%d", (int)v2);
+            } else if (v1 > 10.0f || v2 > 10.0f) {
+                snprintf(b1, sizeof(b1), "%.2f", v1);
+                snprintf(b2, sizeof(b2), "%.2f", v2);
+            } else {
+                snprintf(b1, sizeof(b1), "%.4f", v1);
+                snprintf(b2, sizeof(b2), "%.4f", v2);
+            }
+            s.t1 = b1;
+            s.t2 = b2;
+            s.c1 = ImVec4(1, 1, 1, 1);
+            s.c2 = ImVec4(1, 1, 1, 1);
             if (std::abs(v1 - v2) > 1e-5f) {
                 bool v1Better = lowerIsBetter ? (v1 < v2) : (v1 > v2);
                 s.c1 = v1Better ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
                 s.c2 = !v1Better ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
                 float worse = v1Better ? v2 : v1;
                 float pct = std::abs(worse) > 1e-5f ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
-                char pb[32]; snprintf(pb, sizeof(pb), " (%.1f%% better)", pct);
-                if (v1Better) s.t1 += pb; else s.t2 += pb;
+                char pb[32];
+                snprintf(pb, sizeof(pb), " (%.1f%% better)", pct);
+                if (v1Better)
+                    s.t1 += pb;
+                else
+                    s.t2 += pb;
             }
             return s;
         };
@@ -547,10 +572,10 @@ void Application::renderUI() {
         const auto& cm = m_benchmarkResults->classicalMetrics;
         const auto& qm = m_benchmarkResults->quantumMetrics;
         auto s_wcss = getStyle(cm.wcss, qm.wcss, true);
-        auto s_db   = getStyle(cm.daviesBouldin, qm.daviesBouldin, true);
-        auto s_sil  = getStyle(cm.silhouetteScore, qm.silhouetteScore, false);
+        auto s_db = getStyle(cm.daviesBouldin, qm.daviesBouldin, true);
+        auto s_sil = getStyle(cm.silhouetteScore, qm.silhouetteScore, false);
         auto s_iter = getStyle(cm.iterations, qm.iterations, true, true);
-        auto s_lat  = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
+        auto s_lat = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
 
         if (ImGui::BeginTable("BenchTable", 3, ImGuiTableFlags_None)) {
             // Query actual column widths from ImGui table so centering is exact
@@ -564,7 +589,8 @@ void Application::renderUI() {
             float col1w = colWidth;
             float col2w = colWidth;
             const float imgScale = 0.825f; // scale images to 82.5% of column width
-            float ratio = static_cast<float>(m_benchmarkResults->originalFrame.rows) / static_cast<float>(m_benchmarkResults->originalFrame.cols);
+            float ratio = static_cast<float>(m_benchmarkResults->originalFrame.rows) /
+                          static_cast<float>(m_benchmarkResults->originalFrame.cols);
             float imgW0 = col0w * imgScale;
             float imgW1 = col1w * imgScale;
             float imgW2 = col2w * imgScale;
@@ -588,7 +614,8 @@ void Application::renderUI() {
                 ImGui::Text("%s", title);
 
                 ImGui::SetCursorPosX(curX + (col0w - imgW0) * 0.5f);
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchOriginalTexture.id)), size0, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchOriginalTexture.id)), size0,
+                             ImVec2(1, 0), ImVec2(0, 1));
             }
 
             // Column 1
@@ -601,7 +628,8 @@ void Application::renderUI() {
                 ImGui::Text("%s", title);
 
                 ImGui::SetCursorPosX(curX + (col1w - imgW1) * 0.5f);
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchClassicalTexture.id)), size1, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchClassicalTexture.id)), size1,
+                             ImVec2(1, 0), ImVec2(0, 1));
             }
 
             // Column 2
@@ -614,12 +642,13 @@ void Application::renderUI() {
                 ImGui::Text("%s", title);
 
                 ImGui::SetCursorPosX(curX + (col2w - imgW2) * 0.5f);
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchQuantumTexture.id)), size2, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchQuantumTexture.id)), size2,
+                             ImVec2(1, 0), ImVec2(0, 1));
             }
 
             // Row 2: Metrics
             ImGui::TableNextRow();
-            
+
             ImGui::TableSetColumnIndex(0);
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Metrics Guide:");
@@ -649,8 +678,6 @@ void Application::renderUI() {
             ImGui::EndTable();
         }
         ImGui::Separator();
-        
-
 
         float btnWidth = 250.0f;
         float rerunWidth = 150.0f;
@@ -658,12 +685,12 @@ void Application::renderUI() {
 
         // --- Row 1: Buttons ---
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - buttonsTotalWidth) * 0.5f);
-        
+
         if (ImGui::Button("Resume Live Feed", ImVec2(btnWidth, 40))) {
             m_benchmarkState = BenchmarkState::IDLE;
             m_benchmarkResults.reset();
         }
-        
+
         ImGui::SameLine(0, 20.0f);
         if (ImGui::Button("Rerun Frame", ImVec2(rerunWidth, 40))) {
             m_benchmarkState = BenchmarkState::RECOMPUTING;
@@ -683,22 +710,21 @@ void Application::renderUI() {
 
         float kSliderWidth = 120.0f;
         float strideSliderWidth = 100.0f;
-        float radioW = 260.0f; 
-        
+        float radioW = 260.0f;
+
         float kTextW = ImGui::CalcTextSize("K: ").x;
         float strideTextW = ImGui::CalcTextSize("Stride: ").x;
-        
-        float row2Width = kTextW + kSliderWidth + 30.0f + 
-                          strideTextW + strideSliderWidth + 30.0f + 
-                          radioW;
+
+        float row2Width = kTextW + kSliderWidth + 30.0f + strideTextW + strideSliderWidth + 30.0f + radioW;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - row2Width) * 0.5f);
         ImGui::AlignTextToFramePadding();
 
         // K Slider
-        ImGui::Text("K:"); ImGui::SameLine();
+        ImGui::Text("K:");
+        ImGui::SameLine();
         ImGui::SetNextItemWidth(kSliderWidth);
-        
+
         static bool s_needsRecompute = false;
 
         if (ImGui::SliderInt("##benchK", &tempK, constants::K_MIN, constants::K_MAX)) {
@@ -706,11 +732,12 @@ void Application::renderUI() {
             m_uiConfig.k = tempK;
             s_needsRecompute = true;
         }
-        
+
         ImGui::SameLine(0, 30.0f);
 
         // Stride Slider
-        ImGui::Text("Stride:"); ImGui::SameLine();
+        ImGui::Text("Stride:");
+        ImGui::SameLine();
         ImGui::SetNextItemWidth(strideSliderWidth);
         if (ImGui::SliderInt("##benchStride", &tempStride, 1, 16)) {
             std::scoped_lock<std::mutex> lock(m_configMutex);
@@ -723,7 +750,8 @@ void Application::renderUI() {
         // Radio Buttons
         int currentInit = (currentInitType == common::InitializationType::KMEANS_PLUSPLUS) ? 0 : 1;
         int oldInit = currentInit; // remember previous selection so we only trigger recompute on change
-        ImGui::Text("Init Strategy:"); ImGui::SameLine();
+        ImGui::Text("Init Strategy:");
+        ImGui::SameLine();
         ImGui::RadioButton("K-Means++", &currentInit, 0);
         ImGui::SameLine();
         ImGui::RadioButton("Random", &currentInit, 1);
@@ -731,8 +759,8 @@ void Application::renderUI() {
         // If the user changed the selection, apply it and request a recompute.
         if (currentInit != oldInit) {
             std::scoped_lock<std::mutex> lock(m_configMutex);
-            m_uiConfig.init = (currentInit == 0) ? common::InitializationType::KMEANS_PLUSPLUS
-                                                 : common::InitializationType::RANDOM;
+            m_uiConfig.init =
+                (currentInit == 0) ? common::InitializationType::KMEANS_PLUSPLUS : common::InitializationType::RANDOM;
             s_needsRecompute = true;
         }
 
@@ -799,29 +827,32 @@ void Application::run() {
                     benchConfig = m_uiConfig;
                 }
                 benchConfig.maxIterations = 1000; // Let benchmark run until true convergence
-                
+
                 m_benchmarkFuture = std::async(std::launch::async, [benchFrame, benchConfig]() {
                     BenchmarkComparisonResult result;
                     result.originalFrame = benchFrame.clone();
-                    
-                    auto runEngine = [&](common::AlgorithmType algo, cv::Mat& outSeg, clustering::metrics::BenchmarkResults& outMetrics, std::vector<cv::Vec<float, 5>>& outCenters) {
+
+                    auto runEngine = [&](common::AlgorithmType algo, cv::Mat& outSeg,
+                                         clustering::metrics::BenchmarkResults& outMetrics,
+                                         std::vector<cv::Vec<float, 5>>& outCenters) {
                         clustering::ClusteringManager mgr;
                         common::SegmentationConfig cfg = benchConfig;
                         cfg.algorithm = algo;
                         mgr.getConfig() = cfg;
-                        
+
                         cv::Mat smallFrame;
-                        cv::resize(benchFrame, smallFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
-                        
+                        cv::resize(benchFrame, smallFrame,
+                                   cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
+
                         auto start = std::chrono::high_resolution_clock::now();
-                        cv::Mat segmented = mgr.segmentFrame(smallFrame); 
+                        cv::Mat segmented = mgr.segmentFrame(smallFrame);
                         auto end = std::chrono::high_resolution_clock::now();
                         float execMs = std::chrono::duration<float, std::milli>(end - start).count();
-                        
+
                         outCenters = mgr.getCenters();
                         int iterations = mgr.getEngine() ? mgr.getEngine()->getLastIterations() : 0;
                         cv::resize(segmented, outSeg, benchFrame.size(), 0, 0, cv::INTER_NEAREST);
-                        
+
                         int n = smallFrame.rows * smallFrame.cols;
                         cv::Mat samples(n, 5, CV_32F);
                         float colorScale = constants::COLOR_SCALE;
@@ -840,10 +871,12 @@ void Application::run() {
                         }
                         outMetrics = clustering::metrics::computeAllMetrics(samples, outCenters, iterations, execMs);
                     };
-                    
-                    runEngine(common::AlgorithmType::KMEANS_REGULAR, result.classicalSegmented, result.classicalMetrics, result.classicalCenters);
-                    runEngine(common::AlgorithmType::KMEANS_QUANTUM, result.quantumSegmented, result.quantumMetrics, result.quantumCenters);
-                    
+
+                    runEngine(common::AlgorithmType::KMEANS_REGULAR, result.classicalSegmented, result.classicalMetrics,
+                              result.classicalCenters);
+                    runEngine(common::AlgorithmType::KMEANS_QUANTUM, result.quantumSegmented, result.quantumMetrics,
+                              result.quantumCenters);
+
                     return result;
                 });
             }

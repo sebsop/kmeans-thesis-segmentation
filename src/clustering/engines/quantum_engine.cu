@@ -1,11 +1,11 @@
 #include <cmath>
+#include <cstdlib>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <iostream>
 #include <limits>
 #include <random>
 #include <stdexcept>
-#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -123,28 +123,34 @@ QuantumEngine::~QuantumEngine() {
 
 void QuantumEngine::ensureBuffers(int numPoints, int k) {
     if (static_cast<size_t>(numPoints) > m_maxPoints || k > m_maxK) {
-        if (d_samples)  cudaFree(d_samples);
-        if (d_centers)  cudaFree(d_centers);
-        if (d_labels)   cudaFree(d_labels);
-        if (d_newSums)  cudaFree(d_newSums);
-        if (d_counts)   cudaFree(d_counts);
-        if (d_changed)  cudaFree(d_changed);
+        if (d_samples)
+            cudaFree(d_samples);
+        if (d_centers)
+            cudaFree(d_centers);
+        if (d_labels)
+            cudaFree(d_labels);
+        if (d_newSums)
+            cudaFree(d_newSums);
+        if (d_counts)
+            cudaFree(d_counts);
+        if (d_changed)
+            cudaFree(d_changed);
 
         m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
-        m_maxK      = std::max(m_maxK, k);
+        m_maxK = std::max(m_maxK, k);
 
         CUDA_CHECK(cudaMalloc(&d_samples, m_maxPoints * 5 * sizeof(float)));
         CUDA_CHECK(cudaMalloc(&d_centers, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_labels,  m_maxPoints * sizeof(int)));
+        CUDA_CHECK(cudaMalloc(&d_labels, m_maxPoints * sizeof(int)));
         CUDA_CHECK(cudaMalloc(&d_newSums, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_counts,  m_maxK * sizeof(int)));
+        CUDA_CHECK(cudaMalloc(&d_counts, m_maxK * sizeof(int)));
         CUDA_CHECK(cudaMalloc(&d_changed, sizeof(int)));
     }
 }
 
 std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int numPoints,
-                                                          const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations,
-                                                          float scale_factor) {
+                                                          const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
+                                                          int maxIterations, float scale_factor) {
     size_t centersSize = static_cast<size_t>(k) * 5 * sizeof(float);
 
     std::vector<float> h_centers(k * 5);
@@ -158,21 +164,21 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int num
     CUDA_CHECK(cudaMemset(d_labels, 0xFF, numPoints * sizeof(int)));
 
     int threadsPerBlock = 256;
-    int blocksPerGrid   = (numPoints + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = (numPoints + threadsPerBlock - 1) / threadsPerBlock;
 
     size_t sharedAssignSize = static_cast<size_t>(k) * 5 * sizeof(float);
     size_t sharedUpdateSize = static_cast<size_t>(k) * 5 * sizeof(float) + static_cast<size_t>(k) * sizeof(int);
 
     std::vector<float> h_newSums(k * 5);
-    std::vector<int>   h_counts(k);
+    std::vector<int> h_counts(k);
 
     int iter = 0;
     for (; iter < maxIterations; ++iter) {
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
 
-        quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedAssignSize>>>(
-            d_samp, numPoints, d_centers, k, d_labels, d_changed, scale_factor);
+        quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedAssignSize>>>(d_samp, numPoints, d_centers, k,
+                                                                                  d_labels, d_changed, scale_factor);
         CUDA_CHECK(cudaPeekAtLastError());
         CUDA_CHECK(cudaDeviceSynchronize());
 
@@ -182,15 +188,15 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int num
         }
 
         CUDA_CHECK(cudaMemset(d_newSums, 0, centersSize));
-        CUDA_CHECK(cudaMemset(d_counts,  0, k * sizeof(int)));
+        CUDA_CHECK(cudaMemset(d_counts, 0, k * sizeof(int)));
 
-        quantumUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedUpdateSize>>>(
-            d_samp, numPoints, d_labels, k, d_newSums, d_counts);
+        quantumUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedUpdateSize>>>(d_samp, numPoints, d_labels, k,
+                                                                                  d_newSums, d_counts);
         CUDA_CHECK(cudaPeekAtLastError());
         CUDA_CHECK(cudaDeviceSynchronize());
 
         CUDA_CHECK(cudaMemcpy(h_newSums.data(), d_newSums, centersSize, cudaMemcpyDeviceToHost));
-        CUDA_CHECK(cudaMemcpy(h_counts.data(),  d_counts,  k * sizeof(int), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(h_counts.data(), d_counts, k * sizeof(int), cudaMemcpyDeviceToHost));
 
         for (int j = 0; j < k; ++j) {
             if (h_counts[j] > 0) {
@@ -200,7 +206,8 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int num
             } else if (numPoints > 0) {
                 // Dead center mitigation: reassign to a random data point
                 int randomIdx = rand() % numPoints;
-                CUDA_CHECK(cudaMemcpy(&h_centers[j * 5], &d_samp[randomIdx * 5], 5 * sizeof(float), cudaMemcpyDeviceToHost));
+                CUDA_CHECK(
+                    cudaMemcpy(&h_centers[j * 5], &d_samp[randomIdx * 5], 5 * sizeof(float), cudaMemcpyDeviceToHost));
             }
         }
         CUDA_CHECK(cudaMemcpy(d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
@@ -230,22 +237,26 @@ static float computeScaleFactor(const cv::Mat& samples) {
         const float* rowPtr = samples.ptr<float>(i);
         for (int d = 0; d < 5; ++d) {
             float val = rowPtr[d];
-            if (val < min_vals[d]) min_vals[d] = val;
-            if (val > max_vals[d]) max_vals[d] = val;
+            if (val < min_vals[d])
+                min_vals[d] = val;
+            if (val > max_vals[d])
+                max_vals[d] = val;
         }
     }
 
     float max_range = 0.0f;
     for (int d = 0; d < 5; ++d) {
         float range = max_vals[d] - min_vals[d];
-        if (range > max_range) max_range = range;
+        if (range > max_range)
+            max_range = range;
     }
     float global_range = max_range + 1e-8f;
     return (static_cast<float>(CV_PI) / 2.0f) / global_range;
 }
 
 std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
-                                                  const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations) {
+                                                  const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
+                                                  int maxIterations) {
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
         return initialCenters;
@@ -259,7 +270,8 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
 }
 
 std::vector<cv::Vec<float, 5>> QuantumEngine::runOnDevice(float* d_samples_ext, int numPoints,
-                                                          const std::vector<cv::Vec<float, 5>>& initialCenters, int k, int maxIterations) {
+                                                          const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
+                                                          int maxIterations) {
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
@@ -271,31 +283,39 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runOnDevice(float* d_samples_ext, 
                          std::numeric_limits<float>::lowest()};
     for (const auto& c : initialCenters) {
         for (int d = 0; d < 5; ++d) {
-            if (c[d] < min_vals[d]) min_vals[d] = c[d];
-            if (c[d] > max_vals[d]) max_vals[d] = c[d];
+            if (c[d] < min_vals[d])
+                min_vals[d] = c[d];
+            if (c[d] > max_vals[d])
+                max_vals[d] = c[d];
         }
     }
     float max_range = 0.0f;
     for (int d = 0; d < 5; ++d) {
         float range = max_vals[d] - min_vals[d];
-        if (range > max_range) max_range = range;
+        if (range > max_range)
+            max_range = range;
     }
     float scale_factor = (static_cast<float>(CV_PI) / 2.0f) / (max_range + 1e-8f);
 
     if (static_cast<size_t>(numPoints) > m_maxPoints || k > m_maxK) {
-        if (d_centers)  cudaFree(d_centers);
-        if (d_labels)   cudaFree(d_labels);
-        if (d_newSums)  cudaFree(d_newSums);
-        if (d_counts)   cudaFree(d_counts);
-        if (d_changed)  cudaFree(d_changed);
+        if (d_centers)
+            cudaFree(d_centers);
+        if (d_labels)
+            cudaFree(d_labels);
+        if (d_newSums)
+            cudaFree(d_newSums);
+        if (d_counts)
+            cudaFree(d_counts);
+        if (d_changed)
+            cudaFree(d_changed);
 
         m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
-        m_maxK      = std::max(m_maxK, k);
+        m_maxK = std::max(m_maxK, k);
 
         CUDA_CHECK(cudaMalloc(&d_centers, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_labels,  m_maxPoints * sizeof(int)));
+        CUDA_CHECK(cudaMalloc(&d_labels, m_maxPoints * sizeof(int)));
         CUDA_CHECK(cudaMalloc(&d_newSums, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_counts,  m_maxK * sizeof(int)));
+        CUDA_CHECK(cudaMalloc(&d_counts, m_maxK * sizeof(int)));
         CUDA_CHECK(cudaMalloc(&d_changed, sizeof(int)));
     }
 

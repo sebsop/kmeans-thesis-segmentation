@@ -1,9 +1,9 @@
 #include "clustering/metrics.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <random>
-#include <algorithm>
 
 namespace kmeans::clustering::metrics {
 
@@ -16,10 +16,11 @@ static float sqDistance(const float* p1, const cv::Vec<float, 5>& p2) {
     return d;
 }
 
-BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& centers, int iterations, float executionTimeMs) {
+BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& centers,
+                                   int iterations, float executionTimeMs) {
     int numPoints = samples.rows;
     int k = static_cast<int>(centers.size());
-    
+
     if (numPoints == 0 || k == 0) {
         return {0.0f, 0.0f, 0.0f, iterations, executionTimeMs};
     }
@@ -58,7 +59,8 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
     for (int i = 0; i < k; ++i) {
         float maxR = 0.0f;
         for (int j = 0; j < k; ++j) {
-            if (i == j) continue;
+            if (i == j)
+                continue;
             float dCenter = 0.0f;
             for (int d = 0; d < 5; ++d) {
                 float diff = centers[i][d] - centers[j][d];
@@ -67,7 +69,8 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
             dCenter = std::sqrt(dCenter);
             if (dCenter > 1e-6f) {
                 float r = (intraClusterScatter[i] + intraClusterScatter[j]) / dCenter;
-                if (r > maxR) maxR = r;
+                if (r > maxR)
+                    maxR = r;
             }
         }
         daviesBouldin += maxR;
@@ -92,7 +95,8 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
         int myK = labels[i];
 
         // Skip if this cluster only has 1 point (silhouette is undefined/0)
-        if (clusterCounts[myK] <= 1) continue;
+        if (clusterCounts[myK] <= 1)
+            continue;
 
         float a = 0.0f;
         int aCount = 0;
@@ -102,11 +106,12 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
         // Compare against the next `subsetSize` points (or wrap around)
         for (int idx2 = 0; idx2 < subsetSize; ++idx2) {
             int j = indices[(idx1 + idx2 + 1) % numPoints];
-            if (i == j) continue;
+            if (i == j)
+                continue;
 
             const float* p2 = samples.ptr<float>(j);
             float d = 0.0f;
-            for(int dim = 0; dim < 5; ++dim){
+            for (int dim = 0; dim < 5; ++dim) {
                 float diff = p[dim] - p2[dim];
                 d += diff * diff;
             }
@@ -123,13 +128,15 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
         }
 
         a = (aCount > 0) ? (a / static_cast<float>(aCount)) : 0.0f;
-        
+
         float b = 1e30f;
         for (int j = 0; j < k; ++j) {
-            if (j == myK) continue;
+            if (j == myK)
+                continue;
             if (bCount[j] > 0) {
                 float avgB = bDistSum[j] / static_cast<float>(bCount[j]);
-                if (avgB < b) b = avgB;
+                if (avgB < b)
+                    b = avgB;
             }
         }
 
@@ -140,7 +147,8 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
         }
     }
 
-    float avgSilhouette = (validSilhouettePoints > 0) ? (totalSilhouette / static_cast<float>(validSilhouettePoints)) : 0.0f;
+    float avgSilhouette =
+        (validSilhouettePoints > 0) ? (totalSilhouette / static_cast<float>(validSilhouettePoints)) : 0.0f;
 
     return {wcss, daviesBouldin, avgSilhouette, iterations, executionTimeMs};
 }

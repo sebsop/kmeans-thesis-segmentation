@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "common/constants.hpp"
 #include "clustering/preprocessor/strided_data_preprocessor.hpp"
+#include "common/constants.hpp"
 
 #define CUDA_CHECK_PREP(call)                                                                                          \
     do {                                                                                                               \
@@ -17,18 +17,16 @@
 
 namespace kmeans::clustering {
 
-__global__ void preprocess_strided_kernel(const uchar3* __restrict__ frame_data, float* __restrict__ samples, 
-                                            int cols, int rows, int stride, 
-                                            int out_cols, int out_rows,
-                                            float invCols, float invRows, 
-                                            float color_scale, float spatial_scale) {
+__global__ void preprocess_strided_kernel(const uchar3* __restrict__ frame_data, float* __restrict__ samples, int cols,
+                                          int rows, int stride, int out_cols, int out_rows, float invCols,
+                                          float invRows, float color_scale, float spatial_scale) {
     int out_x = blockIdx.x * blockDim.x + threadIdx.x;
     int out_y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (out_x < out_cols && out_y < out_rows) {
         int x = out_x * stride;
         int y = out_y * stride;
-        
+
         int in_idx = y * cols + x;
         int out_idx = out_y * out_cols + out_x;
 
@@ -89,9 +87,8 @@ void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
     dim3 gridSize((out_cols + blockSize.x - 1) / blockSize.x, (out_rows + blockSize.y - 1) / blockSize.y);
 
     preprocess_strided_kernel<<<gridSize, blockSize>>>(
-        static_cast<uchar3*>(m_d_frame_data), static_cast<float*>(m_d_samples), 
-        frame.cols, frame.rows, stride, out_cols, out_rows,
-        invCols, invRows, kmeans::constants::COLOR_SCALE, kmeans::constants::SPATIAL_SCALE);
+        static_cast<uchar3*>(m_d_frame_data), static_cast<float*>(m_d_samples), frame.cols, frame.rows, stride,
+        out_cols, out_rows, invCols, invRows, kmeans::constants::COLOR_SCALE, kmeans::constants::SPATIAL_SCALE);
 
     CUDA_CHECK_PREP(cudaDeviceSynchronize());
 }
@@ -110,7 +107,8 @@ float* StridedDataPreprocessor::prepareDevice(const cv::Mat& frame, int stride, 
 cv::Mat StridedDataPreprocessor::download() const {
     cv::Mat samples(m_extracted_points, 5, CV_32F);
     if (m_extracted_points > 0 && m_d_samples) {
-        CUDA_CHECK_PREP(cudaMemcpy(samples.ptr<float>(), m_d_samples, m_extracted_points * 5 * sizeof(float), cudaMemcpyDeviceToHost));
+        CUDA_CHECK_PREP(cudaMemcpy(samples.ptr<float>(), m_d_samples, m_extracted_points * 5 * sizeof(float),
+                                   cudaMemcpyDeviceToHost));
     }
     return samples;
 }
