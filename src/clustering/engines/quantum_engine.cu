@@ -28,7 +28,7 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
 
     int tid = threadIdx.x;
     if (tid < k * 5) {
-        s_centers[tid] = centers[tid];
+        s_centers[tid] = centers[tid] * scale_factor; // Pre-scaled
     }
     __syncthreads();
 
@@ -39,7 +39,7 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     float p[5];
 #pragma unroll
     for (int d = 0; d < 5; ++d) {
-        p[d] = samples[idx * 5 + d];
+        p[d] = samples[idx * 5 + d] * scale_factor; // Pre-scaled
     }
 
     float minDistSq = 1e30f;
@@ -49,9 +49,8 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
         float target_prob = 1.0f;
 #pragma unroll
         for (int d = 0; d < 5; ++d) {
-            float c_scaled = s_centers[j * 5 + d] * scale_factor;
-            float s_scaled = p[d] * scale_factor;
-            float diff = (s_scaled - c_scaled) * 0.5f;
+            // Eliminated 2 multiplications per dimension!
+            float diff = (p[d] - s_centers[j * 5 + d]) * 0.5f;
             float cos_val = __cosf(diff);
             target_prob *= (cos_val * cos_val);
         }
