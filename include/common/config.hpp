@@ -4,7 +4,7 @@
 namespace kmeans::common {
 
 struct SegmentationConfig {
-    DataStrategy strategy = DataStrategy::RCC_TREES;
+    int stride = 4;
     InitializationType init = InitializationType::KMEANS_PLUSPLUS;
     AlgorithmType algorithm = AlgorithmType::KMEANS_REGULAR;
 

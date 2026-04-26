@@ -21,8 +21,4 @@ constexpr int FPS_HISTORY_WINDOW = 90;
 // UI Layout boundaries
 constexpr float UI_PANEL_WIDTH = 350.0f;
 
-// IPC Settings
-constexpr const char* IPC_SOCKET = "tcp://127.0.0.1:5555";
-constexpr int IPC_TIMEOUT_MS = 2000;
-
 } // namespace kmeans::constants

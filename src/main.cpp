@@ -3,7 +3,6 @@
 #include <opencv2/core/utils/logger.hpp>
 
 #include "common/config.hpp"
-#include "core/coreset.hpp"
 #include "io/application.hpp"
 
 using namespace kmeans;

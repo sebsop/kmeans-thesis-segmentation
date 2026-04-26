@@ -97,13 +97,10 @@ add_library(kmeans_core
     src/clustering/engines/quantum_engine.cu
     src/clustering/clustering_manager.cpp
     src/clustering/clustering_factory.cpp
-    src/clustering/preprocessors/full_data_preprocessor.cu
-    src/clustering/preprocessors/rcc_data_preprocessor.cpp
+    src/clustering/preprocessor/strided_data_preprocessor.cu
     src/clustering/metrics.cpp
     src/clustering/initializers/random_initializer.cpp
     src/clustering/initializers/kmeans_plus_plus_initializer.cu
-    src/core/coreset.cpp
-    src/core/rcc.cpp
     src/common/utils.cpp
     src/io/application.cpp
 )
@@ -112,7 +109,7 @@ set_source_files_properties(src/backend/cuda_kernels.cu PROPERTIES LANGUAGE CUDA
 set_source_files_properties(src/clustering/engines/classical_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/engines/quantum_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/initializers/kmeans_plus_plus_initializer.cu PROPERTIES LANGUAGE CUDA)
-set_source_files_properties(src/clustering/preprocessors/full_data_preprocessor.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/clustering/preprocessor/full_data_preprocessor.cu PROPERTIES LANGUAGE CUDA)
 
 set_target_properties(kmeans_core PROPERTIES
     CXX_STANDARD 17

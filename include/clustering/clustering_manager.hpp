@@ -8,7 +8,7 @@
 #include "backend/cuda_assignment_context.hpp"
 #include "clustering/engines/kmeans_engine.hpp"
 #include "clustering/initializers/initializer.hpp"
-#include "clustering/preprocessors/data_preprocessor.hpp"
+#include "clustering/preprocessor/strided_data_preprocessor.hpp"
 #include "common/config.hpp"
 
 namespace kmeans::clustering {
@@ -29,8 +29,10 @@ class ClusteringManager {
     std::unique_ptr<backend::CudaAssignmentContext> m_cudaContext;
     common::SegmentationConfig m_config;
 
+    // Concrete Preprocessor (No longer a strategy)
+    std::unique_ptr<StridedDataPreprocessor> m_dataPreprocessor;
+    
     // Active Strategy Implementations
-    std::unique_ptr<DataPreprocessor> m_dataPreprocessor;
     std::unique_ptr<Initializer> m_initializer;
     std::unique_ptr<KMeansEngine> m_clusteringEngine;
 

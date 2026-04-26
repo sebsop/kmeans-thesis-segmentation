@@ -1,4 +1,4 @@
-#include "io/application.hpp"
+﻿#include "io/application.hpp"
 
 #include <deque>
 
@@ -166,12 +166,9 @@ void Application::renderUI() {
 
     ImGui::Text("Architecture Strategy");
 
-    const char* preprocessors[] = {"Full Data (Flatten)", "RCC Tree (Coreset)"};
-    int currentPreprocessor = (pendingConfig.strategy == common::DataStrategy::FULL_DATA) ? 0 : 1;
-    if (ImGui::Combo("Data Preprocessor", &currentPreprocessor, preprocessors, 2)) {
-        pendingConfig.strategy =
-            (currentPreprocessor == 0) ? common::DataStrategy::FULL_DATA : common::DataStrategy::RCC_TREES;
-        configChanged = true;
+    configChanged |= ImGui::SliderInt("Stride", &pendingConfig.stride, 1, 16);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
     }
 
     const char* initializers[] = {"K-Means++", "Random"};
@@ -207,8 +204,11 @@ void Application::renderUI() {
     ImGui::Text("Performance Dashboard");
     
     static float displayUIRenderFPS = 0.0f;
-    if (ImGui::GetFrameCount() % 30 == 0) { // Update every 30 frames
+    static auto lastUIUpdateTime = std::chrono::high_resolution_clock::now();
+    auto uiNow = std::chrono::high_resolution_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(uiNow - lastUIUpdateTime).count() > 1000) {
         displayUIRenderFPS = ImGui::GetIO().Framerate;
+        lastUIUpdateTime = uiNow;
     }
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "UI Render Speed: %.1f FPS", displayUIRenderFPS);
 
@@ -260,12 +260,14 @@ void Application::renderUI() {
         ImGui::Text("Camera Pipeline: %.1f FPS", displayFps);
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg: %.1f | Min: %.1f | Max: %.1f", displayAvg, displayMin, displayMax);
 
-        // Max Filter Graph Smoothing to hide 1-frame calculation drops
+        // Symmetric Max Filter Graph Smoothing to hide 1-frame calculation drops without tail artifacts
         std::vector<float> fpsPlotBuf;
-        int window = 15; // 15-frame max filter
+        int window = 15;
         for (int i = 0; i < static_cast<int>(algoFpsHistory.size()); ++i) {
             float m = 0;
-            for(int j = std::max(0, i - window); j <= i; ++j) {
+            int start = std::max(0, i - window/2);
+            int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + window/2);
+            for(int j = start; j <= end; ++j) {
                 m = std::max(m, algoFpsHistory[j]);
             }
             fpsPlotBuf.push_back(m);
@@ -424,12 +426,11 @@ void Application::renderUI() {
             ImGui::TableSetColumnIndex(0);
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Metrics Guide:");
-            ImGui::Text("WCSS (Inertia): Lower is better");
-            ImGui::Text("Davies-Bouldin: Lower is better");
-            ImGui::Text("Silhouette: Higher is better");
-            ImGui::Text("Iterations: Lower is better");
-            ImGui::Text("Latency: Lower is better");
-
+            ImGui::Text("WCSS (Inertia): ↓ Lower is better");
+            ImGui::Text("Davies-Bouldin: ↓ Lower is better");
+            ImGui::Text("Silhouette: ↑ Higher is better");
+            ImGui::Text("Iterations: ↓ Lower is better");
+            ImGui::Text("Latency: ↓ Lower is better");
             ImGui::TableSetColumnIndex(1);
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Performance Metrics:");

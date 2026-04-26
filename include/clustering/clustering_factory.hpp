@@ -4,7 +4,6 @@
 
 #include "clustering/engines/kmeans_engine.hpp"
 #include "clustering/initializers/initializer.hpp"
-#include "clustering/preprocessors/data_preprocessor.hpp"
 #include "common/config.hpp"
 
 namespace kmeans::clustering {
@@ -18,10 +17,6 @@ namespace kmeans::clustering {
  */
 class ClusteringFactory {
   public:
-    /** @brief Creates the appropriate DataPreprocessor strategy based on configuration. */
-    [[nodiscard]] static std::unique_ptr<DataPreprocessor>
-    createDataPreprocessor(const common::SegmentationConfig& config);
-
     /** @brief Creates the appropriate Initializer strategy based on configuration. */
     [[nodiscard]] static std::unique_ptr<Initializer> createInitializer(const common::SegmentationConfig& config);
 
