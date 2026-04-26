@@ -46,6 +46,8 @@ class ClusteringManager {
 
     [[nodiscard]] const std::vector<cv::Vec<float, 5>>& getCenters() const noexcept { return m_centers; }
 
+    [[nodiscard]] KMeansEngine* getEngine() const noexcept { return m_clusteringEngine.get(); }
+
     /** @brief Reconstructs strategy instances using the factory if config changed. */
     void updateStategyImplementations();
 

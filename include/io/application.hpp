@@ -13,6 +13,9 @@
 #include <GLFW/glfw3.h>
 
 #include "clustering/clustering_manager.hpp"
+#include "clustering/metrics.hpp"
+#include <future>
+#include <optional>
 
 namespace kmeans::io {
 
@@ -59,6 +62,31 @@ class Application {
     bool m_initialized = false;
     bool m_showCentroids = false;
     std::atomic<bool> m_forceReset{false};
+
+    // Benchmark State
+    struct BenchmarkComparisonResult {
+        cv::Mat originalFrame;
+        cv::Mat classicalSegmented;
+        cv::Mat quantumSegmented;
+        clustering::metrics::BenchmarkResults classicalMetrics;
+        clustering::metrics::BenchmarkResults quantumMetrics;
+        std::vector<cv::Vec<float, 5>> classicalCenters;
+        std::vector<cv::Vec<float, 5>> quantumCenters;
+    };
+
+    enum class BenchmarkState { IDLE, CAPTURING, COMPUTING, DONE };
+    BenchmarkState m_benchmarkState = BenchmarkState::IDLE;
+    std::future<BenchmarkComparisonResult> m_benchmarkFuture;
+    std::optional<BenchmarkComparisonResult> m_benchmarkResults;
+    std::string m_benchmarkStatusText;
+
+    TextureResource m_benchOriginalTexture;
+    TextureResource m_benchClassicalTexture;
+    TextureResource m_benchQuantumTexture;
+    bool m_benchTexturesLoaded = false;
+    
+    // UI Theming
+    void applyPremiumTheme();
 
     void initWindow();
     void initImGui();

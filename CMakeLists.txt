@@ -99,6 +99,7 @@ add_library(kmeans_core
     src/clustering/clustering_factory.cpp
     src/clustering/preprocessors/full_data_preprocessor.cu
     src/clustering/preprocessors/rcc_data_preprocessor.cpp
+    src/clustering/metrics.cpp
     src/clustering/initializers/random_initializer.cpp
     src/clustering/initializers/kmeans_plus_plus_initializer.cu
     src/core/coreset.cpp

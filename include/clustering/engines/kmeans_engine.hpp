@@ -15,10 +15,18 @@ namespace kmeans::clustering {
  * external quantum simulation environments without affecting the consumer.
  */
 class KMeansEngine {
+  protected:
+    int m_lastIterations = 0;
+
   public:
     virtual ~KMeansEngine() = default;
 
-    /** @brief Executes the clustering algorithm using the specific engine implementation. */
+    [[nodiscard]] int getLastIterations() const noexcept { return m_lastIterations; }
+
+    /**
+     * @brief Executes the clustering algorithm using a CPU-side cv::Mat.
+     * Use this when the sample data lives in host memory.
+     */
     [[nodiscard]] virtual std::vector<cv::Vec<float, 5>>
     run(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& initialCenters, int k) = 0;
 

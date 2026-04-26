@@ -165,7 +165,8 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int num
     std::vector<float> h_newSums(k * 5);
     std::vector<int>   h_counts(k);
 
-    for (int iter = 0; iter < 20; ++iter) {
+    int iter = 0;
+    for (; iter < 20; ++iter) {
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
 
@@ -200,6 +201,8 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int num
         }
         CUDA_CHECK(cudaMemcpy(d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
     }
+
+    m_lastIterations = iter + 1;
 
     std::vector<cv::Vec<float, 5>> finalCenters(k);
     for (int i = 0; i < k; ++i) {
