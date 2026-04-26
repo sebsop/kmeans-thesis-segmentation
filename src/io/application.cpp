@@ -11,6 +11,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "imgui_internal.h"
+
 // Backend configurations
 #include "common/config.hpp"
 #include "common/constants.hpp"
@@ -45,7 +47,7 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    m_window = glfwCreateWindow(1700, 620, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
+    m_window = glfwCreateWindow(1750, 620, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
     if (m_window == nullptr) {
         std::cerr << "Failed to create window using GLFW.\n";
         glfwTerminate();
@@ -244,22 +246,18 @@ void Application::renderUI() {
         static float displayFps = 0.0f;
         static float displayMs = 0.0f;
         static float displayAvg = 0.0f;
-        static float displayMin = 0.0f;
-        static float displayMax = 0.0f;
         static auto lastUpdateTime = std::chrono::high_resolution_clock::now();
         auto now = std::chrono::high_resolution_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdateTime).count() > 500) {
             displayFps = workerFps; // Show true instantaneous FPS
             displayMs = algoTimeMs;
             displayAvg = avgFps;
-            displayMin = minFps;
-            displayMax = maxFps;
             lastUpdateTime = now;
         }
 
         ImGui::Text("Algorithm Execution: %.2f ms", displayMs);
         ImGui::Text("Camera Pipeline: %.1f FPS", displayFps);
-        ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg: %.1f | Min: %.1f | Max: %.1f", displayAvg, displayMin, displayMax);
+        ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg FPS: %.1f", displayAvg);
 
         // Symmetric Max Filter Graph Smoothing to hide 1-frame calculation drops without tail artifacts
         std::vector<float> fpsPlotBuf;
@@ -392,7 +390,9 @@ void Application::renderUI() {
 
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-        ImGui::Begin("Side-by-Side Algorithm Comparison", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+        // Disable scrollbars for this full-screen comparison window
+        ImGui::Begin("Side-by-Side Algorithm Comparison", nullptr,
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
         
         // Calculate metric styles (colors and % differences)
         struct MetricStyle { ImVec4 c1; ImVec4 c2; std::string t1; std::string t2; };
@@ -425,13 +425,27 @@ void Application::renderUI() {
         auto s_lat  = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
 
         if (ImGui::BeginTable("BenchTable", 3, ImGuiTableFlags_None)) {
-            // Calculate dynamic image size to fit columns and scale down for padding
-            float colWidth = ImGui::GetWindowWidth() / 3.0f - 80.0f; // approximate column width
-            const float imgScale = 0.90f; // scale images to 90% of column width
+            // Query actual column widths from ImGui table so centering is exact
+            // Fallback: compute column widths from available content region when
+            // TableGetColumnWidth is not available in this ImGui version.
+            ImVec2 avail = ImGui::GetContentRegionAvail();
+            float tableInnerW = avail.x;
+            float spacing = ImGui::GetStyle().ItemSpacing.x;
+            float colWidth = (tableInnerW - spacing * 2.0f) / 3.0f;
+            float col0w = colWidth;
+            float col1w = colWidth;
+            float col2w = colWidth;
+            const float imgScale = 0.825f; // scale images to 82.5% of column width
             float ratio = static_cast<float>(m_benchmarkResults->originalFrame.rows) / static_cast<float>(m_benchmarkResults->originalFrame.cols);
-            float imgW = colWidth * imgScale;
-            float imgH = imgW * ratio;
-            ImVec2 size(imgW, imgH);
+            float imgW0 = col0w * imgScale;
+            float imgW1 = col1w * imgScale;
+            float imgW2 = col2w * imgScale;
+            float imgH0 = imgW0 * ratio;
+            float imgH1 = imgW1 * ratio;
+            float imgH2 = imgW2 * ratio;
+            ImVec2 size0(imgW0, imgH0);
+            ImVec2 size1(imgW1, imgH1);
+            ImVec2 size2(imgW2, imgH2);
 
             // Row 1: Headers & Images (centered in their columns)
             ImGui::TableNextRow();
@@ -442,11 +456,11 @@ void Application::renderUI() {
                 const char* title = "1. Original Frame";
                 float curX = ImGui::GetCursorPosX();
                 float textW = ImGui::CalcTextSize(title).x;
-                ImGui::SetCursorPosX(curX + (colWidth - textW) * 0.5f);
+                ImGui::SetCursorPosX(curX + (col0w - textW) * 0.5f);
                 ImGui::Text("%s", title);
 
-                ImGui::SetCursorPosX(curX + (colWidth - imgW) * 0.5f);
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchOriginalTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::SetCursorPosX(curX + (col0w - imgW0) * 0.5f);
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchOriginalTexture.id)), size0, ImVec2(1, 0), ImVec2(0, 1));
             }
 
             // Column 1
@@ -455,11 +469,11 @@ void Application::renderUI() {
                 const char* title = "2. Classical K-Means";
                 float curX = ImGui::GetCursorPosX();
                 float textW = ImGui::CalcTextSize(title).x;
-                ImGui::SetCursorPosX(curX + (colWidth - textW) * 0.5f);
+                ImGui::SetCursorPosX(curX + (col1w - textW) * 0.5f);
                 ImGui::Text("%s", title);
 
-                ImGui::SetCursorPosX(curX + (colWidth - imgW) * 0.5f);
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchClassicalTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::SetCursorPosX(curX + (col1w - imgW1) * 0.5f);
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchClassicalTexture.id)), size1, ImVec2(1, 0), ImVec2(0, 1));
             }
 
             // Column 2
@@ -468,11 +482,11 @@ void Application::renderUI() {
                 const char* title = "3. Quantum K-Means";
                 float curX = ImGui::GetCursorPosX();
                 float textW = ImGui::CalcTextSize(title).x;
-                ImGui::SetCursorPosX(curX + (colWidth - textW) * 0.5f);
+                ImGui::SetCursorPosX(curX + (col2w - textW) * 0.5f);
                 ImGui::Text("%s", title);
 
-                ImGui::SetCursorPosX(curX + (colWidth - imgW) * 0.5f);
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchQuantumTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::SetCursorPosX(curX + (col2w - imgW2) * 0.5f);
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchQuantumTexture.id)), size2, ImVec2(1, 0), ImVec2(0, 1));
             }
 
             // Row 2: Metrics
@@ -507,7 +521,6 @@ void Application::renderUI() {
             ImGui::EndTable();
         }
         ImGui::Separator();
-        ImGui::Dummy(ImVec2(0.0f, 20.0f));
         
         float btnWidth = 300.0f;
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - btnWidth) * 0.5f);

@@ -19,6 +19,6 @@ constexpr int PROCESS_HEIGHT = 150;
 constexpr int FPS_HISTORY_WINDOW = 90;
 
 // UI Layout boundaries
-constexpr float UI_PANEL_WIDTH = 350.0f;
+constexpr float UI_PANEL_WIDTH = 400.0f;
 
 } // namespace kmeans::constants
