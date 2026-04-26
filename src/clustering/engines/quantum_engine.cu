@@ -5,6 +5,7 @@
 #include <limits>
 #include <random>
 #include <stdexcept>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -196,8 +197,11 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::runInternal(float* d_samp, int num
                 for (int d = 0; d < 5; ++d) {
                     h_centers[j * 5 + d] = h_newSums[j * 5 + d] / static_cast<float>(h_counts[j]);
                 }
+            } else if (numPoints > 0) {
+                // Dead center mitigation: reassign to a random data point
+                int randomIdx = rand() % numPoints;
+                CUDA_CHECK(cudaMemcpy(&h_centers[j * 5], &d_samp[randomIdx * 5], 5 * sizeof(float), cudaMemcpyDeviceToHost));
             }
-            // Empty cluster: keep existing center — rare at steady state with warm starts
         }
         CUDA_CHECK(cudaMemcpy(d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
     }

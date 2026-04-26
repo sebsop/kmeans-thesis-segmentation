@@ -45,7 +45,7 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    m_window = glfwCreateWindow(1400, 438, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
+    m_window = glfwCreateWindow(1700, 620, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
     if (m_window == nullptr) {
         std::cerr << "Failed to create window using GLFW.\n";
         glfwTerminate();
@@ -60,7 +60,6 @@ void Application::initImGui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     applyPremiumTheme();
@@ -142,9 +141,11 @@ void Application::renderUI() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    float panelWidth = constants::UI_PANEL_WIDTH;
+
     // 1. Control Panel
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(constants::UI_PANEL_WIDTH, ImGui::GetIO().DisplaySize.y), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(panelWidth, ImGui::GetIO().DisplaySize.y), ImGuiCond_Always);
     ImGui::Begin("Clustering Controls", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
@@ -301,9 +302,9 @@ void Application::renderUI() {
     ImGui::End();
 
     // 2. Video Feed Window
-    ImGui::SetNextWindowPos(ImVec2(constants::UI_PANEL_WIDTH, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(panelWidth, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(
-        ImVec2(ImGui::GetIO().DisplaySize.x - constants::UI_PANEL_WIDTH, ImGui::GetIO().DisplaySize.y),
+        ImVec2(ImGui::GetIO().DisplaySize.x - panelWidth, ImGui::GetIO().DisplaySize.y),
         ImGuiCond_Always);
     ImGui::Begin("Video Segmentation Feed", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
@@ -322,9 +323,34 @@ void Application::renderUI() {
         matToTexture(localOriginal, m_originalTexture);
         matToTexture(localSegmented, m_segmentedTexture);
 
+        ImVec2 imgSize(static_cast<float>(localOriginal.cols), static_cast<float>(localOriginal.rows));
+        ImVec2 segSize(static_cast<float>(localSegmented.cols), static_cast<float>(localSegmented.rows));
+
+        float totalWidth = imgSize.x + ImGui::GetStyle().ItemSpacing.x + segSize.x;
+        float offsetX = (ImGui::GetWindowWidth() - totalWidth) * 0.5f;
+        float offsetY = (ImGui::GetWindowHeight() - imgSize.y - ImGui::GetTextLineHeightWithSpacing()) * 0.5f;
+
+        if (offsetX > 0) ImGui::SetCursorPosX(offsetX);
+        if (offsetY > 0) ImGui::SetCursorPosY(offsetY);
+
+        ImVec2 startPos = ImGui::GetCursorScreenPos();
+        ImU32 accentColor = ImGui::GetColorU32(ImVec4(0.60f, 0.40f, 0.90f, 1.00f));
+
+        // Top Border
+        ImGui::GetWindowDrawList()->AddLine(
+            ImVec2(startPos.x, startPos.y - 10.0f),
+            ImVec2(startPos.x + totalWidth, startPos.y - 10.0f),
+            accentColor, 5.0f);
+
+        // Bottom Border
+        float contentHeight = ImGui::GetTextLineHeightWithSpacing() + imgSize.y;
+        ImGui::GetWindowDrawList()->AddLine(
+            ImVec2(startPos.x, startPos.y + contentHeight + 10.0f),
+            ImVec2(startPos.x + totalWidth, startPos.y + contentHeight + 10.0f),
+            accentColor, 5.0f);
+
         ImGui::BeginGroup();
         ImGui::Text("Original Frame");
-        ImVec2 imgSize(static_cast<float>(localOriginal.cols) * 0.8f, static_cast<float>(localOriginal.rows) * 0.8f);
         ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_originalTexture.id)), imgSize, ImVec2(1, 0),
                      ImVec2(0, 1));
         ImGui::EndGroup();
@@ -333,7 +359,6 @@ void Application::renderUI() {
 
         ImGui::BeginGroup();
         ImGui::Text("Clustered Frame");
-        ImVec2 segSize(static_cast<float>(localSegmented.cols) * 0.8f, static_cast<float>(localSegmented.rows) * 0.8f);
         ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_segmentedTexture.id)), segSize, ImVec2(1, 0),
                      ImVec2(0, 1));
         ImGui::EndGroup();
@@ -400,25 +425,55 @@ void Application::renderUI() {
         auto s_lat  = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
 
         if (ImGui::BeginTable("BenchTable", 3, ImGuiTableFlags_None)) {
-            // Calculate dynamic image size to fit columns perfectly
-            float colWidth = ImGui::GetWindowWidth() / 3.0f - 15.0f; // add margin
+            // Calculate dynamic image size to fit columns and scale down for padding
+            float colWidth = ImGui::GetWindowWidth() / 3.0f - 80.0f; // approximate column width
+            const float imgScale = 0.90f; // scale images to 90% of column width
             float ratio = static_cast<float>(m_benchmarkResults->originalFrame.rows) / static_cast<float>(m_benchmarkResults->originalFrame.cols);
-            ImVec2 size(colWidth, colWidth * ratio);
+            float imgW = colWidth * imgScale;
+            float imgH = imgW * ratio;
+            ImVec2 size(imgW, imgH);
 
-            // Row 1: Headers & Images
+            // Row 1: Headers & Images (centered in their columns)
             ImGui::TableNextRow();
-            
+
+            // Column 0
             ImGui::TableSetColumnIndex(0);
-            ImGui::Text("1. Original Frame");
-            ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchOriginalTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
-            
+            {
+                const char* title = "1. Original Frame";
+                float curX = ImGui::GetCursorPosX();
+                float textW = ImGui::CalcTextSize(title).x;
+                ImGui::SetCursorPosX(curX + (colWidth - textW) * 0.5f);
+                ImGui::Text("%s", title);
+
+                ImGui::SetCursorPosX(curX + (colWidth - imgW) * 0.5f);
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchOriginalTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+            }
+
+            // Column 1
             ImGui::TableSetColumnIndex(1);
-            ImGui::Text("2. Classical K-Means");
-            ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchClassicalTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
-            
+            {
+                const char* title = "2. Classical K-Means";
+                float curX = ImGui::GetCursorPosX();
+                float textW = ImGui::CalcTextSize(title).x;
+                ImGui::SetCursorPosX(curX + (colWidth - textW) * 0.5f);
+                ImGui::Text("%s", title);
+
+                ImGui::SetCursorPosX(curX + (colWidth - imgW) * 0.5f);
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchClassicalTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+            }
+
+            // Column 2
             ImGui::TableSetColumnIndex(2);
-            ImGui::Text("3. Quantum K-Means");
-            ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchQuantumTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+            {
+                const char* title = "3. Quantum K-Means";
+                float curX = ImGui::GetCursorPosX();
+                float textW = ImGui::CalcTextSize(title).x;
+                ImGui::SetCursorPosX(curX + (colWidth - textW) * 0.5f);
+                ImGui::Text("%s", title);
+
+                ImGui::SetCursorPosX(curX + (colWidth - imgW) * 0.5f);
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchQuantumTexture.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+            }
 
             // Row 2: Metrics
             ImGui::TableNextRow();
