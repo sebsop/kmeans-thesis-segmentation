@@ -29,19 +29,15 @@ endif()
 # Compiler optimizations (Only applied in Release mode)
 if(MSVC)
     add_compile_options(
-        "$<$<CONFIG:Release>:/O2>"
-        "$<$<CONFIG:Release>:/fp:fast>"
-        "$<$<CONFIG:Release>:/arch:AVX2>"
-        # Suppress warnings and code analysis in external headers
+        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/O2>"
+        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/fp:fast>"
+        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/arch:AVX2>"
+        # Suppress warnings and code analysis in external headers (C++ only)
         "$<$<COMPILE_LANGUAGE:CXX>:/external:W0>"
         "$<$<COMPILE_LANGUAGE:CXX>:/external:anglebrackets>"
         "$<$<COMPILE_LANGUAGE:CXX>:/analyze:external->"
-        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/external:W0>"
-        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/external:anglebrackets>"
-        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/analyze:external->"
-        # Ensure exceptions are enabled for clang-tidy
+        # Ensure exceptions are enabled for clang-tidy (C++ only)
         "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>"
-        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/EHsc>"
     )
 else()
     add_compile_options(
@@ -128,6 +124,21 @@ set_target_properties(kmeans_core PROPERTIES
 )
 
 target_link_libraries(kmeans_core PUBLIC ${OpenCV_LIBS} glfw cppzmq)
+
+# Forward a minimal set of host MSVC flags into nvcc for the CUDA sources of this target.
+# Each host flag is passed as its own `-Xcompiler` entry to avoid nvcc command-line parsing issues
+# that arise when multiple flags are combined/quoted into a single `-Xcompiler` argument.
+if(MSVC)
+    target_compile_options(kmeans_core PRIVATE
+        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/O2>"
+        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/fp:fast>"
+        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/arch:AVX2>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/external:W0>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/external:anglebrackets>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/analyze:external->"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/EHsc>"
+    )
+endif()
 
 # ImGui Library
 add_library(imgui STATIC

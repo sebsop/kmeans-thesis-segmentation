@@ -38,6 +38,22 @@ __global__ void preprocess_features_kernel(const uchar3* __restrict__ frame_data
     }
 }
 
+FullDataPreprocessor::~FullDataPreprocessor() {
+    reset();
+}
+
+void FullDataPreprocessor::reset() {
+    if (m_d_frame_data) {
+        CUDA_CHECK_PREP(cudaFree(m_d_frame_data));
+        m_d_frame_data = nullptr;
+    }
+    if (m_d_samples) {
+        CUDA_CHECK_PREP(cudaFree(m_d_samples));
+        m_d_samples = nullptr;
+    }
+    m_cached_n = 0;
+}
+
 cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
     CV_Assert(frame.type() == CV_8UC3 && frame.isContinuous());
 
@@ -47,27 +63,26 @@ cv::Mat FullDataPreprocessor::prepare(const cv::Mat& frame) {
     float invCols = 1.0f / static_cast<float>(frame.cols);
     float invRows = 1.0f / static_cast<float>(frame.rows);
 
-    uchar3* d_frame_data = nullptr;
-    float* d_samples = nullptr;
+    if (n != m_cached_n) {
+        reset();
+        CUDA_CHECK_PREP(cudaMalloc(&m_d_frame_data, n * sizeof(uchar3)));
+        CUDA_CHECK_PREP(cudaMalloc(&m_d_samples, n * 5 * sizeof(float)));
+        m_cached_n = n;
+    }
 
-    CUDA_CHECK_PREP(cudaMalloc(&d_frame_data, n * sizeof(uchar3)));
-    CUDA_CHECK_PREP(cudaMalloc(&d_samples, n * 5 * sizeof(float)));
-
-    CUDA_CHECK_PREP(cudaMemcpy(d_frame_data, frame.ptr<uchar3>(), n * sizeof(uchar3), cudaMemcpyHostToDevice));
+    CUDA_CHECK_PREP(cudaMemcpy(m_d_frame_data, frame.ptr<uchar3>(), n * sizeof(uchar3), cudaMemcpyHostToDevice));
 
     dim3 blockSize(16, 16);
     dim3 gridSize((frame.cols + blockSize.x - 1) / blockSize.x, (frame.rows + blockSize.y - 1) / blockSize.y);
 
-    preprocess_features_kernel<<<gridSize, blockSize>>>(d_frame_data, d_samples, frame.cols, frame.rows, invCols,
-                                                        invRows, kmeans::constants::COLOR_SCALE,
+    preprocess_features_kernel<<<gridSize, blockSize>>>(static_cast<uchar3*>(m_d_frame_data),
+                                                        static_cast<float*>(m_d_samples), frame.cols, frame.rows,
+                                                        invCols, invRows, kmeans::constants::COLOR_SCALE,
                                                         kmeans::constants::SPATIAL_SCALE);
 
     CUDA_CHECK_PREP(cudaDeviceSynchronize());
 
-    CUDA_CHECK_PREP(cudaMemcpy(samples.ptr<float>(), d_samples, n * 5 * sizeof(float), cudaMemcpyDeviceToHost));
-
-    CUDA_CHECK_PREP(cudaFree(d_frame_data));
-    CUDA_CHECK_PREP(cudaFree(d_samples));
+    CUDA_CHECK_PREP(cudaMemcpy(samples.ptr<float>(), m_d_samples, n * 5 * sizeof(float), cudaMemcpyDeviceToHost));
 
     return samples;
 }

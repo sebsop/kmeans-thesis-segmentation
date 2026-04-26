@@ -207,7 +207,8 @@ std::vector<cv::Vec<float, 5>> QuantumEngine::run(const cv::Mat& samples,
     std::vector<float> h_newSums(k * 5);
     std::vector<int> h_counts(k);
 
-    std::mt19937 gen(std::random_device{}());
+    thread_local static std::random_device rd;
+    thread_local static std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
     for (int iter = 0; iter < 20; ++iter) {
