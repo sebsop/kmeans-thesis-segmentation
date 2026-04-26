@@ -74,7 +74,7 @@ class Application {
         std::vector<cv::Vec<float, 5>> quantumCenters;
     };
 
-    enum class BenchmarkState { IDLE, CAPTURING, COMPUTING, DONE };
+    enum class BenchmarkState { IDLE, CAPTURING, RECOMPUTING, COMPUTING, DONE };
     BenchmarkState m_benchmarkState = BenchmarkState::IDLE;
     std::future<BenchmarkComparisonResult> m_benchmarkFuture;
     std::optional<BenchmarkComparisonResult> m_benchmarkResults;

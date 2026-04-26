@@ -18,6 +18,14 @@
 #include "common/constants.hpp"
 #include "common/enums.hpp"
 
+#ifdef _WIN32
+#include <windows.h>
+#undef min
+#undef max
+#endif
+
+#include <algorithm>
+
 // Windows <GL/gl.h> strictly supports OpenGL 1.1.
 #ifndef GL_CLAMP_TO_EDGE
 constexpr int GL_CLAMP_TO_EDGE = 0x812F;
@@ -37,6 +45,42 @@ Application::~Application() noexcept {
 }
 
 void Application::initWindow() {
+    // If a previous instance is running on Windows, request it to close so
+    // a fresh instance can start (helps "rerun" workflow).
+#ifdef _WIN32
+    {
+        // Look for an existing window by the app title
+        int retries = 0;
+        while (HWND prev = FindWindowA(nullptr, "K-Means Segmentation Thesis - ImGui Dashboard")) {
+            DWORD pid = 0;
+            GetWindowThreadProcessId(prev, &pid);
+            
+            // Protect against killing ourselves if something weird happens
+            if (pid == GetCurrentProcessId()) break;
+
+            if (retries == 0) {
+                // Request graceful shutdown
+                PostMessageA(prev, WM_CLOSE, 0, 0);
+            }
+            
+            Sleep(100); // Wait 100ms
+            retries++;
+
+            // If it takes more than 1 second to close (e.g., worker thread hanging on camera), force kill it.
+            if (retries > 10) {
+                if (pid != 0) {
+                    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+                    if (hProcess != nullptr) {
+                        TerminateProcess(hProcess, 1);
+                        CloseHandle(hProcess);
+                    }
+                }
+                break;
+            }
+        }
+    }
+#endif
+
     if (glfwInit() == 0) {
         std::cerr << "Failed to initialize GLFW. Application cannot start.\n";
         exit(EXIT_FAILURE);
@@ -47,7 +91,7 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    m_window = glfwCreateWindow(1750, 620, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
+    m_window = glfwCreateWindow(1750, 670, "K-Means Segmentation Thesis - ImGui Dashboard", nullptr, nullptr);
     if (m_window == nullptr) {
         std::cerr << "Failed to create window using GLFW.\n";
         glfwTerminate();
@@ -146,10 +190,68 @@ void Application::renderUI() {
     float panelWidth = constants::UI_PANEL_WIDTH;
 
     // 1. Control Panel
+    // Left-aligned control panel: center settings vertically and align to left
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(panelWidth, ImGui::GetIO().DisplaySize.y), ImGuiCond_Always);
+    // Make the titlebar darker for this controls panel only
+    ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.02f, 0.02f, 0.02f, 0.95f));
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.03f, 0.03f, 0.03f, 0.95f));
     ImGui::Begin("Clustering Controls", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    // Ensure content is left aligned
+    ImGui::SetCursorPosX(10.0f);
+
+    // Use native ImGui title bar for this window (visible by not using NoTitleBar).
+
+    // Center the remaining controls vertically inside the content region.
+    // We compute an estimated content height from the known widgets and
+    // insert a vertical offset before rendering them.
+    {
+        ImGuiStyle& style = ImGui::GetStyle();
+        const float textH = ImGui::GetTextLineHeightWithSpacing();
+        const float frameH = ImGui::GetFrameHeightWithSpacing();
+        const float sepH = style.SeparatorSize;
+        const float plotH = 60.0f; // PlotLines height used below
+
+        float contentH = 0.0f;
+        contentH += textH;            // Core Hyperparameters title
+        contentH += frameH * 2.0f;   // 2 sliders
+        contentH += sepH;
+
+        contentH += textH;            // Architecture Strategy title
+        contentH += frameH;          // Stride
+        contentH += frameH;          // Combo
+        contentH += sepH;
+
+        contentH += textH;           // Visualization Overlays title
+        contentH += frameH;          // Checkbox
+        contentH += frameH;          // Reset button
+        contentH += sepH * 2.0f;
+
+        contentH += textH;           // Performance Dashboard title
+        contentH += textH;           // UI Render FPS
+        contentH += plotH;           // PlotLines
+        contentH += sepH;
+
+        contentH += textH;           // Static Benchmarking title
+        contentH += frameH;          // Capture button
+
+        // Add inter-item spacing (approximate)
+        const int gaps = 12; // number of vertical gaps between above items
+        contentH += gaps * style.ItemSpacing.y;
+
+        // Add window padding
+        contentH += style.WindowPadding.y * 2.0f;
+
+        // Use available content region height for centering (excludes title bar).
+        float availH = ImGui::GetContentRegionAvail().y;
+        if (availH <= 0.0f) availH = ImGui::GetWindowHeight() - style.WindowPadding.y * 2.0f;
+
+        float curY = ImGui::GetCursorPosY();
+        float offset = (availH - contentH) * 0.5f;
+        if (offset < 0.0f) offset = 0.0f;
+        ImGui::SetCursorPosY(curY + offset);
+    }
 
     bool configChanged = false;
 
@@ -172,14 +274,6 @@ void Application::renderUI() {
     configChanged |= ImGui::SliderInt("Stride", &pendingConfig.stride, 1, 16);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
-    }
-
-    const char* initializers[] = {"K-Means++", "Random"};
-    int currentInit = (pendingConfig.init == common::InitializationType::KMEANS_PLUSPLUS) ? 0 : 1;
-    if (ImGui::Combo("Initialization", &currentInit, initializers, 2)) {
-        pendingConfig.init =
-            (currentInit == 0) ? common::InitializationType::KMEANS_PLUSPLUS : common::InitializationType::RANDOM;
-        configChanged = true;
     }
 
     const char* engines[] = {"Classical (CPU)", "Quantum"};
@@ -283,7 +377,7 @@ void Application::renderUI() {
             m_benchmarkState = BenchmarkState::CAPTURING;
             m_benchmarkStatusText = "Requesting frame from camera thread...";
         }
-    } else if (m_benchmarkState == BenchmarkState::CAPTURING) {
+    } else if (m_benchmarkState == BenchmarkState::CAPTURING || m_benchmarkState == BenchmarkState::RECOMPUTING) {
         ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "%s", m_benchmarkStatusText.c_str());
     } else if (m_benchmarkState == BenchmarkState::COMPUTING) {
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.9f, 1.0f), "%s", m_benchmarkStatusText.c_str());
@@ -298,6 +392,7 @@ void Application::renderUI() {
     }
 
     ImGui::End();
+    ImGui::PopStyleColor(2); // restore titlebar colors
 
     // 2. Video Feed Window
     ImGui::SetNextWindowPos(ImVec2(panelWidth, 0), ImGuiCond_Always);
@@ -367,7 +462,7 @@ void Application::renderUI() {
     ImGui::End();
 
     // 3. Full Screen Benchmark Overlay
-    if (m_benchmarkState == BenchmarkState::DONE && m_benchmarkResults) {
+    if ((m_benchmarkState == BenchmarkState::DONE || m_benchmarkState == BenchmarkState::COMPUTING || m_benchmarkState == BenchmarkState::RECOMPUTING) && m_benchmarkResults) {
         if (!m_benchTexturesLoaded) {
             auto drawCentroids = [](cv::Mat& img, const std::vector<cv::Vec<float, 5>>& centers) {
                 for (const auto& c : centers) {
@@ -522,13 +617,97 @@ void Application::renderUI() {
         }
         ImGui::Separator();
         
-        float btnWidth = 300.0f;
-        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - btnWidth) * 0.5f);
+
+
+        float btnWidth = 250.0f;
+        float rerunWidth = 150.0f;
+        float buttonsTotalWidth = btnWidth + 20.0f + rerunWidth;
+
+        // --- Row 1: Buttons ---
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - buttonsTotalWidth) * 0.5f);
+        
         if (ImGui::Button("Resume Live Feed", ImVec2(btnWidth, 40))) {
             m_benchmarkState = BenchmarkState::IDLE;
             m_benchmarkResults.reset();
         }
         
+        ImGui::SameLine(0, 20.0f);
+        if (ImGui::Button("Rerun Frame", ImVec2(rerunWidth, 40))) {
+            m_benchmarkState = BenchmarkState::RECOMPUTING;
+        }
+
+        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+
+        // --- Row 2: Sliders and Toggles ---
+        int tempK, tempStride;
+        common::InitializationType currentInitType;
+        {
+            std::scoped_lock<std::mutex> lock(m_configMutex);
+            tempK = m_uiConfig.k;
+            tempStride = m_uiConfig.stride;
+            currentInitType = m_uiConfig.init;
+        }
+
+        float kSliderWidth = 120.0f;
+        float strideSliderWidth = 100.0f;
+        float radioW = 260.0f; 
+        
+        float kTextW = ImGui::CalcTextSize("K: ").x;
+        float strideTextW = ImGui::CalcTextSize("Stride: ").x;
+        
+        float row2Width = kTextW + kSliderWidth + 30.0f + 
+                          strideTextW + strideSliderWidth + 30.0f + 
+                          radioW;
+
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - row2Width) * 0.5f);
+        ImGui::AlignTextToFramePadding();
+
+        // K Slider
+        ImGui::Text("K:"); ImGui::SameLine();
+        ImGui::SetNextItemWidth(kSliderWidth);
+        
+        static bool s_needsRecompute = false;
+
+        if (ImGui::SliderInt("##benchK", &tempK, constants::K_MIN, constants::K_MAX)) {
+            std::scoped_lock<std::mutex> lock(m_configMutex);
+            m_uiConfig.k = tempK;
+            s_needsRecompute = true;
+        }
+        
+        ImGui::SameLine(0, 30.0f);
+
+        // Stride Slider
+        ImGui::Text("Stride:"); ImGui::SameLine();
+        ImGui::SetNextItemWidth(strideSliderWidth);
+        if (ImGui::SliderInt("##benchStride", &tempStride, 1, 16)) {
+            std::scoped_lock<std::mutex> lock(m_configMutex);
+            m_uiConfig.stride = tempStride;
+            s_needsRecompute = true;
+        }
+
+        ImGui::SameLine(0, 30.0f);
+
+        // Radio Buttons
+        int currentInit = (currentInitType == common::InitializationType::KMEANS_PLUSPLUS) ? 0 : 1;
+        int oldInit = currentInit; // remember previous selection so we only trigger recompute on change
+        ImGui::Text("Init Strategy:"); ImGui::SameLine();
+        ImGui::RadioButton("K-Means++", &currentInit, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Random", &currentInit, 1);
+
+        // If the user changed the selection, apply it and request a recompute.
+        if (currentInit != oldInit) {
+            std::scoped_lock<std::mutex> lock(m_configMutex);
+            m_uiConfig.init = (currentInit == 0) ? common::InitializationType::KMEANS_PLUSPLUS
+                                                 : common::InitializationType::RANDOM;
+            s_needsRecompute = true;
+        }
+
+        if (s_needsRecompute && m_benchmarkState == BenchmarkState::DONE) {
+            m_benchmarkState = BenchmarkState::RECOMPUTING;
+            s_needsRecompute = false;
+        }
+
         ImGui::End();
     }
 
@@ -571,10 +750,16 @@ void Application::run() {
                 continue;
             }
 
-            if (m_benchmarkState == BenchmarkState::CAPTURING) {
+            if (m_benchmarkState == BenchmarkState::CAPTURING || m_benchmarkState == BenchmarkState::RECOMPUTING) {
+                bool isRecomputing = (m_benchmarkState == BenchmarkState::RECOMPUTING);
                 m_benchmarkState = BenchmarkState::COMPUTING;
                 m_benchmarkStatusText = "Extracting frame and running dual-engine comparison...";
-                cv::Mat benchFrame = frame.clone();
+                cv::Mat benchFrame;
+                if (isRecomputing && m_benchmarkResults.has_value()) {
+                    benchFrame = m_benchmarkResults->originalFrame.clone();
+                } else {
+                    benchFrame = frame.clone();
+                }
                 common::SegmentationConfig benchConfig;
                 {
                     std::scoped_lock<std::mutex> lock(m_configMutex);
