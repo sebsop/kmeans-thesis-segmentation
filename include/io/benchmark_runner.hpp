@@ -16,13 +16,13 @@ namespace kmeans::io {
 enum class BenchmarkState { IDLE, CAPTURING, RECOMPUTING, COMPUTING, DONE };
 
 struct BenchmarkComparisonResult {
-    cv::Mat originalFrame;
-    cv::Mat classicalSegmented;
-    cv::Mat quantumSegmented;
+    cv::Mat originalFrame{};
+    cv::Mat classicalSegmented{};
+    cv::Mat quantumSegmented{};
     clustering::metrics::BenchmarkResults classicalMetrics{};
     clustering::metrics::BenchmarkResults quantumMetrics{};
-    std::vector<cv::Vec<float, 5>> classicalCenters;
-    std::vector<cv::Vec<float, 5>> quantumCenters;
+    std::vector<cv::Vec<float, 5>> classicalCenters{};
+    std::vector<cv::Vec<float, 5>> quantumCenters{};
 };
 
 /**

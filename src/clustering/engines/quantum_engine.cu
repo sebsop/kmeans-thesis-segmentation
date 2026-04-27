@@ -51,44 +51,6 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     }
 }
 
-__global__ static void quantumUpdateKernel(const float* __restrict__ samples, int numPoints,
-                                           const int* __restrict__ labels, int k, float* __restrict__ newSums,
-                                           int* __restrict__ counts) {
-    extern __shared__ float s_mem[];
-    float* s_sums = s_mem;
-    int* s_counts = (int*)&s_mem[k * 5];
-
-    int tid = threadIdx.x;
-    int total_elements = k * 5 + k;
-    if (tid < total_elements) {
-        s_mem[tid] = 0.0f;
-    }
-    __syncthreads();
-
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < numPoints) {
-        int cluster = labels[idx];
-        if (cluster >= 0 && cluster < k) {
-            atomicAdd(&s_counts[cluster], 1);
-#pragma unroll
-            for (int d = 0; d < 5; ++d) {
-                atomicAdd(&s_sums[cluster * 5 + d], samples[idx * 5 + d]);
-            }
-        }
-    }
-    __syncthreads();
-
-    if (tid < k) {
-        if (s_counts[tid] > 0) {
-            atomicAdd(&counts[tid], s_counts[tid]);
-#pragma unroll
-            for (int d = 0; d < 5; ++d) {
-                atomicAdd(&newSums[tid * 5 + d], s_sums[tid * 5 + d]);
-            }
-        }
-    }
-}
-
 void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, 5>>& initialCenters, const cv::Mat& samples) {
     float min_vals[5] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
                          std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
@@ -135,12 +97,6 @@ void QuantumEngine::launchAssignKernel(float* d_samples, int numPoints, float* d
                                        int* d_labels, int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
     quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(
         d_samples, numPoints, d_centers, k, d_labels, d_changed, m_scaleFactor);
-}
-
-void QuantumEngine::launchUpdateKernel(float* d_samples, int numPoints, int k,
-                                       int* d_labels, float* d_newSums, int* d_counts, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
-    quantumUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(
-        d_samples, numPoints, d_labels, k, d_newSums, d_counts);
 }
 
 } // namespace kmeans::clustering

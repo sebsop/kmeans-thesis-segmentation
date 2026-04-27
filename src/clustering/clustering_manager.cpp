@@ -2,7 +2,10 @@
 
 #include <opencv2/core.hpp>
 
+#include "backend/cuda_assignment_context.hpp"
 #include "clustering/clustering_factory.hpp"
+#include "clustering/engines/kmeans_engine.hpp"
+#include "clustering/initializers/initializer.hpp"
 #include "clustering/preprocessor/strided_data_preprocessor.hpp"
 #include "common/config.hpp"
 #include "common/constants.hpp"
@@ -12,6 +15,15 @@ namespace kmeans::clustering {
 
 ClusteringManager::ClusteringManager() {
     updateStategyImplementations();
+}
+
+ClusteringManager::~ClusteringManager() = default;
+
+void ClusteringManager::resetCenters() {
+    m_hasPrevious = false;
+    if (m_dataPreprocessor) {
+        m_dataPreprocessor->reset();
+    }
 }
 
 void ClusteringManager::updateStategyImplementations() {

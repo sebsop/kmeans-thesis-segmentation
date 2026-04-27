@@ -16,18 +16,18 @@ namespace kmeans::clustering {
  */
 class BaseKMeansEngine : public KMeansEngine {
   protected:
-    float* d_samples = nullptr;
-    float* d_centers = nullptr;
-    int* d_labels = nullptr;
-    float* d_newSums = nullptr;
-    int* d_counts = nullptr;
-    int* d_changed = nullptr;
+    float* m_d_samples = nullptr;
+    float* m_d_centers = nullptr;
+    int* m_d_labels = nullptr;
+    float* m_d_newSums = nullptr;
+    int* m_d_counts = nullptr;
+    int* m_d_changed = nullptr;
     size_t m_maxPoints = 0;
     int m_maxK = 0;
 
   public:
     BaseKMeansEngine() = default;
-    virtual ~BaseKMeansEngine();
+    ~BaseKMeansEngine() override;
 
     [[nodiscard]] std::vector<cv::Vec<float, 5>> run(const cv::Mat& samples,
                                                      const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
@@ -58,10 +58,11 @@ class BaseKMeansEngine : public KMeansEngine {
                                     int* d_lab, int* d_chg, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) = 0;
 
     /**
-     * @brief Hook to launch the update kernel.
+     * @brief The core update kernel used by both Classical and Quantum engines.
+     * Computes the new sums and counts for each cluster based on assigned labels.
      */
-    virtual void launchUpdateKernel(float* d_samp, int numPoints, int k,
-                                    int* d_lab, float* d_nSums, int* d_cnts, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) = 0;
+    void baseUpdateKernel(float* d_samp, int numPoints, int k,
+                          int* d_lab, float* d_nSums, int* d_cnts, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const;
 };
 
 } // namespace kmeans::clustering

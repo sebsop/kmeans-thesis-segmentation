@@ -1,6 +1,7 @@
 #include "io/benchmark_runner.hpp"
 
 #include "clustering/clustering_manager.hpp"
+#include "clustering/engines/kmeans_engine.hpp"
 #include "common/constants.hpp"
 #include <opencv2/imgproc.hpp>
 

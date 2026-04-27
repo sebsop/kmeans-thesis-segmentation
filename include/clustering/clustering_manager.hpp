@@ -5,13 +5,16 @@
 
 #include <opencv2/core.hpp>
 
-#include "backend/cuda_assignment_context.hpp"
-#include "clustering/engines/kmeans_engine.hpp"
-#include "clustering/initializers/initializer.hpp"
-#include "clustering/preprocessor/strided_data_preprocessor.hpp"
 #include "common/config.hpp"
 
+namespace kmeans::backend {
+class CudaAssignmentContext;
+}
+
 namespace kmeans::clustering {
+class KMeansEngine;
+class Initializer;
+class StridedDataPreprocessor;
 
 /**
  * @brief Strategy Context and Manager class.
@@ -41,7 +44,7 @@ class ClusteringManager {
 
   public:
     ClusteringManager();
-    ~ClusteringManager() = default;
+    ~ClusteringManager();
 
     [[nodiscard]] common::SegmentationConfig& getConfig() noexcept { return m_config; }
     [[nodiscard]] const common::SegmentationConfig& getConfig() const noexcept { return m_config; }
@@ -54,12 +57,7 @@ class ClusteringManager {
     void updateStategyImplementations();
 
     /** @brief Resets the clustering state, clearing previous centers and caches. */
-    void resetCenters() {
-        m_hasPrevious = false;
-        if (m_dataPreprocessor) {
-            m_dataPreprocessor->reset();
-        }
-    }
+    void resetCenters();
 
     /** @brief Forces the engine to use a specific set of initial centroids (bypasses initializer). */
     void setInitialCenters(const std::vector<cv::Vec<float, 5>>& centers) {

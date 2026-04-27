@@ -14,13 +14,13 @@ class CudaAssignmentContext {
     int m_height;
     int m_k;
     cudaStream_t m_stream;
-    unsigned char* d_input = nullptr;
-    unsigned char* d_output = nullptr;
-    float* d_centers = nullptr;
+    unsigned char* m_d_input = nullptr;
+    unsigned char* m_d_output = nullptr;
+    float* m_d_centers = nullptr;
 
-    unsigned char* h_input_pinned = nullptr;
-    unsigned char* h_output_pinned = nullptr;
-    float* h_centers_pinned = nullptr;
+    unsigned char* m_h_input_pinned = nullptr;
+    unsigned char* m_h_output_pinned = nullptr;
+    float* m_h_centers_pinned = nullptr;
 
     size_t m_imgSize;
     size_t m_centersSize;
