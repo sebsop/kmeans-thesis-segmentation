@@ -93,4 +93,21 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& 
     return m_previousCenters;
 }
 
+std::vector<cv::Vec<float, 5>> ClusteringManager::generateInitialCenters(const cv::Mat& frame) {
+    updateStategyImplementations();
+    
+    cv::Mat cpuSamples;
+    if (auto* sdp = dynamic_cast<StridedDataPreprocessor*>(m_dataPreprocessor.get())) {
+        int dummyPoints = 0;
+        // Call prepareDevice to upload and pre-process data according to stride
+        sdp->prepareDevice(frame, m_config.stride, dummyPoints);
+        // Initializer needs CPU samples
+        cpuSamples = sdp->download();
+    } else {
+        cpuSamples = m_dataPreprocessor->prepare(frame);
+    }
+    
+    return m_initializer->initialize(cpuSamples, m_config.k);
+}
+
 } // namespace kmeans::clustering

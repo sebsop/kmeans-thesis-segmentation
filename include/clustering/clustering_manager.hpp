@@ -61,6 +61,15 @@ class ClusteringManager {
         }
     }
 
+    /** @brief Forces the engine to use a specific set of initial centroids (bypasses initializer). */
+    void setInitialCenters(const std::vector<cv::Vec<float, 5>>& centers) {
+        m_previousCenters = centers;
+        m_hasPrevious = true;
+    }
+
+    /** @brief Generates initial centroids using the currently configured initializer without running K-Means. */
+    std::vector<cv::Vec<float, 5>> generateInitialCenters(const cv::Mat& frame);
+
     /** @brief Segments a single frame using the current clustering configuration. */
     [[nodiscard]] cv::Mat segmentFrame(const cv::Mat& frame);
     [[nodiscard]] std::vector<cv::Vec<float, 5>> computeCenters(const cv::Mat& frame);
