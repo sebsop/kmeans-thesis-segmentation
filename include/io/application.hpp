@@ -68,8 +68,8 @@ class Application {
         cv::Mat originalFrame;
         cv::Mat classicalSegmented;
         cv::Mat quantumSegmented;
-        clustering::metrics::BenchmarkResults classicalMetrics;
-        clustering::metrics::BenchmarkResults quantumMetrics;
+        clustering::metrics::BenchmarkResults classicalMetrics{};
+        clustering::metrics::BenchmarkResults quantumMetrics{};
         std::vector<cv::Vec<float, 5>> classicalCenters;
         std::vector<cv::Vec<float, 5>> quantumCenters;
     };
@@ -86,7 +86,7 @@ class Application {
     bool m_benchTexturesLoaded = false;
 
     // UI Theming
-    void applyPremiumTheme();
+    static void applyPremiumTheme();
 
     void initWindow();
     void initImGui();

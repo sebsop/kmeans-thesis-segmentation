@@ -32,7 +32,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
     std::vector<int> clusterCounts(k, 0);
 
     for (int i = 0; i < numPoints; ++i) {
-        const float* p = samples.ptr<float>(i);
+        const auto* p = samples.ptr<float>(i);
         float minDistSq = 1e30f;
         int bestK = 0;
         for (int j = 0; j < k; ++j) {
@@ -59,8 +59,9 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
     for (int i = 0; i < k; ++i) {
         float maxR = 0.0f;
         for (int j = 0; j < k; ++j) {
-            if (i == j)
+            if (i == j) {
                 continue;
+            }
             float dCenter = 0.0f;
             for (int d = 0; d < 5; ++d) {
                 float diff = centers[i][d] - centers[j][d];
@@ -68,9 +69,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
             }
             dCenter = std::sqrt(dCenter);
             if (dCenter > 1e-6f) {
-                float r = (intraClusterScatter[i] + intraClusterScatter[j]) / dCenter;
-                if (r > maxR)
-                    maxR = r;
+                float r = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxR);
             }
         }
         daviesBouldin += maxR;
@@ -91,12 +90,13 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
 
     for (int idx1 = 0; idx1 < subsetSize; ++idx1) {
         int i = indices[idx1];
-        const float* p = samples.ptr<float>(i);
+        const auto* p = samples.ptr<float>(i);
         int myK = labels[i];
 
         // Skip if this cluster only has 1 point (silhouette is undefined/0)
-        if (clusterCounts[myK] <= 1)
+        if (clusterCounts[myK] <= 1) {
             continue;
+        }
 
         float a = 0.0f;
         int aCount = 0;
@@ -106,10 +106,11 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
         // Compare against the next `subsetSize` points (or wrap around)
         for (int idx2 = 0; idx2 < subsetSize; ++idx2) {
             int j = indices[(idx1 + idx2 + 1) % numPoints];
-            if (i == j)
+            if (i == j) {
                 continue;
+            }
 
-            const float* p2 = samples.ptr<float>(j);
+            const auto* p2 = samples.ptr<float>(j);
             float d = 0.0f;
             for (int dim = 0; dim < 5; ++dim) {
                 float diff = p[dim] - p2[dim];
@@ -131,12 +132,11 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
 
         float b = 1e30f;
         for (int j = 0; j < k; ++j) {
-            if (j == myK)
+            if (j == myK) {
                 continue;
+            }
             if (bCount[j] > 0) {
-                float avgB = bDistSum[j] / static_cast<float>(bCount[j]);
-                if (avgB < b)
-                    b = avgB;
+                float avgB = std::min(bDistSum[j] / static_cast<float>(bCount[j]), b);
             }
         }
 

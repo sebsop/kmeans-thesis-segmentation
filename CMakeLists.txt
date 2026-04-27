@@ -109,7 +109,7 @@ set_source_files_properties(src/backend/cuda_kernels.cu PROPERTIES LANGUAGE CUDA
 set_source_files_properties(src/clustering/engines/classical_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/engines/quantum_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/initializers/kmeans_plus_plus_initializer.cu PROPERTIES LANGUAGE CUDA)
-set_source_files_properties(src/clustering/preprocessor/full_data_preprocessor.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/clustering/preprocessor/strided_data_preprocessor.cu PROPERTIES LANGUAGE CUDA)
 
 set_target_properties(kmeans_core PROPERTIES
     CXX_STANDARD 17

@@ -57,8 +57,9 @@ void Application::initWindow() {
             GetWindowThreadProcessId(prev, &pid);
 
             // Protect against killing ourselves if something weird happens
-            if (pid == GetCurrentProcessId())
+            if (pid == GetCurrentProcessId()) {
                 break;
+            }
 
             if (retries == 0) {
                 // Request graceful shutdown
@@ -104,7 +105,7 @@ void Application::initWindow() {
 #ifdef _WIN32
     // Dynamically resolve the absolute path to the icon to avoid working directory issues
     char exePath[MAX_PATH];
-    GetModuleFileNameA(NULL, exePath, MAX_PATH);
+    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
     std::string path(exePath);
     std::string iconPath = "assets/icon.ico"; // Fallback to relative
 
@@ -119,19 +120,20 @@ void Application::initWindow() {
                 break;
             }
             size_t slash = dir.find_last_of("\\/");
-            if (slash == std::string::npos)
+            if (slash == std::string::npos) {
                 break;
+            }
             dir = dir.substr(0, slash);
         }
     }
 
     // Set taskbar and window icon natively from .ico file
     HWND hwnd = glfwGetWin32Window(m_window);
-    HICON hIcon =
-        (HICON)LoadImageA(NULL, iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
-    if (hIcon) {
-        SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-        SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    auto* hIcon = reinterpret_cast<HICON>(
+        LoadImageA(nullptr, iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED));
+    if ((bool)hIcon) {
+        SendMessage(hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
+        SendMessage(hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(hIcon));
     } else {
         std::cerr << "Warning: Could not load " << iconPath << " for window icon.\n";
     }
@@ -281,13 +283,12 @@ void Application::renderUI() {
 
         // Use available content region height for centering (excludes title bar).
         float availH = ImGui::GetContentRegionAvail().y;
-        if (availH <= 0.0f)
+        if (availH <= 0.0f) {
             availH = ImGui::GetWindowHeight() - style.WindowPadding.y * 2.0f;
+        }
 
         float curY = ImGui::GetCursorPosY();
-        float offset = (availH - contentH) * 0.5f;
-        if (offset < 0.0f)
-            offset = 0.0f;
+        float offset = std::max((availH - contentH) * 0.5f, 0.0f);
         ImGui::SetCursorPosY(curY + offset);
     }
 
@@ -397,8 +398,8 @@ void Application::renderUI() {
         int window = 15;
         for (int i = 0; i < static_cast<int>(algoFpsHistory.size()); ++i) {
             float m = 0;
-            int start = std::max(0, i - window / 2);
-            int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + window / 2);
+            int start = std::max(0, i - (window / 2));
+            int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + (window / 2));
             for (int j = start; j <= end; ++j) {
                 m = std::max(m, algoFpsHistory[j]);
             }
@@ -461,10 +462,12 @@ void Application::renderUI() {
         float offsetX = (ImGui::GetWindowWidth() - totalWidth) * 0.5f;
         float offsetY = (ImGui::GetWindowHeight() - imgSize.y - ImGui::GetTextLineHeightWithSpacing()) * 0.5f;
 
-        if (offsetX > 0)
+        if (offsetX > 0) {
             ImGui::SetCursorPosX(offsetX);
-        if (offsetY > 0)
+        }
+        if (offsetY > 0) {
             ImGui::SetCursorPosY(offsetY);
+        }
 
         ImVec2 startPos = ImGui::GetCursorScreenPos();
         ImU32 accentColor = ImGui::GetColorU32(ImVec4(0.60f, 0.40f, 0.90f, 1.00f));
@@ -538,7 +541,8 @@ void Application::renderUI() {
         };
         auto getStyle = [](float v1, float v2, bool lowerIsBetter, bool isInt = false) -> MetricStyle {
             MetricStyle s;
-            char b1[64], b2[64];
+            char b1[64];
+            char b2[64];
             if (isInt) {
                 snprintf(b1, sizeof(b1), "%d", (int)v1);
                 snprintf(b2, sizeof(b2), "%d", (int)v2);
@@ -561,10 +565,11 @@ void Application::renderUI() {
                 float pct = std::abs(worse) > 1e-5f ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
                 char pb[32];
                 snprintf(pb, sizeof(pb), " (%.1f%% better)", pct);
-                if (v1Better)
+                if (v1Better) {
                     s.t1 += pb;
-                else
+                } else {
                     s.t2 += pb;
+                }
             }
             return s;
         };
@@ -574,7 +579,7 @@ void Application::renderUI() {
         auto s_wcss = getStyle(cm.wcss, qm.wcss, true);
         auto s_db = getStyle(cm.daviesBouldin, qm.daviesBouldin, true);
         auto s_sil = getStyle(cm.silhouetteScore, qm.silhouetteScore, false);
-        auto s_iter = getStyle(cm.iterations, qm.iterations, true, true);
+        auto s_iter = getStyle(static_cast<float>(cm.iterations), static_cast<float>(qm.iterations), true, true);
         auto s_lat = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
 
         if (ImGui::BeginTable("BenchTable", 3, ImGuiTableFlags_None)) {
@@ -610,10 +615,10 @@ void Application::renderUI() {
                 const char* title = "1. Original Frame";
                 float curX = ImGui::GetCursorPosX();
                 float textW = ImGui::CalcTextSize(title).x;
-                ImGui::SetCursorPosX(curX + (col0w - textW) * 0.5f);
+                ImGui::SetCursorPosX(curX + ((col0w - textW) * 0.5f));
                 ImGui::Text("%s", title);
 
-                ImGui::SetCursorPosX(curX + (col0w - imgW0) * 0.5f);
+                ImGui::SetCursorPosX(curX + ((col0w - imgW0) * 0.5f));
                 ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchOriginalTexture.id)), size0,
                              ImVec2(1, 0), ImVec2(0, 1));
             }
@@ -624,10 +629,10 @@ void Application::renderUI() {
                 const char* title = "2. Classical K-Means";
                 float curX = ImGui::GetCursorPosX();
                 float textW = ImGui::CalcTextSize(title).x;
-                ImGui::SetCursorPosX(curX + (col1w - textW) * 0.5f);
+                ImGui::SetCursorPosX(curX + ((col1w - textW) * 0.5f));
                 ImGui::Text("%s", title);
 
-                ImGui::SetCursorPosX(curX + (col1w - imgW1) * 0.5f);
+                ImGui::SetCursorPosX(curX + ((col1w - imgW1) * 0.5f));
                 ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchClassicalTexture.id)), size1,
                              ImVec2(1, 0), ImVec2(0, 1));
             }
@@ -638,10 +643,10 @@ void Application::renderUI() {
                 const char* title = "3. Quantum K-Means";
                 float curX = ImGui::GetCursorPosX();
                 float textW = ImGui::CalcTextSize(title).x;
-                ImGui::SetCursorPosX(curX + (col2w - textW) * 0.5f);
+                ImGui::SetCursorPosX(curX + ((col2w - textW) * 0.5f));
                 ImGui::Text("%s", title);
 
-                ImGui::SetCursorPosX(curX + (col2w - imgW2) * 0.5f);
+                ImGui::SetCursorPosX(curX + ((col2w - imgW2) * 0.5f));
                 ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(m_benchQuantumTexture.id)), size2,
                              ImVec2(1, 0), ImVec2(0, 1));
             }
@@ -699,7 +704,8 @@ void Application::renderUI() {
         ImGui::Dummy(ImVec2(0.0f, 10.0f));
 
         // --- Row 2: Sliders and Toggles ---
-        int tempK, tempStride;
+        int tempK = 0;
+        int tempStride = 0;
         common::InitializationType currentInitType;
         {
             std::scoped_lock<std::mutex> lock(m_configMutex);
@@ -869,8 +875,8 @@ void Application::run() {
                         for (int y = 0; y < smallFrame.rows; ++y) {
                             for (int x = 0; x < smallFrame.cols; ++x) {
                                 cv::Vec3b px = smallFrame.at<cv::Vec3b>(y, x);
-                                int idx = y * smallFrame.cols + x;
-                                float* ptr = samples.ptr<float>(idx);
+                                int idx = (y * smallFrame.cols) + x;
+                                auto* ptr = samples.ptr<float>(idx);
                                 ptr[0] = static_cast<float>(px[0]) * colorScale;
                                 ptr[1] = static_cast<float>(px[1]) * colorScale;
                                 ptr[2] = static_cast<float>(px[2]) * colorScale;
