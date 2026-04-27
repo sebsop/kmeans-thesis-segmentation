@@ -1,20 +1,21 @@
 #include "io/application.hpp"
 
 #include <chrono>
-#include <iostream>
-#include <stdexcept>
-
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <iostream>
+#include <stdexcept>
+
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
 // Platform specific includes for icon loading
 #if defined(_WIN32)
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
 #include <windows.h>
+
+#include <GLFW/glfw3native.h>
 #endif
 
 #include "common/constants.hpp"
@@ -56,7 +57,8 @@ void Application::initWindow() {
                                "../../../assets/icon.ico"};
 
     for (const char* path : iconPaths) {
-        hIcon = reinterpret_cast<HICON>(LoadImageA(hInstance, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE));
+        hIcon =
+            reinterpret_cast<HICON>(LoadImageA(hInstance, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE));
         if (hIcon)
             break;
     }
@@ -201,7 +203,9 @@ void Application::run() {
             continue;
         }
 
-        UIDataContext ctx{m_latestOriginal, m_latestSegmented, m_uiConfig, m_configMutex, m_showCentroids, m_forceReset, m_currentWorkerFps, m_currentAlgoTimeMs, m_processedFrames, m_benchmarkRunner};
+        UIDataContext ctx{m_latestOriginal,  m_latestSegmented, m_uiConfig,         m_configMutex,
+                          m_showCentroids,   m_forceReset,      m_currentWorkerFps, m_currentAlgoTimeMs,
+                          m_processedFrames, m_benchmarkRunner};
 
         m_uiManager.render(ctx);
 
@@ -212,7 +216,7 @@ void Application::run() {
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        
+
         glfwSwapBuffers(m_window);
     }
 }

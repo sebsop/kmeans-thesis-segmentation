@@ -5,8 +5,8 @@
 #include <mutex>
 #include <vector>
 
-#include <opencv2/core.hpp>
 #include <GLFW/glfw3.h>
+#include <opencv2/core.hpp>
 
 #include "common/config.hpp"
 #include "io/benchmark_runner.hpp"
@@ -41,10 +41,10 @@ struct UIDataContext {
 
 // Forward declare the UI components (to avoid huge include trees)
 namespace ui {
-    class ControlPanelUI;
-    class VideoFeedUI;
-    class BenchmarkOverlayUI;
-}
+class ControlPanelUI;
+class VideoFeedUI;
+class BenchmarkOverlayUI;
+} // namespace ui
 
 class UIManager {
   private:
@@ -65,7 +65,7 @@ class UIManager {
     ~UIManager();
 
     static void applyPremiumTheme();
-    
+
     /**
      * @brief Renders the complete ImGui interface using the provided context.
      */

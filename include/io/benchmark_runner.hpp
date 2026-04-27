@@ -27,7 +27,7 @@ struct BenchmarkComparisonResult {
 
 /**
  * @brief Manages the execution and state of side-by-side clustering benchmarks.
- * 
+ *
  * Uses std::async to offload the heavy benchmark computations from the UI and camera threads.
  */
 class BenchmarkRunner {

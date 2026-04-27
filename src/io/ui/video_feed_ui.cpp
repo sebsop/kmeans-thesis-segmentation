@@ -4,8 +4,8 @@
 
 namespace kmeans::io::ui {
 
-void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& originalTex, TextureResource& segmentedTex,
-                         void (*matToTexFunc)(const cv::Mat&, TextureResource&)) {
+void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& originalTex,
+                         TextureResource& segmentedTex, void (*matToTexFunc)(const cv::Mat&, TextureResource&)) {
     ImGui::SetNextWindowPos(ImVec2(panelWidth, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x - panelWidth, ImGui::GetIO().DisplaySize.y),
                              ImGuiCond_Always);
@@ -43,14 +43,16 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
 
         ImGui::BeginGroup();
         ImGui::Text("Original Frame");
-        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(originalTex.id)), imgSize, ImVec2(1, 0), ImVec2(0, 1));
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(originalTex.id)), imgSize, ImVec2(1, 0),
+                     ImVec2(0, 1));
         ImGui::EndGroup();
 
         ImGui::SameLine();
 
         ImGui::BeginGroup();
         ImGui::Text("Clustered Frame");
-        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(segmentedTex.id)), segSize, ImVec2(1, 0), ImVec2(0, 1));
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(segmentedTex.id)), segSize, ImVec2(1, 0),
+                     ImVec2(0, 1));
         ImGui::EndGroup();
     } else {
         ImGui::Text("Warming up camera thread...");

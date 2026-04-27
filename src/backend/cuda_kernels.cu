@@ -82,7 +82,8 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
     float x01 = static_cast<float>(c) / static_cast<float>(width);
     float y01 = static_cast<float>(r) / static_cast<float>(height);
 
-    float f[5] = {static_cast<float>(input[offset + 0]) * color_scale, static_cast<float>(input[offset + 1]) * color_scale,
+    float f[5] = {static_cast<float>(input[offset + 0]) * color_scale,
+                  static_cast<float>(input[offset + 1]) * color_scale,
                   static_cast<float>(input[offset + 2]) * color_scale, x01 * spatial_scale, y01 * spatial_scale};
 
     int bestIdx = 0;

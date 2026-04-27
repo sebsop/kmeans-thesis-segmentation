@@ -45,10 +45,10 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     }
 }
 
-void ClassicalEngine::launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k,
-                                         int* d_labels, int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
-    classicalAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(
-        d_samples, numPoints, d_centers, k, d_labels, d_changed);
+void ClassicalEngine::launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,
+                                         int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
+    classicalAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samples, numPoints, d_centers, k, d_labels,
+                                                                          d_changed);
 }
 
 } // namespace kmeans::clustering

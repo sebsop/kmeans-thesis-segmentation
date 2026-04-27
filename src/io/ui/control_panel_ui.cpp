@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <deque>
-
 #include <imgui.h>
 
 #include "common/constants.hpp"
@@ -68,7 +67,8 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     configChanged |= ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
                                       constants::LEARN_INTERVAL_MIN, constants::LEARN_INTERVAL_MAX);
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
+        ImGui::SetTooltip(
+            "How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
     }
 
     ImGui::Separator();
@@ -77,13 +77,15 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
     configChanged |= ImGui::SliderInt("Stride", &pendingConfig.stride, 1, 16);
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
+        ImGui::SetTooltip(
+            "Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
     }
 
     const char* engines[] = {"Classical (CPU)", "Quantum"};
     int currentEngine = (pendingConfig.algorithm == common::AlgorithmType::KMEANS_REGULAR) ? 0 : 1;
     if (ImGui::Combo("Execution Engine", &currentEngine, engines, 2)) {
-        pendingConfig.algorithm = (currentEngine == 0) ? common::AlgorithmType::KMEANS_REGULAR : common::AlgorithmType::KMEANS_QUANTUM;
+        pendingConfig.algorithm =
+            (currentEngine == 0) ? common::AlgorithmType::KMEANS_REGULAR : common::AlgorithmType::KMEANS_QUANTUM;
         configChanged = true;
     }
 
@@ -172,7 +174,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
     ImGui::Separator();
     ImGui::Text("Static Benchmarking");
-    
+
     auto bState = ctx.benchmarkRunner.getState();
     if (bState == BenchmarkState::IDLE) {
         if (ImGui::Button("Capture & Run Comparison", ImVec2(-1, 30))) {

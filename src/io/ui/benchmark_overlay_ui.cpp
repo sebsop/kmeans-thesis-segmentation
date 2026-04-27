@@ -1,29 +1,32 @@
 #include "io/ui/benchmark_overlay_ui.hpp"
 
 #include <cmath>
+#include <imgui.h>
 #include <string>
 #include <vector>
 
-#include <imgui.h>
 #include <opencv2/imgproc.hpp>
 
 #include "common/constants.hpp"
 
 namespace kmeans::io::ui {
 
-void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOriginalTex, TextureResource& benchClassicalTex,
-                                TextureResource& benchQuantumTex, bool& benchTexturesLoaded,
-                                void (*matToTexFunc)(const cv::Mat&, TextureResource&)) {
+void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOriginalTex,
+                                TextureResource& benchClassicalTex, TextureResource& benchQuantumTex,
+                                bool& benchTexturesLoaded, void (*matToTexFunc)(const cv::Mat&, TextureResource&)) {
     auto bState = ctx.benchmarkRunner.getState();
     auto& bResults = ctx.benchmarkRunner.getResults();
 
-    if ((bState == BenchmarkState::DONE || bState == BenchmarkState::COMPUTING || bState == BenchmarkState::RECOMPUTING) && bResults) {
+    if ((bState == BenchmarkState::DONE || bState == BenchmarkState::COMPUTING ||
+         bState == BenchmarkState::RECOMPUTING) &&
+        bResults) {
         if (!benchTexturesLoaded) {
             auto drawCentroids = [](cv::Mat& img, const std::vector<cv::Vec<float, 5>>& centers) {
                 for (const auto& c : centers) {
                     cv::Point pt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(img.cols)),
                                  static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(img.rows)));
-                    cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE, c[2] / constants::COLOR_SCALE);
+                    cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
+                                     c[2] / constants::COLOR_SCALE);
                     cv::circle(img, pt, 6, color, -1);
                     cv::circle(img, pt, 8, cv::Scalar(255, 255, 255), 2);
                 }
@@ -40,7 +43,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
         ImGui::Begin("Side-by-Side Algorithm Comparison", nullptr,
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+                         ImGuiWindowFlags_NoScrollbar);
 
         struct MetricStyle {
             ImVec4 c1;
@@ -97,7 +101,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float colWidth = (tableInnerW - spacing * 2.0f) / 3.0f;
             const float imgScale = 0.825f;
-            float ratio = static_cast<float>(bResults->originalFrame.rows) / static_cast<float>(bResults->originalFrame.cols);
+            float ratio =
+                static_cast<float>(bResults->originalFrame.rows) / static_cast<float>(bResults->originalFrame.cols);
             float imgW = colWidth * imgScale;
             float imgH = imgW * ratio;
             ImVec2 size(imgW, imgH);
@@ -112,7 +117,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                 ImGui::SetCursorPosX(curX + ((colWidth - textW) * 0.5f));
                 ImGui::Text("%s", title);
                 ImGui::SetCursorPosX(curX + ((colWidth - imgW) * 0.5f));
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(benchOriginalTex.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(benchOriginalTex.id)), size, ImVec2(1, 0),
+                             ImVec2(0, 1));
             }
 
             ImGui::TableSetColumnIndex(1);
@@ -123,7 +129,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                 ImGui::SetCursorPosX(curX + ((colWidth - textW) * 0.5f));
                 ImGui::Text("%s", title);
                 ImGui::SetCursorPosX(curX + ((colWidth - imgW) * 0.5f));
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(benchClassicalTex.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(benchClassicalTex.id)), size, ImVec2(1, 0),
+                             ImVec2(0, 1));
             }
 
             ImGui::TableSetColumnIndex(2);
@@ -134,7 +141,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                 ImGui::SetCursorPosX(curX + ((colWidth - textW) * 0.5f));
                 ImGui::Text("%s", title);
                 ImGui::SetCursorPosX(curX + ((colWidth - imgW) * 0.5f));
-                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(benchQuantumTex.id)), size, ImVec2(1, 0), ImVec2(0, 1));
+                ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(benchQuantumTex.id)), size, ImVec2(1, 0),
+                             ImVec2(0, 1));
             }
 
             ImGui::TableNextRow();
@@ -147,7 +155,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             ImGui::Text("Silhouette: > Higher is better");
             ImGui::Text("Iterations: < Lower is better");
             ImGui::Text("Latency: < Lower is better");
-            
+
             ImGui::TableSetColumnIndex(1);
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Performance Metrics:");
@@ -243,7 +251,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
         if (currentInit != oldInit) {
             std::scoped_lock<std::mutex> lock(ctx.configMutex);
-            ctx.uiConfig.init = (currentInit == 0) ? common::InitializationType::KMEANS_PLUSPLUS : common::InitializationType::RANDOM;
+            ctx.uiConfig.init =
+                (currentInit == 0) ? common::InitializationType::KMEANS_PLUSPLUS : common::InitializationType::RANDOM;
             s_needsRecompute = true;
         }
 

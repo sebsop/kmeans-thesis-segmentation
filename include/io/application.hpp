@@ -5,8 +5,8 @@
 #include <thread>
 #include <vector>
 
-#include <opencv2/core.hpp>
 #include <GLFW/glfw3.h>
+#include <opencv2/core.hpp>
 
 #include "clustering/clustering_manager.hpp"
 #include "io/benchmark_runner.hpp"

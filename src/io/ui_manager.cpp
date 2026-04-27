@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <cmath>
 #include <deque>
-
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+
 #include <opencv2/imgproc.hpp>
 
 #include "common/constants.hpp"
@@ -22,8 +22,7 @@ constexpr int GL_CLAMP_TO_EDGE = 0x812F;
 namespace kmeans::io {
 
 UIManager::UIManager()
-    : m_controlPanel(std::make_unique<ui::ControlPanelUI>()),
-      m_videoFeed(std::make_unique<ui::VideoFeedUI>()),
+    : m_controlPanel(std::make_unique<ui::ControlPanelUI>()), m_videoFeed(std::make_unique<ui::VideoFeedUI>()),
       m_benchmarkOverlay(std::make_unique<ui::BenchmarkOverlayUI>()) {}
 
 UIManager::~UIManager() = default;
@@ -94,7 +93,7 @@ void UIManager::render(UIDataContext& ctx) {
 
     m_controlPanel->render(ctx, panelWidth, m_benchTexturesLoaded);
     m_videoFeed->render(ctx, panelWidth, m_originalTexture, m_segmentedTexture, &UIManager::matToTexture);
-    m_benchmarkOverlay->render(ctx, m_benchOriginalTexture, m_benchClassicalTexture, m_benchQuantumTexture, 
+    m_benchmarkOverlay->render(ctx, m_benchOriginalTexture, m_benchClassicalTexture, m_benchQuantumTexture,
                                m_benchTexturesLoaded, &UIManager::matToTexture);
 
     ImGui::Render();

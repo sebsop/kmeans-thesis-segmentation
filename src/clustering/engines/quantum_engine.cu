@@ -1,8 +1,8 @@
-#include "clustering/engines/quantum_engine.hpp"
-
+#include <algorithm>
 #include <cmath>
 #include <limits>
-#include <algorithm>
+
+#include "clustering/engines/quantum_engine.hpp"
 
 namespace kmeans::clustering {
 
@@ -93,10 +93,10 @@ void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, 5>>& initialCen
     m_scaleFactor = (static_cast<float>(CV_PI) / 2.0f) / global_range;
 }
 
-void QuantumEngine::launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k,
-                                       int* d_labels, int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
-    quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(
-        d_samples, numPoints, d_centers, k, d_labels, d_changed, m_scaleFactor);
+void QuantumEngine::launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,
+                                       int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
+    quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samples, numPoints, d_centers, k, d_labels,
+                                                                        d_changed, m_scaleFactor);
 }
 
 } // namespace kmeans::clustering

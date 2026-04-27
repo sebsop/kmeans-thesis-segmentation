@@ -10,7 +10,7 @@ namespace kmeans::clustering {
 
 /**
  * @brief Base implementation for KMeans engines using the Template Method Pattern.
- * 
+ *
  * Provides shared memory management, synchronization, and the iterative execution loop.
  * Subclasses only need to implement the specific kernel launching logic.
  */
@@ -39,7 +39,7 @@ class BaseKMeansEngine : public KMeansEngine {
 
   protected:
     void ensureBuffers(int numPoints, int k);
-    
+
     [[nodiscard]] std::vector<cv::Vec<float, 5>> runInternal(float* d_samp, int numPoints,
                                                              const std::vector<cv::Vec<float, 5>>& initialCenters,
                                                              int k, int maxIterations);
@@ -54,15 +54,15 @@ class BaseKMeansEngine : public KMeansEngine {
     /**
      * @brief Hook to launch the assignment kernel.
      */
-    virtual void launchAssignKernel(float* d_samp, int numPoints, float* d_cent, int k,
-                                    int* d_lab, int* d_chg, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) = 0;
+    virtual void launchAssignKernel(float* d_samp, int numPoints, float* d_cent, int k, int* d_lab, int* d_chg,
+                                    int threadsPerBlock, int blocksPerGrid, size_t sharedSize) = 0;
 
     /**
      * @brief The core update kernel used by both Classical and Quantum engines.
      * Computes the new sums and counts for each cluster based on assigned labels.
      */
-    void baseUpdateKernel(float* d_samp, int numPoints, int k,
-                          int* d_lab, float* d_nSums, int* d_cnts, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const;
+    void baseUpdateKernel(float* d_samp, int numPoints, int k, int* d_lab, float* d_nSums, int* d_cnts,
+                          int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const;
 };
 
 } // namespace kmeans::clustering

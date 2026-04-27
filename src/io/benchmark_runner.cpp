@@ -1,9 +1,10 @@
 #include "io/benchmark_runner.hpp"
 
+#include <opencv2/imgproc.hpp>
+
 #include "clustering/clustering_manager.hpp"
 #include "clustering/engines/kmeans_engine.hpp"
 #include "common/constants.hpp"
-#include <opencv2/imgproc.hpp>
 
 namespace kmeans::io {
 
@@ -25,14 +26,14 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
     bool isRecomputing = (m_state == BenchmarkState::RECOMPUTING);
     m_state = BenchmarkState::COMPUTING;
     m_statusText = "Extracting frame and running dual-engine comparison...";
-    
+
     cv::Mat benchFrame;
     if (isRecomputing && m_results.has_value()) {
         benchFrame = m_results->originalFrame.clone();
     } else {
         benchFrame = currentFrame.clone();
     }
-    
+
     common::SegmentationConfig benchConfig = config;
     benchConfig.maxIterations = 1000; // Let benchmark run until true convergence
 
@@ -41,8 +42,7 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
         result.originalFrame = benchFrame.clone();
 
         cv::Mat smallFrame;
-        cv::resize(benchFrame, smallFrame,
-                   cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
+        cv::resize(benchFrame, smallFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
 
         // Generate shared initial centers to guarantee a fair comparison
         std::vector<cv::Vec<float, 5>> sharedCenters;
@@ -89,8 +89,10 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
             outMetrics = clustering::metrics::computeAllMetrics(samples, outCenters, iterations, execMs);
         };
 
-        runEngine(common::AlgorithmType::KMEANS_REGULAR, result.classicalSegmented, result.classicalMetrics, result.classicalCenters);
-        runEngine(common::AlgorithmType::KMEANS_QUANTUM, result.quantumSegmented, result.quantumMetrics, result.quantumCenters);
+        runEngine(common::AlgorithmType::KMEANS_REGULAR, result.classicalSegmented, result.classicalMetrics,
+                  result.classicalCenters);
+        runEngine(common::AlgorithmType::KMEANS_QUANTUM, result.quantumSegmented, result.quantumMetrics,
+                  result.quantumCenters);
 
         return result;
     });

@@ -1,12 +1,11 @@
-#include "clustering/engines/base_kmeans_engine.hpp"
-
 #include <algorithm>
 #include <cstdlib>
+#include <cuda_runtime.h>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
-#include <cuda_runtime.h>
+#include "clustering/engines/base_kmeans_engine.hpp"
 
 #define CUDA_CHECK(call)                                                                                               \
     do {                                                                                                               \
@@ -20,8 +19,8 @@
 namespace kmeans::clustering {
 
 __global__ static void internalBaseUpdateKernel(const float* __restrict__ samples, int numPoints,
-                                             const int* __restrict__ labels, int k, float* __restrict__ newSums,
-                                             int* __restrict__ counts) {
+                                                const int* __restrict__ labels, int k, float* __restrict__ newSums,
+                                                int* __restrict__ counts) {
     extern __shared__ float s_mem[];
     float* s_sums = s_mem;
     int* s_counts = (int*)&s_mem[k * 5];
@@ -57,10 +56,10 @@ __global__ static void internalBaseUpdateKernel(const float* __restrict__ sample
     }
 }
 
-void BaseKMeansEngine::baseUpdateKernel(float* d_samp, int numPoints, int k,
-                                        int* d_lab, float* d_nSums, int* d_cnts, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const {
-    internalBaseUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(
-        d_samp, numPoints, d_lab, k, d_nSums, d_cnts);
+void BaseKMeansEngine::baseUpdateKernel(float* d_samp, int numPoints, int k, int* d_lab, float* d_nSums, int* d_cnts,
+                                        int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const {
+    internalBaseUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samp, numPoints, d_lab, k, d_nSums,
+                                                                             d_cnts);
 }
 
 BaseKMeansEngine::~BaseKMeansEngine() {
@@ -114,15 +113,15 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::run(const cv::Mat& samples,
 
     ensureBuffers(numPoints, k);
     CUDA_CHECK(cudaMemcpy(m_d_samples, samples.ptr<float>(0), numPoints * 5 * sizeof(float), cudaMemcpyHostToDevice));
-    
+
     preRunSetup(initialCenters, samples);
-    
+
     return runInternal(m_d_samples, numPoints, initialCenters, k, maxIterations);
 }
 
 std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runOnDevice(float* d_samples_ext, int numPoints,
-                                                             const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
-                                                             int maxIterations) {
+                                                             const std::vector<cv::Vec<float, 5>>& initialCenters,
+                                                             int k, int maxIterations) {
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
@@ -154,8 +153,8 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runOnDevice(float* d_samples_ex
 }
 
 std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int numPoints,
-                                                             const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
-                                                             int maxIterations) {
+                                                             const std::vector<cv::Vec<float, 5>>& initialCenters,
+                                                             int k, int maxIterations) {
     size_t centersSize = static_cast<size_t>(k) * 5 * sizeof(float);
 
     std::vector<float> h_centers(k * 5);
@@ -182,7 +181,8 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int 
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(m_d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
 
-        launchAssignKernel(d_samp, numPoints, m_d_centers, k, m_d_labels, m_d_changed, threadsPerBlock, blocksPerGrid, sharedAssignSize);
+        launchAssignKernel(d_samp, numPoints, m_d_centers, k, m_d_labels, m_d_changed, threadsPerBlock, blocksPerGrid,
+                           sharedAssignSize);
         CUDA_CHECK(cudaPeekAtLastError());
         CUDA_CHECK(cudaDeviceSynchronize());
 
@@ -194,7 +194,8 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int 
         CUDA_CHECK(cudaMemset(m_d_newSums, 0, centersSize));
         CUDA_CHECK(cudaMemset(m_d_counts, 0, k * sizeof(int)));
 
-        baseUpdateKernel(d_samp, numPoints, k, m_d_labels, m_d_newSums, m_d_counts, threadsPerBlock, blocksPerGrid, sharedUpdateSize);
+        baseUpdateKernel(d_samp, numPoints, k, m_d_labels, m_d_newSums, m_d_counts, threadsPerBlock, blocksPerGrid,
+                         sharedUpdateSize);
         CUDA_CHECK(cudaPeekAtLastError());
         CUDA_CHECK(cudaDeviceSynchronize());
 
