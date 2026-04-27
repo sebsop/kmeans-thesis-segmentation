@@ -7,11 +7,11 @@
 namespace kmeans::clustering::metrics {
 
 struct BenchmarkResults {
-    float wcss;            // Within-Cluster Sum of Squares (Inertia)
-    float daviesBouldin;   // Cluster separation index
-    float silhouetteScore; // Approximated silhouette coefficient [-1, 1]
-    int iterations;        // Number of iterations to converge
-    float executionTimeMs; // Total ms taken by the algorithm
+    float wcss{0.0f};            // Within-Cluster Sum of Squares (Inertia)
+    float daviesBouldin{0.0f};   // Cluster separation index
+    float silhouetteScore{0.0f}; // Approximated silhouette coefficient [-1, 1]
+    int iterations{0};           // Number of iterations to converge
+    float executionTimeMs{0.0f}; // Total ms taken by the algorithm
 };
 
 /**

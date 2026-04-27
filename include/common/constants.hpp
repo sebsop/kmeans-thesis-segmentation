@@ -14,8 +14,8 @@ constexpr int LEARN_INTERVAL_MAX = 60;
 constexpr int SAMPLE_COUNT = 2000;
 
 // Internal pipeline sizes
-constexpr int PROCESS_WIDTH = 640;
-constexpr int PROCESS_HEIGHT = 480;
+constexpr int PROCESS_WIDTH = 200;
+constexpr int PROCESS_HEIGHT = 150;
 constexpr int FPS_HISTORY_WINDOW = 90;
 
 // UI Layout boundaries

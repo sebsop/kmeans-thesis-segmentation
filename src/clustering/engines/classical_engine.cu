@@ -1,22 +1,4 @@
-#include <cstdlib>
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
-#include <iostream>
-#include <random>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
 #include "clustering/engines/classical_engine.hpp"
-
-#define CUDA_CHECK(call)                                                                                               \
-    do {                                                                                                               \
-        cudaError_t err = call;                                                                                        \
-        if (err != cudaSuccess) {                                                                                      \
-            throw std::runtime_error(std::string("CUDA Error: ") + cudaGetErrorString(err) + " at " + __FILE__ + ":" + \
-                                     std::to_string(__LINE__));                                                        \
-        }                                                                                                              \
-    } while (0)
 
 namespace kmeans::clustering {
 
@@ -26,7 +8,6 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     extern __shared__ float s_centers[];
 
     int tid = threadIdx.x;
-    // Max K=20, so k*5 = 100 elements. Our block is usually 256 threads.
     if (tid < k * 5) {
         s_centers[tid] = centers[tid];
     }
@@ -102,173 +83,16 @@ __global__ static void classicalUpdateKernel(const float* __restrict__ samples, 
     }
 }
 
-ClassicalEngine::~ClassicalEngine() {
-    if (d_samples)
-        cudaFree(d_samples);
-    if (d_centers)
-        cudaFree(d_centers);
-    if (d_labels)
-        cudaFree(d_labels);
-    if (d_newSums)
-        cudaFree(d_newSums);
-    if (d_counts)
-        cudaFree(d_counts);
-    if (d_changed)
-        cudaFree(d_changed);
+void ClassicalEngine::launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k,
+                                         int* d_labels, int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
+    classicalAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(
+        d_samples, numPoints, d_centers, k, d_labels, d_changed);
 }
 
-void ClassicalEngine::ensureBuffers(int numPoints, int k) {
-    if (static_cast<size_t>(numPoints) > m_maxPoints || k > m_maxK) {
-        if (d_samples)
-            cudaFree(d_samples);
-        if (d_centers)
-            cudaFree(d_centers);
-        if (d_labels)
-            cudaFree(d_labels);
-        if (d_newSums)
-            cudaFree(d_newSums);
-        if (d_counts)
-            cudaFree(d_counts);
-        if (d_changed)
-            cudaFree(d_changed);
-
-        m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
-        m_maxK = std::max(m_maxK, k);
-
-        CUDA_CHECK(cudaMalloc(&d_samples, m_maxPoints * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_centers, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_labels, m_maxPoints * sizeof(int)));
-        CUDA_CHECK(cudaMalloc(&d_newSums, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_counts, m_maxK * sizeof(int)));
-        CUDA_CHECK(cudaMalloc(&d_changed, sizeof(int)));
-    }
-}
-
-// Core K-Means loop. d_samp must already be on the device.
-// Center averaging is kept on CPU: trivially fast for k<=20 (k*5=100 floats),
-// and avoids the per-iteration kernel launch overhead of a GPU divide kernel.
-std::vector<cv::Vec<float, 5>> ClassicalEngine::runInternal(float* d_samp, int numPoints,
-                                                            const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
-                                                            int maxIterations) {
-    size_t centersSize = static_cast<size_t>(k) * 5 * sizeof(float);
-
-    std::vector<float> h_centers(k * 5);
-    for (int i = 0; i < k; ++i) {
-        for (int d = 0; d < 5; ++d) {
-            h_centers[i * 5 + d] = initialCenters[i][d];
-        }
-    }
-
-    CUDA_CHECK(cudaMemcpy(d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemset(d_labels, 0xFF, numPoints * sizeof(int)));
-
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (numPoints + threadsPerBlock - 1) / threadsPerBlock;
-
-    size_t sharedAssignSize = static_cast<size_t>(k) * 5 * sizeof(float);
-    size_t sharedUpdateSize = static_cast<size_t>(k) * 5 * sizeof(float) + static_cast<size_t>(k) * sizeof(int);
-
-    std::vector<float> h_newSums(k * 5);
-    std::vector<int> h_counts(k);
-
-    int iter = 0;
-    for (; iter < maxIterations; ++iter) {
-        int h_changed = 0;
-        CUDA_CHECK(cudaMemcpy(d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
-
-        classicalAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedAssignSize>>>(d_samp, numPoints, d_centers, k,
-                                                                                    d_labels, d_changed);
-        CUDA_CHECK(cudaPeekAtLastError());
-        CUDA_CHECK(cudaDeviceSynchronize());
-
-        CUDA_CHECK(cudaMemcpy(&h_changed, d_changed, sizeof(int), cudaMemcpyDeviceToHost));
-        if (h_changed == 0) {
-            break; // converged
-        }
-
-        CUDA_CHECK(cudaMemset(d_newSums, 0, centersSize));
-        CUDA_CHECK(cudaMemset(d_counts, 0, k * sizeof(int)));
-
-        classicalUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedUpdateSize>>>(d_samp, numPoints, d_labels, k,
-                                                                                    d_newSums, d_counts);
-        CUDA_CHECK(cudaPeekAtLastError());
-        CUDA_CHECK(cudaDeviceSynchronize());
-
-        CUDA_CHECK(cudaMemcpy(h_newSums.data(), d_newSums, centersSize, cudaMemcpyDeviceToHost));
-        CUDA_CHECK(cudaMemcpy(h_counts.data(), d_counts, k * sizeof(int), cudaMemcpyDeviceToHost));
-
-        // CPU center averaging: 20*5 = 100 divides — entirely negligible
-        for (int j = 0; j < k; ++j) {
-            if (h_counts[j] > 0) {
-                for (int d = 0; d < 5; ++d) {
-                    h_centers[j * 5 + d] = h_newSums[j * 5 + d] / static_cast<float>(h_counts[j]);
-                }
-            } else if (numPoints > 0) {
-                // Dead center mitigation: reassign to a random data point
-                int randomIdx = rand() % numPoints;
-                CUDA_CHECK(
-                    cudaMemcpy(&h_centers[j * 5], &d_samp[randomIdx * 5], 5 * sizeof(float), cudaMemcpyDeviceToHost));
-            }
-        }
-        CUDA_CHECK(cudaMemcpy(d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
-    }
-
-    m_lastIterations = iter + 1;
-
-    std::vector<cv::Vec<float, 5>> finalCenters(k);
-    for (int i = 0; i < k; ++i) {
-        for (int d = 0; d < 5; ++d) {
-            finalCenters[i][d] = h_centers[i * 5 + d];
-        }
-    }
-    return finalCenters;
-}
-
-std::vector<cv::Vec<float, 5>> ClassicalEngine::run(const cv::Mat& samples,
-                                                    const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
-                                                    int maxIterations) {
-    int numPoints = samples.rows;
-    if (numPoints == 0 || k <= 0)
-        return initialCenters;
-
-    ensureBuffers(numPoints, k);
-    CUDA_CHECK(cudaMemcpy(d_samples, samples.ptr<float>(0), numPoints * 5 * sizeof(float), cudaMemcpyHostToDevice));
-    return runInternal(d_samples, numPoints, initialCenters, k, maxIterations);
-}
-
-std::vector<cv::Vec<float, 5>> ClassicalEngine::runOnDevice(float* d_samples_ext, int numPoints,
-                                                            const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
-                                                            int maxIterations) {
-    if (numPoints == 0 || k <= 0)
-        return initialCenters;
-
-    // Ensure auxiliary buffers (centers, labels, sums, counts, changed) are allocated.
-    // We do NOT allocate our own d_samples — the caller provides it on the device already.
-    if (static_cast<size_t>(numPoints) > m_maxPoints || k > m_maxK) {
-        // Free only non-sample buffers (d_samples may be nullptr in GPU-direct mode)
-        if (d_centers)
-            cudaFree(d_centers);
-        if (d_labels)
-            cudaFree(d_labels);
-        if (d_newSums)
-            cudaFree(d_newSums);
-        if (d_counts)
-            cudaFree(d_counts);
-        if (d_changed)
-            cudaFree(d_changed);
-
-        m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
-        m_maxK = std::max(m_maxK, k);
-
-        CUDA_CHECK(cudaMalloc(&d_centers, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_labels, m_maxPoints * sizeof(int)));
-        CUDA_CHECK(cudaMalloc(&d_newSums, m_maxK * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&d_counts, m_maxK * sizeof(int)));
-        CUDA_CHECK(cudaMalloc(&d_changed, sizeof(int)));
-    }
-
-    // Use the external device pointer — no H2D upload of samples needed
-    return runInternal(d_samples_ext, numPoints, initialCenters, k, maxIterations);
+void ClassicalEngine::launchUpdateKernel(float* d_samples, int numPoints, int k,
+                                         int* d_labels, float* d_newSums, int* d_counts, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
+    classicalUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(
+        d_samples, numPoints, d_labels, k, d_newSums, d_counts);
 }
 
 } // namespace kmeans::clustering

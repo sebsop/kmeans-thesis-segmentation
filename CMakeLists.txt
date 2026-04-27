@@ -93,6 +93,7 @@ endif()
 # Core Logic Library
 add_library(kmeans_core
     src/backend/cuda_kernels.cu
+    src/clustering/engines/base_kmeans_engine.cu
     src/clustering/engines/classical_engine.cu
     src/clustering/engines/quantum_engine.cu
     src/clustering/clustering_manager.cpp
@@ -103,9 +104,15 @@ add_library(kmeans_core
     src/clustering/initializers/kmeans_plus_plus_initializer.cu
     src/common/utils.cpp
     src/io/application.cpp
+    src/io/benchmark_runner.cpp
+    src/io/ui_manager.cpp
+    src/io/ui/control_panel_ui.cpp
+    src/io/ui/video_feed_ui.cpp
+    src/io/ui/benchmark_overlay_ui.cpp
 )
 
 set_source_files_properties(src/backend/cuda_kernels.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/clustering/engines/base_kmeans_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/engines/classical_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/engines/quantum_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/initializers/kmeans_plus_plus_initializer.cu PROPERTIES LANGUAGE CUDA)
