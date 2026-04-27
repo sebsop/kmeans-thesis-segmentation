@@ -833,8 +833,7 @@ void Application::run() {
                     result.originalFrame = benchFrame.clone();
 
                     cv::Mat smallFrame;
-                    cv::resize(benchFrame, smallFrame,
-                               cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
+                    cv::resize(benchFrame, smallFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
 
                     // Generate shared initial centers to guarantee a fair comparison
                     std::vector<cv::Vec<float, 5>> sharedCenters;
@@ -851,7 +850,8 @@ void Application::run() {
                         common::SegmentationConfig cfg = benchConfig;
                         cfg.algorithm = algo;
                         mgr.getConfig() = cfg;
-                        mgr.setInitialCenters(sharedCenters); // Force both engines to use the exact same starting points
+                        mgr.setInitialCenters(
+                            sharedCenters); // Force both engines to use the exact same starting points
 
                         auto start = std::chrono::high_resolution_clock::now();
                         cv::Mat segmented = mgr.segmentFrame(smallFrame);

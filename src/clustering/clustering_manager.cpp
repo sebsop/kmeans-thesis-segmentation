@@ -95,7 +95,7 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& 
 
 std::vector<cv::Vec<float, 5>> ClusteringManager::generateInitialCenters(const cv::Mat& frame) {
     updateStategyImplementations();
-    
+
     cv::Mat cpuSamples;
     if (auto* sdp = dynamic_cast<StridedDataPreprocessor*>(m_dataPreprocessor.get())) {
         int dummyPoints = 0;
@@ -106,7 +106,7 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::generateInitialCenters(const c
     } else {
         cpuSamples = m_dataPreprocessor->prepare(frame);
     }
-    
+
     return m_initializer->initialize(cpuSamples, m_config.k);
 }
 
