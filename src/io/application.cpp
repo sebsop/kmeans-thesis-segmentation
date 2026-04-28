@@ -42,7 +42,7 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(1600, 900, "K-Means Real-Time Segmentation Benchmark", nullptr, nullptr);
+    m_window = glfwCreateWindow(1750, 700, "K-Means Real-Time Segmentation Benchmark", nullptr, nullptr);
     if (!m_window) {
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
@@ -133,6 +133,15 @@ void Application::run() {
                 m_benchmarkRunner.startComputing(frame, benchConfig);
             }
 
+            // If a benchmark is active, do not run the normal segmentation pipeline in the background.
+            // This prevents race conditions and ensures UI parameter changes only affect the benchmark.
+            bState = m_benchmarkRunner.getState();
+            if (bState != BenchmarkState::IDLE) {
+                std::scoped_lock<std::mutex> lock(m_dataMutex);
+                m_initialized = true;
+                continue;
+            }
+
             cv::Mat processFrame;
             cv::resize(frame, processFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
 
@@ -187,23 +196,81 @@ void Application::run() {
     while (!glfwWindowShouldClose(m_window) && m_running) {
         glfwPollEvents();
 
+        auto bState = m_benchmarkRunner.getState();
+        if (bState != BenchmarkState::IDLE && !m_benchWasActive) {
+            std::scoped_lock<std::mutex> lock(m_configMutex);
+            m_savedBenchConfig = m_uiConfig;
+            m_benchWasActive = true;
+        } else if (bState == BenchmarkState::IDLE && m_benchWasActive) {
+            std::scoped_lock<std::mutex> lock(m_configMutex);
+            m_uiConfig = m_savedBenchConfig;
+            m_benchWasActive = false;
+        }
+
         if (!m_initialized) {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            ImGui::Text("Waiting for camera initialization...");
-            ImGui::Render();
+            
             int display_w = 0, display_h = 0;
             glfwGetFramebufferSize(m_window, &display_w, &display_h);
+
+            // Premium full-screen loading overlay
+            ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+            ImGui::SetNextWindowSize(ImVec2(static_cast<float>(display_w), static_cast<float>(display_h)));
+            
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
+                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | 
+                                     ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
+                                     
+            ImGui::Begin("Loader", nullptr, flags);
+            
+            const char* loadingText = "INITIALIZING K-MEANS ENGINE";
+            ImVec2 textSize = ImGui::CalcTextSize(loadingText);
+            
+            // Animate dots based on time
+            int dots = static_cast<int>(ImGui::GetTime() * 4.0) % 4;
+            std::string dotStr(dots, '.');
+            std::string fullText = std::string(loadingText) + dotStr;
+            
+            // Center position for main text
+            ImGui::SetCursorPos(ImVec2((display_w - textSize.x) * 0.5f, (display_h - textSize.y) * 0.5f));
+            
+            // Use a nice accent color (cyan/blue)
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.4f, 0.9f, 1.0f));
+            ImGui::TextUnformatted(fullText.c_str());
+            ImGui::PopStyleColor();
+            
+            // Subtitle
+            const char* subText = "Connecting to camera stream and allocating VRAM...";
+            ImVec2 subSize = ImGui::CalcTextSize(subText);
+            ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h + textSize.y) * 0.5f + 15.0f));
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+            ImGui::TextUnformatted(subText);
+            ImGui::PopStyleColor();
+            
+            ImGui::End();
+
+            ImGui::Render();
             glViewport(0, 0, display_w, display_h);
-            glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+            
+            // Deep dark premium background
+            glClearColor(0.06f, 0.06f, 0.07f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             glfwSwapBuffers(m_window);
             continue;
         }
 
-        UIDataContext ctx{m_latestOriginal,  m_latestSegmented, m_uiConfig,         m_configMutex,
+        cv::Mat displayOriginal;
+        cv::Mat displaySegmented;
+        {
+            std::scoped_lock<std::mutex> lock(m_dataMutex);
+            displayOriginal = m_latestOriginal;
+            displaySegmented = m_latestSegmented;
+        }
+
+        UIDataContext ctx{displayOriginal,  displaySegmented, m_uiConfig,         m_configMutex,
                           m_showCentroids,   m_forceReset,      m_currentWorkerFps, m_currentAlgoTimeMs,
                           m_processedFrames, m_benchmarkRunner};
 

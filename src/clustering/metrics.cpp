@@ -69,7 +69,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
             }
             dCenter = std::sqrt(dCenter);
             if (dCenter > 1e-6f) {
-                float r = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxR);
+                maxR = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxR);
             }
         }
         daviesBouldin += maxR;
@@ -136,7 +136,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
                 continue;
             }
             if (bCount[j] > 0) {
-                float avgB = std::min(bDistSum[j] / static_cast<float>(bCount[j]), b);
+                b = std::min(bDistSum[j] / static_cast<float>(bCount[j]), b);
             }
         }
 

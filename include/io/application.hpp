@@ -42,6 +42,9 @@ class Application {
     bool m_showCentroids = false;
     std::atomic<bool> m_forceReset{false};
 
+    common::SegmentationConfig m_savedBenchConfig;
+    bool m_benchWasActive = false;
+
     void initWindow();
     void initImGui();
     void cleanup() noexcept;

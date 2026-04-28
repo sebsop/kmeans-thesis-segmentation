@@ -159,13 +159,14 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         std::vector<float> fpsPlotBuf;
         int window = 15;
         for (int i = 0; i < static_cast<int>(algoFpsHistory.size()); ++i) {
-            float m = 0;
+            float sum = 0.0f;
             int start = std::max(0, i - (window / 2));
             int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + (window / 2));
             for (int j = start; j <= end; ++j) {
-                m = std::max(m, algoFpsHistory[j]);
+                sum += algoFpsHistory[j];
             }
-            fpsPlotBuf.push_back(m);
+            float avg = sum / static_cast<float>(end - start + 1);
+            fpsPlotBuf.push_back(avg);
         }
 
         ImGui::PlotLines("##Pipeline History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0, nullptr, 0.0f,

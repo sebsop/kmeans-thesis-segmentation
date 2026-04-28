@@ -24,9 +24,10 @@ void BenchmarkRunner::reset() {
 
 void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::SegmentationConfig& config) {
     bool isRecomputing = (m_state == BenchmarkState::RECOMPUTING);
-    m_state = BenchmarkState::COMPUTING;
     m_statusText = "Extracting frame and running dual-engine comparison...";
 
+    // 1. ISOLATE THE FRAME: Clone on the main thread so the buffer's reference count is 1.
+    // This prevents the background thread from racing with the camera thread during deallocation.
     cv::Mat benchFrame;
     if (isRecomputing && m_results.has_value()) {
         benchFrame = m_results->originalFrame.clone();
@@ -37,9 +38,12 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
     common::SegmentationConfig benchConfig = config;
     benchConfig.maxIterations = 1000; // Let benchmark run until true convergence
 
-    m_future = std::async(std::launch::async, [benchFrame, benchConfig]() {
+    // 2. Pass the isolated benchFrame by value. The lambda now owns its own unique memory buffer.
+    auto future = std::async(std::launch::async, [benchFrame, benchConfig]() {
         BenchmarkComparisonResult result;
-        result.originalFrame = benchFrame.clone();
+
+        // We can safely use benchFrame here as it is a private copy for this thread.
+        result.originalFrame = benchFrame;
 
         cv::Mat smallFrame;
         cv::resize(benchFrame, smallFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
@@ -96,6 +100,11 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
 
         return result;
     });
+
+    m_future = std::move(future);
+
+    // Set state AFTER future is fully initialized to prevent UI thread poll() data race
+    m_state = BenchmarkState::COMPUTING;
 }
 
 void BenchmarkRunner::poll() {
