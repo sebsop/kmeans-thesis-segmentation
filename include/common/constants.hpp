@@ -1,6 +1,23 @@
 #pragma once
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
 
 namespace kmeans::constants {
+
+// API Flags & Hardware
+constexpr int VIZ_RESIZE_ALGO = cv::INTER_NEAREST;
+constexpr int CAMERA_HW_ACCEL = cv::VIDEO_ACCELERATION_ANY;
+constexpr int VIZ_OUTLINE_COLOR = 255;
+
+// Layout Geometry
+constexpr int UI_FPS_PLOT_WINDOW = 15;
+constexpr int UI_BENCH_COL_COUNT = 3;
+constexpr float UI_BENCH_BTN_PADDING = 20.0f;
+constexpr float UI_BENCH_SLIDER_SPACING = 30.0f;
+
+// Quantum Range
+constexpr float QUANTUM_RANGE_EPSILON = 1e-8f;
 
 // Color structures for logic encapsulation
 struct ColorRGBA {
@@ -54,7 +71,7 @@ constexpr int DEFAULT_LEARN_INTERVAL = 15;
 constexpr int STABLE_RANDOM_SEED = 42;
 
 // Layout & Ratios
-constexpr float UI_LAYOUT_OFFSET = 15.0f;
+constexpr float UI_LANDING_OFFSET = 15.0f;
 constexpr float UI_K_SLIDER_WIDTH = 120.0f;
 constexpr float UI_STRIDE_SLIDER_WIDTH = 100.0f;
 constexpr float UI_RADIO_WIDTH = 260.0f;
@@ -84,10 +101,17 @@ constexpr double UI_ANIM_DOT_SPEED = 4.0;
 // Threading & OS
 constexpr int WORKER_FPS_MATCH_SLEEP = 33;
 
+// Internal pipeline sizes
+constexpr int VIDEO_WIDTH = 640;
+constexpr int VIDEO_HEIGHT = 480;
+constexpr int PROCESS_WIDTH = 320;
+constexpr int PROCESS_HEIGHT = 240;
+constexpr int FPS_HISTORY_WINDOW = 90;
+
 // Mathematics & Scaling
 constexpr float PI_F = 3.1415926535f;
 constexpr float COLOR_SCALE = 1.0f / 255.0f;
-constexpr float SPATIAL_SCALE = 1.0f / 76800.0f;
+constexpr float SPATIAL_SCALE = 1.0f / (static_cast<float>(PROCESS_WIDTH) * static_cast<float>(PROCESS_HEIGHT));
 
 // Algorithm & Benchmark Convergence
 constexpr int K_MIN = 2;
@@ -97,13 +121,6 @@ constexpr int LEARN_INTERVAL_MAX = 60;
 constexpr int SAMPLE_COUNT = 5000;
 constexpr int BENCHMARK_MAX_ITERATIONS = 1000;
 constexpr float CONVERGENCE_EPSILON = 1e-4f;
-
-// Internal pipeline sizes
-constexpr int VIDEO_WIDTH = 640;
-constexpr int VIDEO_HEIGHT = 480;
-constexpr int PROCESS_WIDTH = 320;
-constexpr int PROCESS_HEIGHT = 240;
-constexpr int FPS_HISTORY_WINDOW = 90;
 
 // Hardware & CUDA Configuration
 constexpr int CUDA_THREADS_PER_BLOCK = 256;

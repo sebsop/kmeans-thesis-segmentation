@@ -95,11 +95,11 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         auto s_iter = getStyle(static_cast<float>(cm.iterations), static_cast<float>(qm.iterations), true, true);
         auto s_lat = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
 
-        if (ImGui::BeginTable("BenchTable", 3, ImGuiTableFlags_None)) {
+        if (ImGui::BeginTable("BenchTable", constants::UI_BENCH_COL_COUNT, ImGuiTableFlags_None)) {
             ImVec2 avail = ImGui::GetContentRegionAvail();
             float tableInnerW = avail.x;
             float spacing = ImGui::GetStyle().ItemSpacing.x;
-            float colWidth = (tableInnerW - spacing * 2.0f) / 3.0f;
+            float colWidth = (tableInnerW - spacing * 2.0f) / static_cast<float>(constants::UI_BENCH_COL_COUNT);
             const float imgScale = constants::UI_BENCH_IMG_SCALE;
             float ratio =
                 static_cast<float>(bResults->originalFrame.rows) / static_cast<float>(bResults->originalFrame.cols);
@@ -180,7 +180,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
         float btnWidth = constants::UI_BTN_WIDTH_LG;
         float rerunWidth = constants::UI_BTN_WIDTH_MD;
-        float buttonsTotalWidth = btnWidth + 20.0f + rerunWidth;
+        float buttonsTotalWidth = btnWidth + constants::UI_BENCH_BTN_PADDING + rerunWidth;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - buttonsTotalWidth) * 0.5f);
 
@@ -188,7 +188,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             ctx.benchmarkRunner.reset();
         }
 
-        ImGui::SameLine(0, 20.0f);
+        ImGui::SameLine(0, constants::UI_BENCH_BTN_PADDING);
         if (ImGui::Button("Rerun Frame", ImVec2(rerunWidth, constants::UI_BTN_HEIGHT))) {
             ctx.benchmarkRunner.requestRecompute();
         }
@@ -211,7 +211,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
         float kTextW = ImGui::CalcTextSize("K: ").x;
         float strideTextW = ImGui::CalcTextSize("Stride: ").x;
-        float row2Width = kTextW + kSliderWidth + 30.0f + strideTextW + strideSliderWidth + 30.0f + radioW;
+        float row2Width = kTextW + kSliderWidth + constants::UI_BENCH_SLIDER_SPACING + strideTextW + strideSliderWidth + constants::UI_BENCH_SLIDER_SPACING + radioW;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - row2Width) * 0.5f);
         ImGui::AlignTextToFramePadding();
@@ -228,7 +228,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             s_needsRecompute = true;
         }
 
-        ImGui::SameLine(0, 30.0f);
+        ImGui::SameLine(0, constants::UI_BENCH_SLIDER_SPACING);
 
         ImGui::Text("Stride:");
         ImGui::SameLine();
@@ -239,7 +239,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             s_needsRecompute = true;
         }
 
-        ImGui::SameLine(0, 30.0f);
+        ImGui::SameLine(0, constants::UI_BENCH_SLIDER_SPACING);
 
         int currentInit = (currentInitType == common::InitializationType::KMEANS_PLUSPLUS) ? 0 : 1;
         int oldInit = currentInit;

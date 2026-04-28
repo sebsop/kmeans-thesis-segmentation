@@ -72,7 +72,7 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
 
             outCenters = mgr.getCenters();
             int iterations = mgr.getEngine() ? mgr.getEngine()->getLastIterations() : 0;
-            cv::resize(segmented, outSeg, benchFrame.size(), 0, 0, cv::INTER_NEAREST);
+            cv::resize(segmented, outSeg, benchFrame.size(), 0, 0, constants::VIZ_RESIZE_ALGO);
 
             int n = smallFrame.rows * smallFrame.cols;
             cv::Mat samples(n, 5, CV_32F);

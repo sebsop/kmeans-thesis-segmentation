@@ -159,7 +159,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg FPS: %.1f", displayAvg);
 
         std::vector<float> fpsPlotBuf;
-        int window = 15;
+        int window = constants::UI_FPS_PLOT_WINDOW;
         for (int i = 0; i < static_cast<int>(algoFpsHistory.size()); ++i) {
             float sum = 0.0f;
             int start = std::max(0, i - (window / 2));

@@ -82,17 +82,17 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
     float x01 = static_cast<float>(c) / static_cast<float>(width);
     float y01 = static_cast<float>(r) / static_cast<float>(height);
 
-    float f[5] = {static_cast<float>(input[offset + 0]) * color_scale,
+    float f[constants::FEATURE_DIMS] = {static_cast<float>(input[offset + 0]) * color_scale,
                   static_cast<float>(input[offset + 1]) * color_scale,
                   static_cast<float>(input[offset + 2]) * color_scale, x01 * spatial_scale, y01 * spatial_scale};
 
     int bestIdx = 0;
-    float bestDist2 = 1e20f;
+    float bestDist2 = constants::MATH_INF;
 
     for (int ci = 0; ci < k; ++ci) {
         float d2 = 0.0f;
-        for (int d = 0; d < 5; ++d) {
-            float diff = f[d] - s_centers[ci * 5 + d]; // shared memory read
+        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            float diff = f[d] - s_centers[ci * constants::FEATURE_DIMS + d]; // shared memory read
             d2 += diff * diff;
         }
         if (d2 < bestDist2) {

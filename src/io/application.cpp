@@ -104,7 +104,7 @@ void Application::run() {
     m_workerThread = std::thread([this]() {
         cv::VideoCapture cap(0, cv::CAP_FFMPEG);
         if (cap.isOpened()) {
-            cap.set(cv::CAP_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY);
+            cap.set(cv::CAP_PROP_HW_ACCELERATION, constants::CAMERA_HW_ACCEL);
         } else {
             cap.open(0);
         }
@@ -161,7 +161,7 @@ void Application::run() {
             float execMs = std::chrono::duration<float, std::milli>(end - start).count();
 
             cv::Mat segmentedFull;
-            cv::resize(segmented, segmentedFull, frame.size(), 0, 0, cv::INTER_NEAREST);
+            cv::resize(segmented, segmentedFull, frame.size(), 0, 0, constants::VIZ_RESIZE_ALGO);
 
             std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers;
             if (m_showCentroids) {
@@ -172,7 +172,7 @@ void Application::run() {
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
                     cv::circle(segmentedFull, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
-                    cv::circle(segmentedFull, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(255, 255, 255), 2);
+                    cv::circle(segmentedFull, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR), 2);
                 }
             }
 
@@ -246,7 +246,7 @@ void Application::run() {
             // Subtitle
             const char* subText = "Connecting to camera stream and allocating VRAM...";
             ImVec2 subSize = ImGui::CalcTextSize(subText);
-            ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h + textSize.y) * 0.5f + constants::UI_LAYOUT_OFFSET));
+            ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h + textSize.y) * 0.5f + constants::UI_LANDING_OFFSET));
             ImGui::PushStyleColor(ImGuiCol_Text,
                                   ImVec4(constants::UI_COLOR_TEXT_DIM.r, constants::UI_COLOR_TEXT_DIM.g,
                                          constants::UI_COLOR_TEXT_DIM.b, constants::UI_COLOR_TEXT_DIM.a));

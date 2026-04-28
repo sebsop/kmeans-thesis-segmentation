@@ -88,7 +88,7 @@ void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, constants::FEAT
         if (range > max_range)
             max_range = range;
     }
-    float global_range = max_range + 1e-8f;
+    float global_range = max_range + constants::QUANTUM_RANGE_EPSILON;
     m_scaleFactor = (constants::PI_F / 2.0f) / global_range;
 }
 
