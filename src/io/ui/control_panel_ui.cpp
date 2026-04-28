@@ -156,7 +156,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
         ImGui::Text("Algorithm Execution: %.2f ms", displayMs);
         ImGui::Text("Camera Pipeline: %.1f FPS", displayFps);
-        ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), "Avg FPS: %.1f", displayAvg);
+        ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g, constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a), "Avg FPS: %.1f", displayAvg);
 
         std::vector<float> fpsPlotBuf;
         int window = constants::UI_FPS_PLOT_WINDOW;
@@ -184,7 +184,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
             ctx.benchmarkRunner.requestCapture();
         }
     } else if (bState == BenchmarkState::CAPTURING || bState == BenchmarkState::RECOMPUTING) {
-        ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "%s", ctx.benchmarkRunner.getStatusText().c_str());
+        ImGui::TextColored(ImVec4(constants::theme::WARNING_COL.r, constants::theme::WARNING_COL.g, constants::theme::WARNING_COL.b, constants::theme::WARNING_COL.a), "%s", ctx.benchmarkRunner.getStatusText().c_str());
     } else if (bState == BenchmarkState::COMPUTING) {
         ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.9f, 1.0f), "%s", ctx.benchmarkRunner.getStatusText().c_str());
         ctx.benchmarkRunner.poll();
@@ -192,7 +192,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
             benchTexturesLoaded = false;
         }
     } else if (bState == BenchmarkState::DONE) {
-        ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.0f), "%s", ctx.benchmarkRunner.getStatusText().c_str());
+        ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g, constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a), "%s", ctx.benchmarkRunner.getStatusText().c_str());
         ImGui::Text("View the full-screen results.");
     }
 

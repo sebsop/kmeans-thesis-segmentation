@@ -51,6 +51,9 @@ namespace theme {
     constexpr ColorRGBA SLIDER_GRAB_ACTIVE = {0.70f, 0.50f, 1.00f, 1.00f};
     constexpr ColorRGBA PLOT_LINES = {0.60f, 0.40f, 0.90f, 1.00f};
     constexpr ColorRGBA PLOT_LINES_HOVERED = {0.70f, 0.50f, 1.00f, 1.00f};
+    constexpr ColorRGBA SUCCESS_COL = {0.40f, 1.00f, 0.40f, 1.00f};
+    constexpr ColorRGBA ERROR_COL = {1.00f, 0.40f, 0.40f, 1.00f};
+    constexpr ColorRGBA WARNING_COL = {0.80f, 0.80f, 0.20f, 1.00f};
 
     constexpr float WINDOW_ROUNDING = 8.0f;
     constexpr float CHILD_ROUNDING = 6.0f;
