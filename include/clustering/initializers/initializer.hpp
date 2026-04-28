@@ -4,6 +4,8 @@
 
 #include <opencv2/core.hpp>
 
+#include "common/constants.hpp"
+
 namespace kmeans::clustering {
 
 /**
@@ -17,7 +19,8 @@ class Initializer {
     virtual ~Initializer() = default;
 
     /** @brief Calculates initial cluster centers from the provided samples. */
-    [[nodiscard]] virtual std::vector<cv::Vec<float, 5>> initialize(const cv::Mat& samples, int k) const = 0;
+    [[nodiscard]] virtual std::vector<cv::Vec<float, constants::FEATURE_DIMS>> initialize(const cv::Mat& samples,
+                                                                                          int k) const = 0;
 };
 
 } // namespace kmeans::clustering

@@ -10,6 +10,7 @@
 
 #include "clustering/metrics.hpp"
 #include "common/config.hpp"
+#include "common/constants.hpp"
 
 namespace kmeans::io {
 
@@ -21,8 +22,8 @@ struct BenchmarkComparisonResult {
     cv::Mat quantumSegmented{};
     clustering::metrics::BenchmarkResults classicalMetrics{};
     clustering::metrics::BenchmarkResults quantumMetrics{};
-    std::vector<cv::Vec<float, 5>> classicalCenters{};
-    std::vector<cv::Vec<float, 5>> quantumCenters{};
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> classicalCenters{};
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> quantumCenters{};
 };
 
 /**

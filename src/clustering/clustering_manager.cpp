@@ -40,7 +40,7 @@ void ClusteringManager::updateStategyImplementations() {
 }
 
 cv::Mat ClusteringManager::segmentFrame(const cv::Mat& frame) {
-    std::vector<cv::Vec<float, 5>> centers = computeCenters(frame);
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers = computeCenters(frame);
 
     if (!m_cudaContext || m_cudaContext->getWidth() != frame.cols || m_cudaContext->getK() != m_config.k) {
         m_cudaContext = std::make_unique<backend::CudaAssignmentContext>(frame.cols, frame.rows, m_config.k);
@@ -54,7 +54,7 @@ cv::Mat ClusteringManager::segmentFrame(const cv::Mat& frame) {
     return result;
 }
 
-std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& frame) {
+std::vector<cv::Vec<float, constants::FEATURE_DIMS>> ClusteringManager::computeCenters(const cv::Mat& frame) {
     CV_Assert(!frame.empty() && "Input frame is empty in ClusteringManager::computeCenters");
     CV_Assert(m_config.k > 0 && "Number of clusters 'k' must be greater than 0");
 
@@ -67,8 +67,8 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& 
         return m_previousCenters;
     }
 
-    std::vector<cv::Vec<float, 5>> initialCenters;
-    std::vector<cv::Vec<float, 5>> finalCenters;
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> initialCenters;
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> finalCenters;
 
     // GPU-direct path: StridedDataPreprocessor can hand off device-side samples directly,
     // eliminating the D2H+H2D round-trip (saves ~6MB PCIe traffic per processed frame).
@@ -105,7 +105,7 @@ std::vector<cv::Vec<float, 5>> ClusteringManager::computeCenters(const cv::Mat& 
     return m_previousCenters;
 }
 
-std::vector<cv::Vec<float, 5>> ClusteringManager::generateInitialCenters(const cv::Mat& frame) {
+std::vector<cv::Vec<float, constants::FEATURE_DIMS>> ClusteringManager::generateInitialCenters(const cv::Mat& frame) {
     updateStategyImplementations();
 
     cv::Mat cpuSamples;

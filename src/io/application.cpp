@@ -163,7 +163,7 @@ void Application::run() {
             cv::Mat segmentedFull;
             cv::resize(segmented, segmentedFull, frame.size(), 0, 0, cv::INTER_NEAREST);
 
-            std::vector<cv::Vec<float, 5>> centers;
+            std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers;
             if (m_showCentroids) {
                 centers = m_manager.getCenters();
                 for (const auto& c : centers) {

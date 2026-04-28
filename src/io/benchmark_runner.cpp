@@ -49,7 +49,7 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
         cv::resize(benchFrame, smallFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
 
         // Generate shared initial centers to guarantee a fair comparison
-        std::vector<cv::Vec<float, 5>> sharedCenters;
+        std::vector<cv::Vec<float, constants::FEATURE_DIMS>> sharedCenters;
         {
             clustering::ClusteringManager initMgr;
             initMgr.getConfig() = benchConfig;
@@ -58,7 +58,7 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
 
         auto runEngine = [&](common::AlgorithmType algo, cv::Mat& outSeg,
                              clustering::metrics::BenchmarkResults& outMetrics,
-                             std::vector<cv::Vec<float, 5>>& outCenters) {
+                             std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& outCenters) {
             clustering::ClusteringManager mgr;
             common::SegmentationConfig cfg = benchConfig;
             cfg.algorithm = algo;

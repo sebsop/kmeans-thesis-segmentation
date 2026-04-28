@@ -1,6 +1,7 @@
 #pragma once
 
 #include "clustering/initializers/initializer.hpp"
+#include "common/constants.hpp"
 
 namespace kmeans::clustering {
 
@@ -9,7 +10,8 @@ class KMeansPlusPlusInitializer final : public Initializer {
     KMeansPlusPlusInitializer() = default;
     ~KMeansPlusPlusInitializer() override = default;
 
-    [[nodiscard]] std::vector<cv::Vec<float, 5>> initialize(const cv::Mat& samples, int k) const override final;
+    [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>> initialize(const cv::Mat& samples,
+                                                                                  int k) const override final;
 };
 
 } // namespace kmeans::clustering

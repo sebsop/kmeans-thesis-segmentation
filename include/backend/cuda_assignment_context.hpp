@@ -4,6 +4,7 @@
 
 #include <opencv2/core.hpp>
 
+#include "common/constants.hpp"
 #include "cuda_runtime.h"
 
 namespace kmeans::backend {
@@ -35,7 +36,8 @@ class CudaAssignmentContext {
     [[nodiscard]] int getWidth() const noexcept { return m_width; }
     [[nodiscard]] int getK() const noexcept { return m_k; }
 
-    void run(const cv::Mat& frame, const std::vector<cv::Vec<float, 5>>& centers, cv::Mat& output);
+    void run(const cv::Mat& frame, const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers,
+             cv::Mat& output);
 };
 
 } // namespace kmeans::backend

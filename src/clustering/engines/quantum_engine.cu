@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <vector>
 
 #include "clustering/engines/quantum_engine.hpp"
 #include "common/constants.hpp"
@@ -13,7 +14,7 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     extern __shared__ float s_centers[];
 
     int tid = threadIdx.x;
-    if (tid < k * 5) {
+    if (tid < k * constants::FEATURE_DIMS) {
         s_centers[tid] = centers[tid] * scale_factor; // Pre-scaled
     }
     __syncthreads();
@@ -22,10 +23,10 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     if (idx >= numPoints)
         return;
 
-    float p[5];
+    float p[constants::FEATURE_DIMS];
 #pragma unroll
-    for (int d = 0; d < 5; ++d) {
-        p[d] = samples[idx * 5 + d] * scale_factor; // Pre-scaled
+    for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+        p[d] = samples[idx * constants::FEATURE_DIMS + d] * scale_factor; // Pre-scaled
     }
 
     float minDistSq = constants::MATH_INF;
@@ -34,8 +35,8 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     for (int j = 0; j < k; ++j) {
         float target_prob = 1.0f;
 #pragma unroll
-        for (int d = 0; d < 5; ++d) {
-            float diff = (p[d] - s_centers[j * 5 + d]) * constants::QUANTUM_PHASE_OFFSET;
+        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            float diff = (p[d] - s_centers[j * constants::FEATURE_DIMS + d]) * constants::QUANTUM_PHASE_OFFSET;
             float cos_val = __cosf(diff);
             target_prob *= (cos_val * cos_val);
         }
@@ -52,19 +53,16 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     }
 }
 
-void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, 5>>& initialCenters, const cv::Mat& samples) {
-    float min_vals[5] = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
-                         std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
-                         std::numeric_limits<float>::max()};
-    float max_vals[5] = {std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
-                         std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(),
-                         std::numeric_limits<float>::lowest()};
+void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters,
+                                const cv::Mat& samples) {
+    std::vector<float> min_vals(constants::FEATURE_DIMS, std::numeric_limits<float>::max());
+    std::vector<float> max_vals(constants::FEATURE_DIMS, std::numeric_limits<float>::lowest());
 
     if (!samples.empty()) {
         int numPoints = samples.rows;
         for (int i = 0; i < numPoints; ++i) {
             const float* rowPtr = samples.ptr<float>(i);
-            for (int d = 0; d < 5; ++d) {
+            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
                 float val = rowPtr[d];
                 if (val < min_vals[d])
                     min_vals[d] = val;
@@ -73,9 +71,9 @@ void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, 5>>& initialCen
             }
         }
     } else {
-        // Compute from centers if samples matrix is empty (GPU direct path)
+        // Compute from centers if samples matrix is empty
         for (const auto& c : initialCenters) {
-            for (int d = 0; d < 5; ++d) {
+            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
                 if (c[d] < min_vals[d])
                     min_vals[d] = c[d];
                 if (c[d] > max_vals[d])
@@ -85,7 +83,7 @@ void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, 5>>& initialCen
     }
 
     float max_range = 0.0f;
-    for (int d = 0; d < 5; ++d) {
+    for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
         float range = max_vals[d] - min_vals[d];
         if (range > max_range)
             max_range = range;

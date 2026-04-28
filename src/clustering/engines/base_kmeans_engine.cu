@@ -24,10 +24,10 @@ __global__ static void internalBaseUpdateKernel(const float* __restrict__ sample
                                                 int* __restrict__ counts) {
     extern __shared__ float s_mem[];
     float* s_sums = s_mem;
-    int* s_counts = (int*)&s_mem[k * 5];
+    int* s_counts = (int*)&s_mem[k * constants::FEATURE_DIMS];
 
     int tid = threadIdx.x;
-    int total_elements = k * 5 + k;
+    int total_elements = k * constants::FEATURE_DIMS + k;
     if (tid < total_elements) {
         s_mem[tid] = 0.0f;
     }
@@ -39,8 +39,8 @@ __global__ static void internalBaseUpdateKernel(const float* __restrict__ sample
         if (cluster >= 0 && cluster < k) {
             atomicAdd(&s_counts[cluster], 1);
 #pragma unroll
-            for (int d = 0; d < 5; ++d) {
-                atomicAdd(&s_sums[cluster * 5 + d], samples[idx * 5 + d]);
+            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+                atomicAdd(&s_sums[cluster * constants::FEATURE_DIMS + d], samples[idx * constants::FEATURE_DIMS + d]);
             }
         }
     }
@@ -50,8 +50,8 @@ __global__ static void internalBaseUpdateKernel(const float* __restrict__ sample
         if (s_counts[tid] > 0) {
             atomicAdd(&counts[tid], s_counts[tid]);
 #pragma unroll
-            for (int d = 0; d < 5; ++d) {
-                atomicAdd(&newSums[tid * 5 + d], s_sums[tid * 5 + d]);
+            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+                atomicAdd(&newSums[tid * constants::FEATURE_DIMS + d], s_sums[tid * constants::FEATURE_DIMS + d]);
             }
         }
     }
@@ -96,33 +96,36 @@ void BaseKMeansEngine::ensureBuffers(int numPoints, int k) {
         m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
         m_maxK = std::max(m_maxK, k);
 
-        CUDA_CHECK(cudaMalloc(&m_d_samples, m_maxPoints * 5 * sizeof(float)));
-        CUDA_CHECK(cudaMalloc(&m_d_centers, m_maxK * 5 * sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&m_d_samples, m_maxPoints * constants::FEATURE_DIMS * sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&m_d_centers, m_maxK * constants::FEATURE_DIMS * sizeof(float)));
         CUDA_CHECK(cudaMalloc(&m_d_labels, m_maxPoints * sizeof(int)));
-        CUDA_CHECK(cudaMalloc(&m_d_newSums, m_maxK * 5 * sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&m_d_newSums, m_maxK * constants::FEATURE_DIMS * sizeof(float)));
         CUDA_CHECK(cudaMalloc(&m_d_counts, m_maxK * sizeof(int)));
         CUDA_CHECK(cudaMalloc(&m_d_changed, sizeof(int)));
     }
 }
 
-std::vector<cv::Vec<float, 5>> BaseKMeansEngine::run(const cv::Mat& samples,
-                                                     const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
-                                                     int maxIterations) {
+std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+BaseKMeansEngine::run(const cv::Mat& samples,
+                      const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+                      int maxIterations) {
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
     ensureBuffers(numPoints, k);
-    CUDA_CHECK(cudaMemcpy(m_d_samples, samples.ptr<float>(0), numPoints * 5 * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(m_d_samples, samples.ptr<float>(0), numPoints * constants::FEATURE_DIMS * sizeof(float),
+                          cudaMemcpyHostToDevice));
 
     preRunSetup(initialCenters, samples);
 
     return runInternal(m_d_samples, numPoints, initialCenters, k, maxIterations);
 }
 
-std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runOnDevice(float* d_samples_ext, int numPoints,
-                                                             const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                             int k, int maxIterations) {
+std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+BaseKMeansEngine::runOnDevice(float* d_samples_ext, int numPoints,
+                              const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+                              int maxIterations) {
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
@@ -141,9 +144,9 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runOnDevice(float* d_samples_ex
         m_maxPoints = std::max(m_maxPoints, static_cast<size_t>(numPoints));
         m_maxK = std::max(m_maxK, k);
 
-        CUDA_CHECK(cudaMalloc(&m_d_centers, m_maxK * 5 * sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&m_d_centers, m_maxK * constants::FEATURE_DIMS * sizeof(float)));
         CUDA_CHECK(cudaMalloc(&m_d_labels, m_maxPoints * sizeof(int)));
-        CUDA_CHECK(cudaMalloc(&m_d_newSums, m_maxK * 5 * sizeof(float)));
+        CUDA_CHECK(cudaMalloc(&m_d_newSums, m_maxK * constants::FEATURE_DIMS * sizeof(float)));
         CUDA_CHECK(cudaMalloc(&m_d_counts, m_maxK * sizeof(int)));
         CUDA_CHECK(cudaMalloc(&m_d_changed, sizeof(int)));
     }
@@ -153,15 +156,16 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runOnDevice(float* d_samples_ex
     return runInternal(d_samples_ext, numPoints, initialCenters, k, maxIterations);
 }
 
-std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int numPoints,
-                                                             const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                             int k, int maxIterations) {
-    size_t centersSize = static_cast<size_t>(k) * 5 * sizeof(float);
+std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+BaseKMeansEngine::runInternal(float* d_samp, int numPoints,
+                              const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+                              int maxIterations) {
+    size_t centersSize = static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float);
 
-    std::vector<float> h_centers(k * 5);
+    std::vector<float> h_centers(k * constants::FEATURE_DIMS);
     for (int i = 0; i < k; ++i) {
-        for (int d = 0; d < 5; ++d) {
-            h_centers[i * 5 + d] = initialCenters[i][d];
+        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            h_centers[i * constants::FEATURE_DIMS + d] = initialCenters[i][d];
         }
     }
 
@@ -171,10 +175,11 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int 
     int threadsPerBlock = constants::CUDA_THREADS_PER_BLOCK;
     int blocksPerGrid = (numPoints + threadsPerBlock - 1) / threadsPerBlock;
 
-    size_t sharedAssignSize = static_cast<size_t>(k) * 5 * sizeof(float);
-    size_t sharedUpdateSize = static_cast<size_t>(k) * 5 * sizeof(float) + static_cast<size_t>(k) * sizeof(int);
+    size_t sharedAssignSize = static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float);
+    size_t sharedUpdateSize =
+        static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float) + static_cast<size_t>(k) * sizeof(int);
 
-    std::vector<float> h_newSums(k * 5);
+    std::vector<float> h_newSums(k * constants::FEATURE_DIMS);
     std::vector<int> h_counts(k);
 
     int iter = 0;
@@ -206,13 +211,15 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int 
         // CPU center averaging
         for (int j = 0; j < k; ++j) {
             if (h_counts[j] > 0) {
-                for (int d = 0; d < 5; ++d) {
-                    h_centers[j * 5 + d] = h_newSums[j * 5 + d] / static_cast<float>(h_counts[j]);
+                for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+                    h_centers[j * constants::FEATURE_DIMS + d] =
+                        h_newSums[j * constants::FEATURE_DIMS + d] / static_cast<float>(h_counts[j]);
                 }
             } else if (numPoints > 0) {
                 int randomIdx = rand() % numPoints;
-                CUDA_CHECK(
-                    cudaMemcpy(&h_centers[j * 5], &d_samp[randomIdx * 5], 5 * sizeof(float), cudaMemcpyDeviceToHost));
+                CUDA_CHECK(cudaMemcpy(&h_centers[j * constants::FEATURE_DIMS],
+                                      &d_samp[randomIdx * constants::FEATURE_DIMS],
+                                      constants::FEATURE_DIMS * sizeof(float), cudaMemcpyDeviceToHost));
             }
         }
         CUDA_CHECK(cudaMemcpy(m_d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
@@ -220,10 +227,10 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int 
 
     m_lastIterations = iter + 1;
 
-    std::vector<cv::Vec<float, 5>> finalCenters(k);
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> finalCenters(k);
     for (int i = 0; i < k; ++i) {
-        for (int d = 0; d < 5; ++d) {
-            finalCenters[i][d] = h_centers[i * 5 + d];
+        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            finalCenters[i][d] = h_centers[i * constants::FEATURE_DIMS + d];
         }
     }
     return finalCenters;

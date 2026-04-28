@@ -1,4 +1,5 @@
 #include "clustering/engines/classical_engine.hpp"
+#include "common/constants.hpp"
 
 namespace kmeans::clustering {
 
@@ -8,7 +9,7 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     extern __shared__ float s_centers[];
 
     int tid = threadIdx.x;
-    if (tid < k * 5) {
+    if (tid < k * constants::FEATURE_DIMS) {
         s_centers[tid] = centers[tid];
     }
     __syncthreads();
@@ -17,20 +18,20 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     if (idx >= numPoints)
         return;
 
-    float p[5];
+    float p[constants::FEATURE_DIMS];
 #pragma unroll
-    for (int d = 0; d < 5; ++d) {
-        p[d] = samples[idx * 5 + d];
+    for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+        p[d] = samples[idx * constants::FEATURE_DIMS + d];
     }
 
-    float minDistSq = 1e30f;
+    float minDistSq = constants::MATH_INF;
     int bestK = 0;
 
     for (int j = 0; j < k; ++j) {
         float d2 = 0.0f;
 #pragma unroll
-        for (int d = 0; d < 5; ++d) {
-            float diff = p[d] - s_centers[j * 5 + d];
+        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            float diff = p[d] - s_centers[j * constants::FEATURE_DIMS + d];
             d2 += diff * diff;
         }
         if (d2 < minDistSq) {

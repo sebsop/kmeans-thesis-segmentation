@@ -21,7 +21,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
          bState == BenchmarkState::RECOMPUTING) &&
         bResults) {
         if (!benchTexturesLoaded) {
-            auto drawCentroids = [](cv::Mat& img, const std::vector<cv::Vec<float, 5>>& centers) {
+            auto drawCentroids = [](cv::Mat& img, const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers) {
                 for (const auto& c : centers) {
                     cv::Point pt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(img.cols)),
                                  static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(img.rows)));
@@ -100,7 +100,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             float tableInnerW = avail.x;
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float colWidth = (tableInnerW - spacing * 2.0f) / 3.0f;
-            const float imgScale = 0.825f;
+            const float imgScale = constants::UI_BENCH_IMG_SCALE;
             float ratio =
                 static_cast<float>(bResults->originalFrame.rows) / static_cast<float>(bResults->originalFrame.cols);
             float imgW = colWidth * imgScale;

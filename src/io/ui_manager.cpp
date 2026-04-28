@@ -31,35 +31,37 @@ void UIManager::applyPremiumTheme() {
     ImGuiStyle& style = ImGui::GetStyle();
     ImVec4* colors = style.Colors;
 
-    colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.12f, 0.12f, 0.12f, 0.94f);
-    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.16f, 0.16f, 0.18f, 1.00f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.08f, 0.08f, 1.00f);
-    colors[ImGuiCol_Button] = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
-    colors[ImGuiCol_ButtonHovered] = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(0.45f, 0.45f, 0.50f, 1.00f);
-    colors[ImGuiCol_Header] = ImVec4(0.24f, 0.24f, 0.28f, 1.00f);
-    colors[ImGuiCol_HeaderHovered] = ImVec4(0.35f, 0.35f, 0.40f, 1.00f);
-    colors[ImGuiCol_HeaderActive] = ImVec4(0.45f, 0.45f, 0.50f, 1.00f);
-    colors[ImGuiCol_CheckMark] = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
-    colors[ImGuiCol_SliderGrab] = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
-    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.70f, 0.50f, 1.00f, 1.00f);
-    colors[ImGuiCol_PlotLines] = ImVec4(0.60f, 0.40f, 0.90f, 1.00f);
-    colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.70f, 0.50f, 1.00f, 1.00f);
+    auto toImVec4 = [](const constants::ColorRGBA& c) { return ImVec4(c.r, c.g, c.b, c.a); };
 
-    style.WindowRounding = 8.0f;
-    style.ChildRounding = 6.0f;
-    style.FrameRounding = 6.0f;
-    style.PopupRounding = 6.0f;
-    style.GrabRounding = 6.0f;
-    style.FramePadding = ImVec2(10.0f, 6.0f);
-    style.WindowPadding = ImVec2(12.0f, 12.0f);
-    style.ItemSpacing = ImVec2(8.0f, 8.0f);
+    colors[ImGuiCol_Text] = toImVec4(constants::UITheme::TEXT);
+    colors[ImGuiCol_WindowBg] = toImVec4(constants::UITheme::WINDOW_BG);
+    colors[ImGuiCol_PopupBg] = toImVec4(constants::UITheme::POPUP_BG);
+    colors[ImGuiCol_Border] = toImVec4(constants::UITheme::BORDER);
+    colors[ImGuiCol_FrameBg] = toImVec4(constants::UITheme::FRAME_BG);
+    colors[ImGuiCol_FrameBgHovered] = toImVec4(constants::UITheme::FRAME_BG_HOVERED);
+    colors[ImGuiCol_FrameBgActive] = toImVec4(constants::UITheme::FRAME_BG_ACTIVE);
+    colors[ImGuiCol_TitleBg] = toImVec4(constants::UITheme::TITLE_BG);
+    colors[ImGuiCol_TitleBgActive] = toImVec4(constants::UITheme::TITLE_BG_ACTIVE);
+    colors[ImGuiCol_Button] = toImVec4(constants::UITheme::BUTTON);
+    colors[ImGuiCol_ButtonHovered] = toImVec4(constants::UITheme::BUTTON_HOVERED);
+    colors[ImGuiCol_ButtonActive] = toImVec4(constants::UITheme::BUTTON_ACTIVE);
+    colors[ImGuiCol_Header] = toImVec4(constants::UITheme::HEADER);
+    colors[ImGuiCol_HeaderHovered] = toImVec4(constants::UITheme::HEADER_HOVERED);
+    colors[ImGuiCol_HeaderActive] = toImVec4(constants::UITheme::HEADER_ACTIVE);
+    colors[ImGuiCol_CheckMark] = toImVec4(constants::UITheme::CHECK_MARK);
+    colors[ImGuiCol_SliderGrab] = toImVec4(constants::UITheme::SLIDER_GRAB);
+    colors[ImGuiCol_SliderGrabActive] = toImVec4(constants::UITheme::SLIDER_GRAB_ACTIVE);
+    colors[ImGuiCol_PlotLines] = toImVec4(constants::UITheme::PLOT_LINES);
+    colors[ImGuiCol_PlotLinesHovered] = toImVec4(constants::UITheme::PLOT_LINES_HOVERED);
+
+    style.WindowRounding = constants::UITheme::WINDOW_ROUNDING;
+    style.ChildRounding = constants::UITheme::CHILD_ROUNDING;
+    style.FrameRounding = constants::UITheme::FRAME_ROUNDING;
+    style.PopupRounding = constants::UITheme::POPUP_ROUNDING;
+    style.GrabRounding = constants::UITheme::GRAB_ROUNDING;
+    style.FramePadding = ImVec2(constants::UITheme::FRAME_PADDING_X, constants::UITheme::FRAME_PADDING_Y);
+    style.WindowPadding = ImVec2(constants::UITheme::WINDOW_PADDING_X, constants::UITheme::WINDOW_PADDING_Y);
+    style.ItemSpacing = ImVec2(constants::UITheme::ITEM_SPACING_X, constants::UITheme::ITEM_SPACING_Y);
 }
 
 void UIManager::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {

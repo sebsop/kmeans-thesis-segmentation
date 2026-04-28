@@ -6,6 +6,7 @@
 #include <opencv2/core.hpp>
 
 #include "common/config.hpp"
+#include "common/constants.hpp"
 
 namespace kmeans::backend {
 class CudaAssignmentContext;
@@ -25,7 +26,7 @@ class StridedDataPreprocessor;
  */
 class ClusteringManager {
   private:
-    std::vector<cv::Vec<float, 5>> m_previousCenters;
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> m_previousCenters;
     bool m_hasPrevious = false;
     int m_frameCount = 0;
 
@@ -40,7 +41,7 @@ class ClusteringManager {
     std::unique_ptr<KMeansEngine> m_clusteringEngine;
 
     common::SegmentationConfig m_prevConfig;
-    std::vector<cv::Vec<float, 5>> m_centers;
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> m_centers;
 
   public:
     ClusteringManager();
@@ -49,7 +50,9 @@ class ClusteringManager {
     [[nodiscard]] common::SegmentationConfig& getConfig() noexcept { return m_config; }
     [[nodiscard]] const common::SegmentationConfig& getConfig() const noexcept { return m_config; }
 
-    [[nodiscard]] const std::vector<cv::Vec<float, 5>>& getCenters() const noexcept { return m_centers; }
+    [[nodiscard]] const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& getCenters() const noexcept {
+        return m_centers;
+    }
 
     [[nodiscard]] KMeansEngine* getEngine() const noexcept { return m_clusteringEngine.get(); }
 
@@ -60,17 +63,17 @@ class ClusteringManager {
     void resetCenters();
 
     /** @brief Forces the engine to use a specific set of initial centroids (bypasses initializer). */
-    void setInitialCenters(const std::vector<cv::Vec<float, 5>>& centers) {
+    void setInitialCenters(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers) {
         m_previousCenters = centers;
         m_hasPrevious = true;
     }
 
     /** @brief Generates initial centroids using the currently configured initializer without running K-Means. */
-    std::vector<cv::Vec<float, 5>> generateInitialCenters(const cv::Mat& frame);
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> generateInitialCenters(const cv::Mat& frame);
 
     /** @brief Segments a single frame using the current clustering configuration. */
     [[nodiscard]] cv::Mat segmentFrame(const cv::Mat& frame);
-    [[nodiscard]] std::vector<cv::Vec<float, 5>> computeCenters(const cv::Mat& frame);
+    [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>> computeCenters(const cv::Mat& frame);
 };
 
 } // namespace kmeans::clustering

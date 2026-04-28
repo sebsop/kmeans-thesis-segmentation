@@ -9,17 +9,18 @@
 
 namespace kmeans::clustering::metrics {
 
-static float sqDistance(const float* p1, const cv::Vec<float, 5>& p2) {
+static float sqDistance(const float* p1, const cv::Vec<float, constants::FEATURE_DIMS>& p2) {
     float d = 0;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < constants::FEATURE_DIMS; ++i) {
         float diff = p1[i] - p2[i];
         d += diff * diff;
     }
     return d;
 }
 
-BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv::Vec<float, 5>>& centers,
-                                   int iterations, float executionTimeMs) {
+BenchmarkResults computeAllMetrics(const cv::Mat& samples,
+                                   const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers, int iterations,
+                                   float executionTimeMs) {
     int numPoints = samples.rows;
     int k = static_cast<int>(centers.size());
 
@@ -65,12 +66,12 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
                 continue;
             }
             float dCenter = 0.0f;
-            for (int d = 0; d < 5; ++d) {
+            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
                 float diff = centers[i][d] - centers[j][d];
                 dCenter += diff * diff;
             }
             dCenter = std::sqrt(dCenter);
-            if (dCenter > 1e-6f) {
+            if (dCenter > constants::MATH_EPSILON) {
                 maxR = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxR);
             }
         }
@@ -114,7 +115,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
 
             const auto* p2 = samples.ptr<float>(j);
             float d = 0.0f;
-            for (int dim = 0; dim < 5; ++dim) {
+            for (int dim = 0; dim < constants::FEATURE_DIMS; ++dim) {
                 float diff = p[dim] - p2[dim];
                 d += diff * diff;
             }
@@ -143,7 +144,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
         }
 
         float maxAB = std::max(a, b);
-        if (maxAB > 1e-6f && b < 1e29f) {
+        if (maxAB > constants::MATH_EPSILON && b < constants::MATH_INF) {
             totalSilhouette += (b - a) / maxAB;
             validSilhouettePoints++;
         }

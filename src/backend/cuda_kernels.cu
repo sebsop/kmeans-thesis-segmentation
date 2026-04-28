@@ -102,12 +102,16 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
     }
 
     float inv_scale = 1.0f / fmaxf(constants::MATH_EPSILON, color_scale);
-    output[offset + 0] = static_cast<unsigned char>(fminf(255.0f, s_centers[bestIdx * 5 + 0] * inv_scale));
-    output[offset + 1] = static_cast<unsigned char>(fminf(255.0f, s_centers[bestIdx * 5 + 1] * inv_scale));
-    output[offset + 2] = static_cast<unsigned char>(fminf(255.0f, s_centers[bestIdx * 5 + 2] * inv_scale));
+    output[offset + 0] = static_cast<unsigned char>(
+        fminf(constants::COLOR_MAX_F, s_centers[bestIdx * constants::FEATURE_DIMS + 0] * inv_scale));
+    output[offset + 1] = static_cast<unsigned char>(
+        fminf(constants::COLOR_MAX_F, s_centers[bestIdx * constants::FEATURE_DIMS + 1] * inv_scale));
+    output[offset + 2] = static_cast<unsigned char>(
+        fminf(constants::COLOR_MAX_F, s_centers[bestIdx * constants::FEATURE_DIMS + 2] * inv_scale));
 }
 
-void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<cv::Vec<float, 5>>& centers, cv::Mat& output) {
+void CudaAssignmentContext::run(const cv::Mat& frame,
+                                const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers, cv::Mat& output) {
     // 1. Quick CPU copy to pinned memory to bypass driver staging overhead
     std::memcpy(m_h_input_pinned, frame.data, m_imgSize);
     CUDA_CHECK(cudaMemcpyAsync(m_d_input, m_h_input_pinned, m_imgSize, cudaMemcpyHostToDevice, m_stream));
@@ -115,7 +119,7 @@ void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<cv::Vec<
     // Flatten centers directly into pinned host buffer
     int k_idx = 0;
     for (const auto& c : centers) {
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < constants::FEATURE_DIMS; ++i) {
             m_h_centers_pinned[k_idx++] = c[i];
         }
     }
@@ -125,7 +129,7 @@ void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<cv::Vec<
     // 2. Launch Kernel on Stream
     int threadsPerBlock = constants::CUDA_THREADS_PER_BLOCK;
     int blocksPerGrid = (m_width * m_height + threadsPerBlock - 1) / threadsPerBlock;
-    size_t sharedSize = static_cast<size_t>(m_k) * 5 * sizeof(float);
+    size_t sharedSize = static_cast<size_t>(m_k) * constants::FEATURE_DIMS * sizeof(float);
 
     assignPixelsKernel<<<blocksPerGrid, threadsPerBlock, sharedSize, m_stream>>>(
         m_d_input, m_d_output, m_width, m_height, m_d_centers, m_k, constants::COLOR_SCALE, constants::SPATIAL_SCALE);

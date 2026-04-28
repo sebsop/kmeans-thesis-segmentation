@@ -108,7 +108,8 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     static float displayUIRenderFPS = 0.0f;
     static auto lastUIUpdateTime = std::chrono::high_resolution_clock::now();
     auto uiNow = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(uiNow - lastUIUpdateTime).count() > 1000) {
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(uiNow - lastUIUpdateTime).count() >
+        constants::UI_REFRESH_SLOW) {
         displayUIRenderFPS = ImGui::GetIO().Framerate;
         lastUIUpdateTime = uiNow;
     }
@@ -145,7 +146,8 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         static float displayAvg = 0.0f;
         static auto lastUpdateTime = std::chrono::high_resolution_clock::now();
         auto now = std::chrono::high_resolution_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdateTime).count() > 500) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdateTime).count() >
+            constants::UI_REFRESH_FAST) {
             displayFps = workerFps;
             displayMs = algoTimeMs;
             displayAvg = avgFps;

@@ -5,6 +5,7 @@
 #include <opencv2/core.hpp>
 
 #include "clustering/engines/kmeans_engine.hpp"
+#include "common/constants.hpp"
 
 namespace kmeans::clustering {
 
@@ -29,27 +30,29 @@ class BaseKMeansEngine : public KMeansEngine {
     BaseKMeansEngine() = default;
     ~BaseKMeansEngine() override;
 
-    [[nodiscard]] std::vector<cv::Vec<float, 5>> run(const cv::Mat& samples,
-                                                     const std::vector<cv::Vec<float, 5>>& initialCenters, int k,
-                                                     int maxIterations) override;
+    [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+    run(const cv::Mat& samples, const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+        int maxIterations) override;
 
-    [[nodiscard]] std::vector<cv::Vec<float, 5>> runOnDevice(float* d_samples_ext, int numPoints,
-                                                             const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                             int k, int maxIterations) override;
+    [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+    runOnDevice(float* d_samples_ext, int numPoints,
+                const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+                int maxIterations) override;
 
   protected:
     void ensureBuffers(int numPoints, int k);
 
-    [[nodiscard]] std::vector<cv::Vec<float, 5>> runInternal(float* d_samp, int numPoints,
-                                                             const std::vector<cv::Vec<float, 5>>& initialCenters,
-                                                             int k, int maxIterations);
+    [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+    runInternal(float* d_samp, int numPoints,
+                const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k, int maxIterations);
 
     /**
      * @brief Hook for subclasses to perform any setup before the iterative loop begins.
      * @param initialCenters The initial cluster centers.
      * @param samples Host-side samples matrix (empty if runOnDevice is used).
      */
-    virtual void preRunSetup(const std::vector<cv::Vec<float, 5>>& initialCenters, const cv::Mat& samples) {}
+    virtual void preRunSetup(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters,
+                             const cv::Mat& samples) {}
 
     /**
      * @brief Hook to launch the assignment kernel.

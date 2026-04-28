@@ -29,7 +29,7 @@ class Application {
 
     cv::Mat m_latestOriginal;
     cv::Mat m_latestSegmented;
-    std::vector<cv::Vec<float, 5>> m_latestCenters;
+    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> m_latestCenters;
     common::SegmentationConfig m_uiConfig;
 
     std::chrono::high_resolution_clock::time_point m_lastWorkerTime;
