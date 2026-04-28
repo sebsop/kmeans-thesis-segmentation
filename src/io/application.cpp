@@ -230,7 +230,7 @@ void Application::run() {
             ImVec2 textSize = ImGui::CalcTextSize(loadingText);
 
             // Animate dots based on time
-            int dots = static_cast<int>(ImGui::GetTime() * 4.0) % 4;
+            int dots = static_cast<int>(ImGui::GetTime() * constants::UI_ANIM_DOT_SPEED) % 4;
             std::string dotStr(dots, '.');
             std::string fullText = std::string(loadingText) + dotStr;
 
@@ -246,7 +246,7 @@ void Application::run() {
             // Subtitle
             const char* subText = "Connecting to camera stream and allocating VRAM...";
             ImVec2 subSize = ImGui::CalcTextSize(subText);
-            ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h + textSize.y) * 0.5f + 15.0f));
+            ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h + textSize.y) * 0.5f + constants::UI_LAYOUT_OFFSET));
             ImGui::PushStyleColor(ImGuiCol_Text,
                                   ImVec4(constants::UI_COLOR_TEXT_DIM.r, constants::UI_COLOR_TEXT_DIM.g,
                                          constants::UI_COLOR_TEXT_DIM.b, constants::UI_COLOR_TEXT_DIM.a));

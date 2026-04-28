@@ -85,7 +85,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
     int subsetSize = std::min(numPoints, constants::METRIC_APPROX_SUBSET_SIZE);
     std::vector<int> indices(numPoints);
     std::iota(indices.begin(), indices.end(), 0);
-    std::mt19937 gen(42); // Fixed seed for stable comparisons between algorithms
+    std::mt19937 gen(constants::STABLE_RANDOM_SEED); // Fixed seed for stable comparisons between algorithms
     std::shuffle(indices.begin(), indices.end(), gen);
 
     float totalSilhouette = 0.0f;

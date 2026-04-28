@@ -1,15 +1,16 @@
 #pragma once
 #include "common/enums.hpp"
+#include "common/constants.hpp"
 
 namespace kmeans::common {
 
 struct SegmentationConfig {
-    int stride = 4;
+    int stride = constants::DEFAULT_STRIDE;
     InitializationType init = InitializationType::KMEANS_PLUSPLUS;
     AlgorithmType algorithm = AlgorithmType::KMEANS_REGULAR;
 
     int k = 3;
-    int learningInterval = 15;
+    int learningInterval = constants::DEFAULT_LEARN_INTERVAL;
     int maxIterations = 20;
 };
 

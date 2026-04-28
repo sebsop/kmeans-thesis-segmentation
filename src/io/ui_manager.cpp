@@ -33,35 +33,35 @@ void UIManager::applyPremiumTheme() {
 
     auto toImVec4 = [](const constants::ColorRGBA& c) { return ImVec4(c.r, c.g, c.b, c.a); };
 
-    colors[ImGuiCol_Text] = toImVec4(constants::UITheme::TEXT);
-    colors[ImGuiCol_WindowBg] = toImVec4(constants::UITheme::WINDOW_BG);
-    colors[ImGuiCol_PopupBg] = toImVec4(constants::UITheme::POPUP_BG);
-    colors[ImGuiCol_Border] = toImVec4(constants::UITheme::BORDER);
-    colors[ImGuiCol_FrameBg] = toImVec4(constants::UITheme::FRAME_BG);
-    colors[ImGuiCol_FrameBgHovered] = toImVec4(constants::UITheme::FRAME_BG_HOVERED);
-    colors[ImGuiCol_FrameBgActive] = toImVec4(constants::UITheme::FRAME_BG_ACTIVE);
-    colors[ImGuiCol_TitleBg] = toImVec4(constants::UITheme::TITLE_BG);
-    colors[ImGuiCol_TitleBgActive] = toImVec4(constants::UITheme::TITLE_BG_ACTIVE);
-    colors[ImGuiCol_Button] = toImVec4(constants::UITheme::BUTTON);
-    colors[ImGuiCol_ButtonHovered] = toImVec4(constants::UITheme::BUTTON_HOVERED);
-    colors[ImGuiCol_ButtonActive] = toImVec4(constants::UITheme::BUTTON_ACTIVE);
-    colors[ImGuiCol_Header] = toImVec4(constants::UITheme::HEADER);
-    colors[ImGuiCol_HeaderHovered] = toImVec4(constants::UITheme::HEADER_HOVERED);
-    colors[ImGuiCol_HeaderActive] = toImVec4(constants::UITheme::HEADER_ACTIVE);
-    colors[ImGuiCol_CheckMark] = toImVec4(constants::UITheme::CHECK_MARK);
-    colors[ImGuiCol_SliderGrab] = toImVec4(constants::UITheme::SLIDER_GRAB);
-    colors[ImGuiCol_SliderGrabActive] = toImVec4(constants::UITheme::SLIDER_GRAB_ACTIVE);
-    colors[ImGuiCol_PlotLines] = toImVec4(constants::UITheme::PLOT_LINES);
-    colors[ImGuiCol_PlotLinesHovered] = toImVec4(constants::UITheme::PLOT_LINES_HOVERED);
+    colors[ImGuiCol_Text] = toImVec4(constants::theme::TEXT);
+    colors[ImGuiCol_WindowBg] = toImVec4(constants::theme::WINDOW_BG);
+    colors[ImGuiCol_PopupBg] = toImVec4(constants::theme::POPUP_BG);
+    colors[ImGuiCol_Border] = toImVec4(constants::theme::BORDER);
+    colors[ImGuiCol_FrameBg] = toImVec4(constants::theme::FRAME_BG);
+    colors[ImGuiCol_FrameBgHovered] = toImVec4(constants::theme::FRAME_BG_HOVERED);
+    colors[ImGuiCol_FrameBgActive] = toImVec4(constants::theme::FRAME_BG_ACTIVE);
+    colors[ImGuiCol_TitleBg] = toImVec4(constants::theme::TITLE_BG);
+    colors[ImGuiCol_TitleBgActive] = toImVec4(constants::theme::TITLE_BG_ACTIVE);
+    colors[ImGuiCol_Button] = toImVec4(constants::theme::BUTTON);
+    colors[ImGuiCol_ButtonHovered] = toImVec4(constants::theme::BUTTON_HOVERED);
+    colors[ImGuiCol_ButtonActive] = toImVec4(constants::theme::BUTTON_ACTIVE);
+    colors[ImGuiCol_Header] = toImVec4(constants::theme::HEADER);
+    colors[ImGuiCol_HeaderHovered] = toImVec4(constants::theme::HEADER_HOVERED);
+    colors[ImGuiCol_HeaderActive] = toImVec4(constants::theme::HEADER_ACTIVE);
+    colors[ImGuiCol_CheckMark] = toImVec4(constants::theme::CHECK_MARK);
+    colors[ImGuiCol_SliderGrab] = toImVec4(constants::theme::SLIDER_GRAB);
+    colors[ImGuiCol_SliderGrabActive] = toImVec4(constants::theme::SLIDER_GRAB_ACTIVE);
+    colors[ImGuiCol_PlotLines] = toImVec4(constants::theme::PLOT_LINES);
+    colors[ImGuiCol_PlotLinesHovered] = toImVec4(constants::theme::PLOT_LINES_HOVERED);
 
-    style.WindowRounding = constants::UITheme::WINDOW_ROUNDING;
-    style.ChildRounding = constants::UITheme::CHILD_ROUNDING;
-    style.FrameRounding = constants::UITheme::FRAME_ROUNDING;
-    style.PopupRounding = constants::UITheme::POPUP_ROUNDING;
-    style.GrabRounding = constants::UITheme::GRAB_ROUNDING;
-    style.FramePadding = ImVec2(constants::UITheme::FRAME_PADDING_X, constants::UITheme::FRAME_PADDING_Y);
-    style.WindowPadding = ImVec2(constants::UITheme::WINDOW_PADDING_X, constants::UITheme::WINDOW_PADDING_Y);
-    style.ItemSpacing = ImVec2(constants::UITheme::ITEM_SPACING_X, constants::UITheme::ITEM_SPACING_Y);
+    style.WindowRounding = constants::theme::WINDOW_ROUNDING;
+    style.ChildRounding = constants::theme::CHILD_ROUNDING;
+    style.FrameRounding = constants::theme::FRAME_ROUNDING;
+    style.PopupRounding = constants::theme::POPUP_ROUNDING;
+    style.GrabRounding = constants::theme::GRAB_ROUNDING;
+    style.FramePadding = ImVec2(constants::theme::FRAME_PADDING_X, constants::theme::FRAME_PADDING_Y);
+    style.WindowPadding = ImVec2(constants::theme::WINDOW_PADDING_X, constants::theme::WINDOW_PADDING_Y);
+    style.ItemSpacing = ImVec2(constants::theme::ITEM_SPACING_X, constants::theme::ITEM_SPACING_Y);
 }
 
 void UIManager::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {

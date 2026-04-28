@@ -205,9 +205,9 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             currentInitType = ctx.uiConfig.init;
         }
 
-        float kSliderWidth = 120.0f;
-        float strideSliderWidth = 100.0f;
-        float radioW = 260.0f;
+        float kSliderWidth = constants::UI_K_SLIDER_WIDTH;
+        float strideSliderWidth = constants::UI_STRIDE_SLIDER_WIDTH;
+        float radioW = constants::UI_RADIO_WIDTH;
 
         float kTextW = ImGui::CalcTextSize("K: ").x;
         float strideTextW = ImGui::CalcTextSize("Stride: ").x;

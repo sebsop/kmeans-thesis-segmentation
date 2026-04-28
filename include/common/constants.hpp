@@ -13,40 +13,51 @@ constexpr ColorRGBA UI_COLOR_ACCENT = {0.6f, 0.4f, 0.9f, 1.0f};
 constexpr ColorRGBA UI_COLOR_TEXT_DIM = {0.5f, 0.5f, 0.5f, 1.0f};
 
 // UITheme Palettes
-struct UITheme {
-    static constexpr ColorRGBA TEXT = {1.00f, 1.00f, 1.00f, 1.00f};
-    static constexpr ColorRGBA WINDOW_BG = {0.08f, 0.08f, 0.08f, 0.94f};
-    static constexpr ColorRGBA POPUP_BG = {0.12f, 0.12f, 0.12f, 0.94f};
-    static constexpr ColorRGBA BORDER = {0.43f, 0.43f, 0.50f, 0.50f};
-    static constexpr ColorRGBA FRAME_BG = {0.16f, 0.16f, 0.18f, 1.00f};
-    static constexpr ColorRGBA FRAME_BG_HOVERED = {0.24f, 0.24f, 0.28f, 1.00f};
-    static constexpr ColorRGBA FRAME_BG_ACTIVE = {0.35f, 0.35f, 0.40f, 1.00f};
-    static constexpr ColorRGBA TITLE_BG = {0.08f, 0.08f, 0.08f, 1.00f};
-    static constexpr ColorRGBA TITLE_BG_ACTIVE = {0.08f, 0.08f, 0.08f, 1.00f};
-    static constexpr ColorRGBA BUTTON = {0.24f, 0.24f, 0.28f, 1.00f};
-    static constexpr ColorRGBA BUTTON_HOVERED = {0.35f, 0.35f, 0.40f, 1.00f};
-    static constexpr ColorRGBA BUTTON_ACTIVE = {0.45f, 0.45f, 0.50f, 1.00f};
-    static constexpr ColorRGBA HEADER = {0.24f, 0.24f, 0.28f, 1.00f};
-    static constexpr ColorRGBA HEADER_HOVERED = {0.35f, 0.35f, 0.40f, 1.00f};
-    static constexpr ColorRGBA HEADER_ACTIVE = {0.45f, 0.45f, 0.50f, 1.00f};
-    static constexpr ColorRGBA CHECK_MARK = {0.60f, 0.40f, 0.90f, 1.00f};
-    static constexpr ColorRGBA SLIDER_GRAB = {0.60f, 0.40f, 0.90f, 1.00f};
-    static constexpr ColorRGBA SLIDER_GRAB_ACTIVE = {0.70f, 0.50f, 1.00f, 1.00f};
-    static constexpr ColorRGBA PLOT_LINES = {0.60f, 0.40f, 0.90f, 1.00f};
-    static constexpr ColorRGBA PLOT_LINES_HOVERED = {0.70f, 0.50f, 1.00f, 1.00f};
+namespace theme {
+    constexpr ColorRGBA TEXT = {1.00f, 1.00f, 1.00f, 1.00f};
+    constexpr ColorRGBA WINDOW_BG = {0.08f, 0.08f, 0.08f, 0.94f};
+    constexpr ColorRGBA POPUP_BG = {0.12f, 0.12f, 0.12f, 0.94f};
+    constexpr ColorRGBA BORDER = {0.43f, 0.43f, 0.50f, 0.50f};
+    constexpr ColorRGBA FRAME_BG = {0.16f, 0.16f, 0.18f, 1.00f};
+    constexpr ColorRGBA FRAME_BG_HOVERED = {0.24f, 0.24f, 0.28f, 1.00f};
+    constexpr ColorRGBA FRAME_BG_ACTIVE = {0.35f, 0.35f, 0.40f, 1.00f};
+    constexpr ColorRGBA TITLE_BG = {0.08f, 0.08f, 0.08f, 1.00f};
+    constexpr ColorRGBA TITLE_BG_ACTIVE = {0.08f, 0.08f, 0.08f, 1.00f};
+    constexpr ColorRGBA BUTTON = {0.24f, 0.24f, 0.28f, 1.00f};
+    constexpr ColorRGBA BUTTON_HOVERED = {0.35f, 0.35f, 0.40f, 1.00f};
+    constexpr ColorRGBA BUTTON_ACTIVE = {0.45f, 0.45f, 0.50f, 1.00f};
+    constexpr ColorRGBA HEADER = {0.24f, 0.24f, 0.28f, 1.00f};
+    constexpr ColorRGBA HEADER_HOVERED = {0.35f, 0.35f, 0.40f, 1.00f};
+    constexpr ColorRGBA HEADER_ACTIVE = {0.45f, 0.45f, 0.50f, 1.00f};
+    constexpr ColorRGBA CHECK_MARK = {0.60f, 0.40f, 0.90f, 1.00f};
+    constexpr ColorRGBA SLIDER_GRAB = {0.60f, 0.40f, 0.90f, 1.00f};
+    constexpr ColorRGBA SLIDER_GRAB_ACTIVE = {0.70f, 0.50f, 1.00f, 1.00f};
+    constexpr ColorRGBA PLOT_LINES = {0.60f, 0.40f, 0.90f, 1.00f};
+    constexpr ColorRGBA PLOT_LINES_HOVERED = {0.70f, 0.50f, 1.00f, 1.00f};
 
-    static constexpr float WINDOW_ROUNDING = 8.0f;
-    static constexpr float CHILD_ROUNDING = 6.0f;
-    static constexpr float FRAME_ROUNDING = 6.0f;
-    static constexpr float POPUP_ROUNDING = 6.0f;
-    static constexpr float GRAB_ROUNDING = 6.0f;
-    static constexpr float FRAME_PADDING_X = 10.0f;
-    static constexpr float FRAME_PADDING_Y = 6.0f;
-    static constexpr float WINDOW_PADDING_X = 12.0f;
-    static constexpr float WINDOW_PADDING_Y = 12.0f;
-    static constexpr float ITEM_SPACING_X = 8.0f;
-    static constexpr float ITEM_SPACING_Y = 8.0f;
-};
+    constexpr float WINDOW_ROUNDING = 8.0f;
+    constexpr float CHILD_ROUNDING = 6.0f;
+    constexpr float FRAME_ROUNDING = 6.0f;
+    constexpr float POPUP_ROUNDING = 6.0f;
+    constexpr float GRAB_ROUNDING = 6.0f;
+    constexpr float FRAME_PADDING_X = 10.0f;
+    constexpr float FRAME_PADDING_Y = 6.0f;
+    constexpr float WINDOW_PADDING_X = 12.0f;
+    constexpr float WINDOW_PADDING_Y = 12.0f;
+    constexpr float ITEM_SPACING_X = 8.0f;
+    constexpr float ITEM_SPACING_Y = 8.0f;
+}
+
+// Logic Defaults
+constexpr int DEFAULT_STRIDE = 4;
+constexpr int DEFAULT_LEARN_INTERVAL = 15;
+constexpr int STABLE_RANDOM_SEED = 42;
+
+// Layout & Ratios
+constexpr float UI_LAYOUT_OFFSET = 15.0f;
+constexpr float UI_K_SLIDER_WIDTH = 120.0f;
+constexpr float UI_STRIDE_SLIDER_WIDTH = 100.0f;
+constexpr float UI_RADIO_WIDTH = 260.0f;
 
 // Scientific Accuracy & Metrics
 constexpr int FEATURE_DIMS = 5;
