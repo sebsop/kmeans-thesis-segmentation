@@ -22,12 +22,14 @@ void BenchmarkRunner::reset() {
     m_results.reset();
 }
 
+void BenchmarkRunner::queueCommand(std::unique_ptr<IBenchmarkCommand> cmd) {
+    m_commandQueue.push(std::move(cmd));
+}
+
 void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::SegmentationConfig& config) {
     bool isRecomputing = (m_state == BenchmarkState::RECOMPUTING);
     m_statusText = "Extracting frame and running dual-engine comparison...";
 
-    // 1. ISOLATE THE FRAME: Clone on the main thread so the buffer's reference count is 1.
-    // This prevents the background thread from racing with the camera thread during deallocation.
     cv::Mat benchFrame;
     if (isRecomputing && m_results.has_value()) {
         benchFrame = m_results->originalFrame.clone();
@@ -35,84 +37,46 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
         benchFrame = currentFrame.clone();
     }
 
-    common::SegmentationConfig benchConfig = config;
-    benchConfig.maxIterations = constants::BENCHMARK_MAX_ITERATIONS; // Let benchmark run until true convergence
-
-    // 2. Pass the isolated benchFrame by value. The lambda now owns its own unique memory buffer.
-    auto future = std::async(std::launch::async, [benchFrame, benchConfig]() {
-        BenchmarkComparisonResult result;
-
-        // We can safely use benchFrame here as it is a private copy for this thread.
-        result.originalFrame = benchFrame;
-
-        cv::Mat smallFrame;
-        cv::resize(benchFrame, smallFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
-
-        // Generate shared initial centers to guarantee a fair comparison
-        std::vector<cv::Vec<float, constants::FEATURE_DIMS>> sharedCenters;
-        {
-            clustering::ClusteringManager initMgr;
-            initMgr.getConfig() = benchConfig;
-            sharedCenters = initMgr.generateInitialCenters(smallFrame);
-        }
-
-        auto runEngine = [&](common::AlgorithmType algo, cv::Mat& outSeg,
-                             clustering::metrics::BenchmarkResults& outMetrics,
-                             std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& outCenters) {
-            clustering::ClusteringManager mgr;
-            common::SegmentationConfig cfg = benchConfig;
-            cfg.algorithm = algo;
-            mgr.getConfig() = cfg;
-            mgr.setInitialCenters(sharedCenters); // Force both engines to use the exact same starting points
-
-            auto start = std::chrono::high_resolution_clock::now();
-            cv::Mat segmented = mgr.segmentFrame(smallFrame);
-            auto end = std::chrono::high_resolution_clock::now();
-            float execMs = std::chrono::duration<float, std::milli>(end - start).count();
-
-            outCenters = mgr.getCenters();
-            int iterations = mgr.getEngine() ? mgr.getEngine()->getLastIterations() : 0;
-            cv::resize(segmented, outSeg, benchFrame.size(), 0, 0, constants::VIZ_RESIZE_ALGO);
-
-            int n = smallFrame.rows * smallFrame.cols;
-            cv::Mat samples(n, 5, CV_32F);
-            float colorScale = constants::COLOR_SCALE;
-            float spatialScale = constants::SPATIAL_SCALE;
-            for (int y = 0; y < smallFrame.rows; ++y) {
-                for (int x = 0; x < smallFrame.cols; ++x) {
-                    cv::Vec3b px = smallFrame.at<cv::Vec3b>(y, x);
-                    int idx = (y * smallFrame.cols) + x;
-                    auto* ptr = samples.ptr<float>(idx);
-                    ptr[0] = static_cast<float>(px[0]) * colorScale;
-                    ptr[1] = static_cast<float>(px[1]) * colorScale;
-                    ptr[2] = static_cast<float>(px[2]) * colorScale;
-                    ptr[3] = static_cast<float>(x) * spatialScale;
-                    ptr[4] = static_cast<float>(y) * spatialScale;
-                }
-            }
-            outMetrics = clustering::metrics::computeAllMetrics(samples, outCenters, iterations, execMs);
-        };
-
-        runEngine(common::AlgorithmType::KMEANS_REGULAR, result.classicalSegmented, result.classicalMetrics,
-                  result.classicalCenters);
-        runEngine(common::AlgorithmType::KMEANS_QUANTUM, result.quantumSegmented, result.quantumMetrics,
-                  result.quantumCenters);
-
-        return result;
-    });
-
-    m_future = std::move(future);
-
-    // Set state AFTER future is fully initialized to prevent UI thread poll() data race
+    auto cmd = std::make_unique<RunBenchmarkCommand>(benchFrame, config);
+    queueCommand(std::move(cmd));
     m_state = BenchmarkState::COMPUTING;
+}
+
+void BenchmarkRunner::addObserver(IBenchmarkObserver* observer) {
+    m_observers.push_back(observer);
+}
+
+void BenchmarkRunner::removeObserver(IBenchmarkObserver* observer) {
+    m_observers.erase(std::remove(m_observers.begin(), m_observers.end(), observer), m_observers.end());
+}
+
+void BenchmarkRunner::notifyObservers(const BenchmarkComparisonResult& result) {
+    for (auto* obs : m_observers) {
+        if (obs) obs->onBenchmarkComplete(result);
+    }
 }
 
 void BenchmarkRunner::poll() {
     if (m_state == BenchmarkState::COMPUTING) {
-        if (m_future.valid() && m_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            m_results = m_future.get();
-            m_state = BenchmarkState::DONE;
-            m_statusText = "Benchmark Complete.";
+        if (!m_currentCommand && !m_commandQueue.empty()) {
+            m_currentCommand = std::move(m_commandQueue.front());
+            m_commandQueue.pop();
+            m_currentCommand->execute();
+        }
+
+        if (m_currentCommand) {
+            auto& fut = m_currentCommand->getFuture();
+            if (fut.valid() && fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                m_results = fut.get();
+                m_state = BenchmarkState::DONE;
+                m_statusText = "Benchmark Complete.";
+                notifyObservers(m_results.value());
+                m_currentCommand.reset();
+
+                if (!m_commandQueue.empty()) {
+                    m_state = BenchmarkState::COMPUTING;
+                }
+            }
         }
     }
 }

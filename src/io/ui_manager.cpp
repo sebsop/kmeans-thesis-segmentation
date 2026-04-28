@@ -102,4 +102,8 @@ void UIManager::render(UIDataContext& ctx) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void UIManager::onBenchmarkComplete(const BenchmarkComparisonResult& /*result*/) {
+    m_benchTexturesLoaded = false;
+}
+
 } // namespace kmeans::io

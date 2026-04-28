@@ -6,18 +6,18 @@
 namespace kmeans::constants {
 
 // API Flags & Hardware
-constexpr int VIZ_RESIZE_ALGO = cv::INTER_NEAREST;
-constexpr int CAMERA_HW_ACCEL = cv::VIDEO_ACCELERATION_ANY;
-constexpr int VIZ_OUTLINE_COLOR = 255;
+constinit inline const int VIZ_RESIZE_ALGO = cv::INTER_NEAREST;
+constinit inline const int CAMERA_HW_ACCEL = cv::VIDEO_ACCELERATION_ANY;
+constinit inline const int VIZ_OUTLINE_COLOR = 255;
 
 // Layout Geometry
-constexpr int UI_FPS_PLOT_WINDOW = 15;
-constexpr int UI_BENCH_COL_COUNT = 3;
-constexpr float UI_BENCH_BTN_PADDING = 20.0f;
-constexpr float UI_BENCH_SLIDER_SPACING = 30.0f;
+constinit inline const int UI_FPS_PLOT_WINDOW = 15;
+constinit inline const int UI_BENCH_COL_COUNT = 3;
+constinit inline const float UI_BENCH_BTN_PADDING = 20.0f;
+constinit inline const float UI_BENCH_SLIDER_SPACING = 30.0f;
 
 // Quantum Range
-constexpr float QUANTUM_RANGE_EPSILON = 1e-8f;
+constinit inline const float QUANTUM_RANGE_EPSILON = 1e-8f;
 
 // Color structures for logic encapsulation
 struct ColorRGBA {

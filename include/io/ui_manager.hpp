@@ -10,6 +10,7 @@
 
 #include "common/config.hpp"
 #include "io/benchmark_runner.hpp"
+#include "io/benchmark_observer.hpp"
 
 namespace kmeans::io {
 
@@ -39,14 +40,13 @@ struct UIDataContext {
     BenchmarkRunner& benchmarkRunner;
 };
 
-// Forward declare the UI components (to avoid huge include trees)
 namespace ui {
 class ControlPanelUI;
 class VideoFeedUI;
 class BenchmarkOverlayUI;
 } // namespace ui
 
-class UIManager {
+class UIManager : public IBenchmarkObserver {
   private:
     TextureResource m_originalTexture;
     TextureResource m_segmentedTexture;
@@ -62,14 +62,12 @@ class UIManager {
 
   public:
     UIManager();
-    ~UIManager();
+    ~UIManager() override;
 
     static void applyPremiumTheme();
 
-    /**
-     * @brief Renders the complete ImGui interface using the provided context.
-     */
     void render(UIDataContext& ctx);
+    void onBenchmarkComplete(const BenchmarkComparisonResult& result) override;
 
   private:
     static void matToTexture(const cv::Mat& mat, TextureResource& textureRes);

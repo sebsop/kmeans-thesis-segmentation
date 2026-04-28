@@ -9,6 +9,7 @@
 
 #include "clustering/initializers/kmeans_plus_plus_initializer.hpp"
 #include "common/constants.hpp"
+#include "common/vector_math.hpp"
 
 namespace kmeans::clustering {
 
@@ -16,11 +17,7 @@ __global__ void compute_min_distances_kernel(const float* __restrict__ samples, 
                                              const float* __restrict__ latestCenter, float* __restrict__ distances) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numPoints) {
-        float distSq = 0.0f;
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
-            float diff = samples[idx * constants::FEATURE_DIMS + d] - latestCenter[d];
-            distSq += diff * diff;
-        }
+        float distSq = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(&samples[idx * constants::FEATURE_DIMS], latestCenter);
         if (distSq < distances[idx]) {
             distances[idx] = distSq;
         }

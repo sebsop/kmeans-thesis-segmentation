@@ -1,5 +1,6 @@
 #include "clustering/engines/classical_engine.hpp"
 #include "common/constants.hpp"
+#include "common/vector_math.hpp"
 
 namespace kmeans::clustering {
 
@@ -28,12 +29,7 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     int bestK = 0;
 
     for (int j = 0; j < k; ++j) {
-        float d2 = 0.0f;
-#pragma unroll
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
-            float diff = p[d] - s_centers[j * constants::FEATURE_DIMS + d];
-            d2 += diff * diff;
-        }
+        float d2 = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p, &s_centers[j * constants::FEATURE_DIMS]);
         if (d2 < minDistSq) {
             minDistSq = d2;
             bestK = j;
@@ -46,8 +42,8 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     }
 }
 
-void ClassicalEngine::launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,
-                                         int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
+void ClassicalEngine::launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,
+                                             int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
     classicalAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samples, numPoints, d_centers, k, d_labels,
                                                                           d_changed);
 }

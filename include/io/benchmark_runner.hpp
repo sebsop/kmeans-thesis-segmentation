@@ -12,35 +12,31 @@
 #include "common/config.hpp"
 #include "common/constants.hpp"
 
+#include <queue>
+#include "io/benchmark_observer.hpp"
+#include "io/benchmark_command.hpp"
+#include "io/benchmark_result.hpp"
+
 namespace kmeans::io {
 
 enum class BenchmarkState { IDLE, CAPTURING, RECOMPUTING, COMPUTING, DONE };
 
-struct BenchmarkComparisonResult {
-    cv::Mat originalFrame{};
-    cv::Mat classicalSegmented{};
-    cv::Mat quantumSegmented{};
-    clustering::metrics::BenchmarkResults classicalMetrics{};
-    clustering::metrics::BenchmarkResults quantumMetrics{};
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> classicalCenters{};
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> quantumCenters{};
-};
-
-/**
- * @brief Manages the execution and state of side-by-side clustering benchmarks.
- *
- * Uses std::async to offload the heavy benchmark computations from the UI and camera threads.
- */
 class BenchmarkRunner {
   private:
     BenchmarkState m_state = BenchmarkState::IDLE;
-    std::future<BenchmarkComparisonResult> m_future;
+    std::unique_ptr<IBenchmarkCommand> m_currentCommand;
+    std::queue<std::unique_ptr<IBenchmarkCommand>> m_commandQueue;
     std::optional<BenchmarkComparisonResult> m_results;
     std::string m_statusText;
+    std::vector<IBenchmarkObserver*> m_observers;
 
   public:
     BenchmarkRunner() = default;
     ~BenchmarkRunner() = default;
+
+    void addObserver(IBenchmarkObserver* observer);
+    void removeObserver(IBenchmarkObserver* observer);
+    void notifyObservers(const BenchmarkComparisonResult& result);
 
     [[nodiscard]] BenchmarkState getState() const noexcept { return m_state; }
     [[nodiscard]] const std::string& getStatusText() const noexcept { return m_statusText; }
@@ -50,9 +46,8 @@ class BenchmarkRunner {
     void requestRecompute();
     void reset();
 
-    /**
-     * @brief Triggers the actual background execution.
-     */
+    void queueCommand(std::unique_ptr<IBenchmarkCommand> cmd);
+
     void startComputing(const cv::Mat& currentFrame, const common::SegmentationConfig& config);
 
     /**

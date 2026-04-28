@@ -6,16 +6,12 @@
 #include <random>
 
 #include "common/constants.hpp"
+#include "common/vector_math.hpp"
 
 namespace kmeans::clustering::metrics {
 
 static float sqDistance(const float* p1, const cv::Vec<float, constants::FEATURE_DIMS>& p2) {
-    float d = 0;
-    for (int i = 0; i < constants::FEATURE_DIMS; ++i) {
-        float diff = p1[i] - p2[i];
-        d += diff * diff;
-    }
-    return d;
+    return common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p1, p2);
 }
 
 BenchmarkResults computeAllMetrics(const cv::Mat& samples,

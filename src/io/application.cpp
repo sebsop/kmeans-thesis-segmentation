@@ -27,9 +27,11 @@ Application::Application() {
     initImGui();
     UIManager::applyPremiumTheme();
     m_uiConfig = m_manager.getConfig();
+    m_benchmarkRunner.addObserver(&m_uiManager);
 }
 
 Application::~Application() noexcept {
+    m_benchmarkRunner.removeObserver(&m_uiManager);
     cleanup();
 }
 
@@ -143,6 +145,7 @@ void Application::run() {
                 continue;
             }
 
+            [[maybe_unused]] int frameIdx = 0;
             cv::Mat processFrame;
             cv::resize(frame, processFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
 

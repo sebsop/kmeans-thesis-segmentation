@@ -16,9 +16,7 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> RandomInitializer::initiali
         int randIdx = dis(gen);
         const auto* rowPtr = samples.ptr<float>(randIdx);
         cv::Vec<float, constants::FEATURE_DIMS> c;
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
-            c[d] = rowPtr[d];
-        }
+        std::copy_n(rowPtr, constants::FEATURE_DIMS, c.val);
         centers[i] = c;
     }
 

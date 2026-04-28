@@ -9,7 +9,7 @@ find_package(glfw3 REQUIRED)
 
 enable_language(CUDA)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -105,6 +105,7 @@ add_library(kmeans_core
     src/common/utils.cpp
     src/io/application.cpp
     src/io/benchmark_runner.cpp
+    src/io/benchmark_command.cpp
     src/io/ui_manager.cpp
     src/io/ui/control_panel_ui.cpp
     src/io/ui/video_feed_ui.cpp
@@ -119,11 +120,11 @@ set_source_files_properties(src/clustering/initializers/kmeans_plus_plus_initial
 set_source_files_properties(src/clustering/preprocessor/strided_data_preprocessor.cu PROPERTIES LANGUAGE CUDA)
 
 set_target_properties(kmeans_core PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
     CUDA_SEPARABLE_COMPILATION ON       # Enable separable compilation for CUDA
-    CUDA_STANDARD 17                    # Use C++17 standard for CUDA files
+    CUDA_STANDARD 20                    # Use C++20 standard for CUDA files
     CUDA_STANDARD_REQUIRED ON           # Enforce the use of the specified C++ standard
     CUDA_ARCHITECTURES "native"         # Specify target architecture (native for the current machine)
 )
@@ -177,10 +178,10 @@ endif()
 
 # Set CUDA properties for the main executable
 set_target_properties(kmeans_thesis_segmentation PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
-    CUDA_STANDARD 17
+    CUDA_STANDARD 20
     CUDA_STANDARD_REQUIRED ON
     CUDA_ARCHITECTURES "native"
 )

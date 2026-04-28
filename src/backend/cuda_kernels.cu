@@ -9,6 +9,7 @@
 
 #include "backend/cuda_assignment_context.hpp"
 #include "common/constants.hpp"
+#include "common/vector_math.hpp"
 
 #define CUDA_CHECK(call)                                                                                               \
     do {                                                                                                               \
@@ -90,11 +91,7 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
     float bestDist2 = constants::MATH_INF;
 
     for (int ci = 0; ci < k; ++ci) {
-        float d2 = 0.0f;
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
-            float diff = f[d] - s_centers[ci * constants::FEATURE_DIMS + d]; // shared memory read
-            d2 += diff * diff;
-        }
+        float d2 = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(f, &s_centers[ci * constants::FEATURE_DIMS]);
         if (d2 < bestDist2) {
             bestDist2 = d2;
             bestIdx = ci;

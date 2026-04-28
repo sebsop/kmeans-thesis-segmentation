@@ -9,7 +9,7 @@
 
 namespace kmeans::clustering {
 
-class QuantumEngine final : public BaseKMeansEngine {
+class QuantumEngine final : public BaseKMeansEngine<QuantumEngine> {
   private:
     float m_scaleFactor = 1.0f;
 
@@ -17,12 +17,11 @@ class QuantumEngine final : public BaseKMeansEngine {
     QuantumEngine() = default;
     ~QuantumEngine() override = default;
 
-  protected:
-    void preRunSetup(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters,
-                     const cv::Mat& samples) override;
+    void preRunSetupImpl(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters,
+                         const cv::Mat& samples);
 
-    void launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels, int* d_changed,
-                            int threadsPerBlock, int blocksPerGrid, size_t sharedSize) override;
+    void launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels, int* d_changed,
+                                int threadsPerBlock, int blocksPerGrid, size_t sharedSize);
 };
 
 } // namespace kmeans::clustering
