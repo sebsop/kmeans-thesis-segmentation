@@ -21,7 +21,9 @@ class ClusteringManager {
     std::unique_ptr<Impl> m_impl;
 
   public:
+    /** @brief Basic Exception Safety Guarantee */
     ClusteringManager();
+    /** @brief No-throw Exception Safety Guarantee */
     ~ClusteringManager();
 
     [[nodiscard]] common::SegmentationConfig& getConfig() noexcept;
@@ -31,14 +33,20 @@ class ClusteringManager {
 
     [[nodiscard]] KMeansEngine* getEngine() const noexcept;
 
+    /** @brief Strong Exception Safety Guarantee */
     void updateStategyImplementations();
+    /** @brief No-throw Exception Safety Guarantee */
     void resetCenters();
 
+    /** @brief Strong Exception Safety Guarantee */
     void setInitialCenters(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers);
 
+    /** @brief Basic Exception Safety Guarantee */
     std::vector<cv::Vec<float, constants::FEATURE_DIMS>> generateInitialCenters(const cv::Mat& frame);
 
+    /** @brief Strong Exception Safety Guarantee */
     [[nodiscard]] cv::Mat segmentFrame(const cv::Mat& frame);
+    /** @brief Basic Exception Safety Guarantee */
     [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>> computeCenters(const cv::Mat& frame);
 };
 

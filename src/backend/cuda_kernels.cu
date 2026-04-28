@@ -115,12 +115,7 @@ void CudaAssignmentContext::run(const cv::Mat& frame,
     CUDA_CHECK(cudaMemcpyAsync(m_d_input, m_h_input_pinned, m_imgSize, cudaMemcpyHostToDevice, m_stream));
 
     // Flatten centers directly into pinned host buffer
-    int k_idx = 0;
-    for (const auto& c : centers) {
-        for (int i = 0; i < constants::FEATURE_DIMS; ++i) {
-            m_h_centers_pinned[k_idx++] = c[i];
-        }
-    }
+    std::memcpy(m_h_centers_pinned, centers.data(), m_centersSize);
 
     CUDA_CHECK(cudaMemcpyAsync(m_d_centers, m_h_centers_pinned, m_centersSize, cudaMemcpyHostToDevice, m_stream));
 

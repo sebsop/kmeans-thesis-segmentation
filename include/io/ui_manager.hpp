@@ -67,6 +67,7 @@ class UIManager : public IBenchmarkObserver {
     static void applyPremiumTheme();
 
     void render(UIDataContext& ctx);
+    void renderLoadingScreen(GLFWwindow* window);
     void onBenchmarkComplete(const BenchmarkComparisonResult& result) override;
 
   private:

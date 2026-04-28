@@ -51,9 +51,11 @@ void BenchmarkRunner::removeObserver(IBenchmarkObserver* observer) {
 }
 
 void BenchmarkRunner::notifyObservers(const BenchmarkComparisonResult& result) {
-    for (auto* obs : m_observers) {
-        if (obs) obs->onBenchmarkComplete(result);
-    }
+    std::for_each(m_observers.begin(), m_observers.end(), [&](auto* obs) {
+        if (obs) {
+            obs->onBenchmarkComplete(result);
+        }
+    });
 }
 
 void BenchmarkRunner::poll() {

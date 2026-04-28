@@ -106,4 +106,51 @@ void UIManager::onBenchmarkComplete(const BenchmarkComparisonResult& /*result*/)
     m_benchTexturesLoaded = false;
 }
 
+void UIManager::renderLoadingScreen(GLFWwindow* window) {
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    int display_w = 0, display_h = 0;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+
+    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImVec2(static_cast<float>(display_w), static_cast<float>(display_h)));
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_NoBackground;
+
+    ImGui::Begin("Loader", nullptr, flags);
+
+    const char* loadingText = "INITIALIZING K-MEANS ENGINE";
+    ImVec2 textSize = ImGui::CalcTextSize(loadingText);
+
+    int dots = static_cast<int>(ImGui::GetTime() * constants::UI_ANIM_DOT_SPEED) % 4;
+    std::string dotStr(dots, '.');
+    std::string fullText = std::string(loadingText) + dotStr;
+
+    ImGui::SetCursorPos(ImVec2((display_w - textSize.x) * 0.5f, (display_h - textSize.y) * 0.5f));
+
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(constants::UI_COLOR_ACCENT.r, constants::UI_COLOR_ACCENT.g,
+                                                constants::UI_COLOR_ACCENT.b, constants::UI_COLOR_ACCENT.a));
+    ImGui::TextUnformatted(fullText.c_str());
+    ImGui::PopStyleColor();
+
+    const char* subText = "Connecting to camera stream and allocating VRAM...";
+    ImVec2 subSize = ImGui::CalcTextSize(subText);
+    ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h - textSize.y) * 0.5f + 40.0f));
+    ImGui::TextUnformatted(subText);
+
+    ImGui::End();
+
+    ImGui::Render();
+    glViewport(0, 0, display_w, display_h);
+
+    glClearColor(constants::UI_COLOR_BG_DARK.r, constants::UI_COLOR_BG_DARK.g, constants::UI_COLOR_BG_DARK.b,
+                 constants::UI_COLOR_BG_DARK.a);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
 } // namespace kmeans::io

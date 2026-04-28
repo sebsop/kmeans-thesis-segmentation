@@ -12,13 +12,13 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> RandomInitializer::initiali
     thread_local static std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
-    for (int i = 0; i < k; ++i) {
+    std::generate(centers.begin(), centers.end(), [&]() {
         int randIdx = dis(gen);
         const auto* rowPtr = samples.ptr<float>(randIdx);
         cv::Vec<float, constants::FEATURE_DIMS> c;
         std::copy_n(rowPtr, constants::FEATURE_DIMS, c.val);
-        centers[i] = c;
-    }
+        return c;
+    });
 
     return centers;
 }

@@ -3,6 +3,8 @@
 
 #include <chrono>
 #include <future>
+#include <numeric>
+#include <algorithm>
 #include <opencv2/imgproc.hpp>
 
 #include "clustering/clustering_manager.hpp"
@@ -56,18 +58,19 @@ void RunBenchmarkCommand::execute() {
             cv::Mat samples(n, 5, CV_32F);
             float colorScale = constants::COLOR_SCALE;
             float spatialScale = constants::SPATIAL_SCALE;
-            for (int y = 0; y < smallFrame.rows; ++y) {
-                for (int x = 0; x < smallFrame.cols; ++x) {
-                    cv::Vec3b px = smallFrame.at<cv::Vec3b>(y, x);
-                    int idx = (y * smallFrame.cols) + x;
-                    auto* ptr = samples.ptr<float>(idx);
-                    ptr[0] = static_cast<float>(px[0]) * colorScale;
-                    ptr[1] = static_cast<float>(px[1]) * colorScale;
-                    ptr[2] = static_cast<float>(px[2]) * colorScale;
-                    ptr[3] = static_cast<float>(x) * spatialScale;
-                    ptr[4] = static_cast<float>(y) * spatialScale;
-                }
-            }
+            std::vector<int> pixel_indices(n);
+            std::iota(pixel_indices.begin(), pixel_indices.end(), 0);
+            std::for_each(pixel_indices.begin(), pixel_indices.end(), [&](int idx) {
+                int y = idx / smallFrame.cols;
+                int x = idx % smallFrame.cols;
+                cv::Vec3b px = smallFrame.at<cv::Vec3b>(y, x);
+                auto* ptr = samples.ptr<float>(idx);
+                ptr[0] = static_cast<float>(px[0]) * colorScale;
+                ptr[1] = static_cast<float>(px[1]) * colorScale;
+                ptr[2] = static_cast<float>(px[2]) * colorScale;
+                ptr[3] = static_cast<float>(x) * spatialScale;
+                ptr[4] = static_cast<float>(y) * spatialScale;
+            });
             outMetrics = clustering::metrics::computeAllMetrics(samples, outCenters, iterations, execMs);
         };
 

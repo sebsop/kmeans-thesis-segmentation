@@ -22,14 +22,14 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         bResults) {
         if (!benchTexturesLoaded) {
             auto drawCentroids = [](cv::Mat& img, const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers) {
-                for (const auto& c : centers) {
+                std::for_each(centers.begin(), centers.end(), [&](const auto& c) {
                     cv::Point pt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(img.cols)),
                                  static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(img.rows)));
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
                     cv::circle(img, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
                     cv::circle(img, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(255, 255, 255), 2);
-                }
+                });
             };
             drawCentroids(bResults->classicalSegmented, bResults->classicalCenters);
             drawCentroids(bResults->quantumSegmented, bResults->quantumCenters);

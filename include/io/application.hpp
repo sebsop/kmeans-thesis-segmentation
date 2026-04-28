@@ -50,9 +50,12 @@ class Application {
     void cleanup() noexcept;
 
   public:
+    /** @brief Basic Exception Safety Guarantee */
     Application();
+    /** @brief No-throw Exception Safety Guarantee */
     ~Application() noexcept;
 
+    /** @brief Strong Exception Safety Guarantee */
     void run();
 };
 

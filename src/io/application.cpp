@@ -59,12 +59,11 @@ void Application::initWindow() {
     const char* iconPaths[] = {"assets/icon.ico", "../assets/icon.ico", "../../assets/icon.ico",
                                "../../../assets/icon.ico"};
 
-    for (const char* path : iconPaths) {
+    [[maybe_unused]] auto it = std::find_if(std::begin(iconPaths), std::end(iconPaths), [&](const char* path) {
         hIcon =
             reinterpret_cast<HICON>(LoadImageA(hInstance, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE));
-        if (hIcon)
-            break;
-    }
+        return hIcon != nullptr;
+    });
 
     if (hIcon) {
         SendMessage(hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(hIcon));
@@ -169,14 +168,14 @@ void Application::run() {
             std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers;
             if (m_showCentroids) {
                 centers = m_manager.getCenters();
-                for (const auto& c : centers) {
+                std::for_each(centers.begin(), centers.end(), [&](const auto& c) {
                     cv::Point pt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
                                  static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
                     cv::circle(segmentedFull, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
                     cv::circle(segmentedFull, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR), 2);
-                }
+                });
             }
 
             auto now = std::chrono::high_resolution_clock::now();
@@ -212,60 +211,7 @@ void Application::run() {
         }
 
         if (!m_initialized) {
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-            int display_w = 0, display_h = 0;
-            glfwGetFramebufferSize(m_window, &display_w, &display_h);
-
-            // Premium full-screen loading overlay
-            ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-            ImGui::SetNextWindowSize(ImVec2(static_cast<float>(display_w), static_cast<float>(display_h)));
-
-            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                                     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
-                                     ImGuiWindowFlags_NoBackground;
-
-            ImGui::Begin("Loader", nullptr, flags);
-
-            const char* loadingText = "INITIALIZING K-MEANS ENGINE";
-            ImVec2 textSize = ImGui::CalcTextSize(loadingText);
-
-            // Animate dots based on time
-            int dots = static_cast<int>(ImGui::GetTime() * constants::UI_ANIM_DOT_SPEED) % 4;
-            std::string dotStr(dots, '.');
-            std::string fullText = std::string(loadingText) + dotStr;
-
-            // Center position for main text
-            ImGui::SetCursorPos(ImVec2((display_w - textSize.x) * 0.5f, (display_h - textSize.y) * 0.5f));
-
-            // Use a nice accent color (cyan/blue)
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(constants::UI_COLOR_ACCENT.r, constants::UI_COLOR_ACCENT.g,
-                                                        constants::UI_COLOR_ACCENT.b, constants::UI_COLOR_ACCENT.a));
-            ImGui::TextUnformatted(fullText.c_str());
-            ImGui::PopStyleColor();
-
-            // Subtitle
-            const char* subText = "Connecting to camera stream and allocating VRAM...";
-            ImVec2 subSize = ImGui::CalcTextSize(subText);
-            ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h + textSize.y) * 0.5f + constants::UI_LANDING_OFFSET));
-            ImGui::PushStyleColor(ImGuiCol_Text,
-                                  ImVec4(constants::UI_COLOR_TEXT_DIM.r, constants::UI_COLOR_TEXT_DIM.g,
-                                         constants::UI_COLOR_TEXT_DIM.b, constants::UI_COLOR_TEXT_DIM.a));
-            ImGui::TextUnformatted(subText);
-            ImGui::PopStyleColor();
-
-            ImGui::End();
-
-            ImGui::Render();
-            glViewport(0, 0, display_w, display_h);
-
-            // Deep dark premium background
-            glClearColor(constants::UI_COLOR_BG_DARK.r, constants::UI_COLOR_BG_DARK.g, constants::UI_COLOR_BG_DARK.b,
-                         constants::UI_COLOR_BG_DARK.a);
-            glClear(GL_COLOR_BUFFER_BIT);
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            m_uiManager.renderLoadingScreen(m_window);
             glfwSwapBuffers(m_window);
             continue;
         }

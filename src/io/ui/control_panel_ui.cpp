@@ -1,6 +1,7 @@
 #include "io/ui/control_panel_ui.hpp"
 
 #include <algorithm>
+#include <numeric>
 #include <deque>
 #include <imgui.h>
 
@@ -131,14 +132,10 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     }
 
     if (!algoFpsHistory.empty()) {
-        float minFps = algoFpsHistory[0];
-        float maxFps = algoFpsHistory[0];
-        float sumFps = 0.0f;
-        for (float f : algoFpsHistory) {
-            minFps = std::min(f, minFps);
-            maxFps = std::max(f, maxFps);
-            sumFps += f;
-        }
+        auto [min_it, max_it] = std::minmax_element(algoFpsHistory.begin(), algoFpsHistory.end());
+        float minFps = *min_it;
+        float maxFps = *max_it;
+        float sumFps = std::accumulate(algoFpsHistory.begin(), algoFpsHistory.end(), 0.0f);
         float avgFps = sumFps / static_cast<float>(algoFpsHistory.size());
 
         static float displayFps = 0.0f;
@@ -158,18 +155,17 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         ImGui::Text("Camera Pipeline: %.1f FPS", displayFps);
         ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g, constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a), "Avg FPS: %.1f", displayAvg);
 
-        std::vector<float> fpsPlotBuf;
         int window = constants::UI_FPS_PLOT_WINDOW;
-        for (int i = 0; i < static_cast<int>(algoFpsHistory.size()); ++i) {
-            float sum = 0.0f;
+        std::vector<int> plot_indices(algoFpsHistory.size());
+        std::iota(plot_indices.begin(), plot_indices.end(), 0);
+        std::vector<float> fpsPlotBuf(algoFpsHistory.size());
+        
+        std::transform(plot_indices.begin(), plot_indices.end(), fpsPlotBuf.begin(), [&](int i) {
             int start = std::max(0, i - (window / 2));
             int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + (window / 2));
-            for (int j = start; j <= end; ++j) {
-                sum += algoFpsHistory[j];
-            }
-            float avg = sum / static_cast<float>(end - start + 1);
-            fpsPlotBuf.push_back(avg);
-        }
+            float sum = std::accumulate(algoFpsHistory.begin() + start, algoFpsHistory.begin() + end + 1, 0.0f);
+            return sum / static_cast<float>(end - start + 1);
+        });
 
         ImGui::PlotLines("##Pipeline History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0, nullptr, 0.0f,
                          (maxFps * 1.5f) + 5.0f, ImVec2(0, 60));

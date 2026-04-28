@@ -30,49 +30,50 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
     std::vector<float> intraClusterScatter(k, 0.0f);
     std::vector<int> clusterCounts(k, 0);
 
-    for (int i = 0; i < numPoints; ++i) {
+    std::vector<int> point_indices(numPoints);
+    std::iota(point_indices.begin(), point_indices.end(), 0);
+    std::for_each(point_indices.begin(), point_indices.end(), [&](int i) {
         const auto* p = samples.ptr<float>(i);
         float minDistSq = constants::MATH_INF;
         int bestK = 0;
-        for (int j = 0; j < k; ++j) {
+        std::vector<int> k_indices_inner(k);
+        std::iota(k_indices_inner.begin(), k_indices_inner.end(), 0);
+        std::for_each(k_indices_inner.begin(), k_indices_inner.end(), [&](int j) {
             float d2 = sqDistance(p, centers[j]);
             if (d2 < minDistSq) {
                 minDistSq = d2;
                 bestK = j;
             }
-        }
+        });
         labels[i] = bestK;
         wcss += minDistSq;
         intraClusterScatter[bestK] += std::sqrt(minDistSq); // Davies-Bouldin uses linear distance
         clusterCounts[bestK]++;
-    }
+    });
 
     // 2. Davies-Bouldin Index
-    for (int j = 0; j < k; ++j) {
+    std::vector<int> k_indices(k);
+    std::iota(k_indices.begin(), k_indices.end(), 0);
+    std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
         if (clusterCounts[j] > 0) {
             intraClusterScatter[j] /= static_cast<float>(clusterCounts[j]);
         }
-    }
+    });
 
     float daviesBouldin = 0.0f;
-    for (int i = 0; i < k; ++i) {
+    std::for_each(k_indices.begin(), k_indices.end(), [&](int i) {
         float maxR = 0.0f;
-        for (int j = 0; j < k; ++j) {
+        std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
             if (i == j) {
-                continue;
+                return;
             }
-            float dCenter = 0.0f;
-            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
-                float diff = centers[i][d] - centers[j][d];
-                dCenter += diff * diff;
-            }
-            dCenter = std::sqrt(dCenter);
+            float dCenter = std::sqrt(common::VectorMath<constants::FEATURE_DIMS>::sqDistance(centers[i].val, centers[j].val));
             if (dCenter > constants::MATH_EPSILON) {
                 maxR = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxR);
             }
-        }
+        });
         daviesBouldin += maxR;
-    }
+    });
     daviesBouldin = daviesBouldin / static_cast<float>(k);
 
     // 3. Approximate Silhouette Score
@@ -87,14 +88,15 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
     float totalSilhouette = 0.0f;
     int validSilhouettePoints = 0;
 
-    for (int idx1 = 0; idx1 < subsetSize; ++idx1) {
+    std::vector<int> subset_indices(subsetSize);
+    std::iota(subset_indices.begin(), subset_indices.end(), 0);
+    std::for_each(subset_indices.begin(), subset_indices.end(), [&](int idx1) {
         int i = indices[idx1];
         const auto* p = samples.ptr<float>(i);
         int myK = labels[i];
 
-        // Skip if this cluster only has 1 point (silhouette is undefined/0)
         if (clusterCounts[myK] <= 1) {
-            continue;
+            return;
         }
 
         float a = 0.0f;
@@ -102,20 +104,14 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
         std::vector<float> bDistSum(k, 0.0f);
         std::vector<int> bCount(k, 0);
 
-        // Compare against the next `subsetSize` points (or wrap around)
-        for (int idx2 = 0; idx2 < subsetSize; ++idx2) {
+        std::for_each(subset_indices.begin(), subset_indices.end(), [&](int idx2) {
             int j = indices[(idx1 + idx2 + 1) % numPoints];
             if (i == j) {
-                continue;
+                return;
             }
 
             const auto* p2 = samples.ptr<float>(j);
-            float d = 0.0f;
-            for (int dim = 0; dim < constants::FEATURE_DIMS; ++dim) {
-                float diff = p[dim] - p2[dim];
-                d += diff * diff;
-            }
-            d = std::sqrt(d);
+            float d = std::sqrt(common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p, p2));
 
             int otherK = labels[j];
             if (otherK == myK) {
@@ -125,26 +121,26 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
                 bDistSum[otherK] += d;
                 bCount[otherK]++;
             }
-        }
+        });
 
         a = (aCount > 0) ? (a / static_cast<float>(aCount)) : 0.0f;
 
         float b = constants::MATH_INF;
-        for (int j = 0; j < k; ++j) {
+        std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
             if (j == myK) {
-                continue;
+                return;
             }
             if (bCount[j] > 0) {
                 b = std::min(bDistSum[j] / static_cast<float>(bCount[j]), b);
             }
-        }
+        });
 
         float maxAB = std::max(a, b);
         if (maxAB > constants::MATH_EPSILON && b < constants::MATH_INF) {
             totalSilhouette += (b - a) / maxAB;
             validSilhouettePoints++;
         }
-    }
+    });
 
     float avgSilhouette =
         (validSilhouettePoints > 0) ? (totalSilhouette / static_cast<float>(validSilhouettePoints)) : 0.0f;
