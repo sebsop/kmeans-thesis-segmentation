@@ -73,6 +73,7 @@ void BenchmarkRunner::poll() {
                 notifyObservers(m_results.value());
                 m_currentCommand.reset();
 
+                [[maybe_unused]] size_t pendingCount = m_commandQueue.size();
                 if (!m_commandQueue.empty()) {
                     m_state = BenchmarkState::COMPUTING;
                 }

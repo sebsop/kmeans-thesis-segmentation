@@ -9,6 +9,7 @@
 
 #include "backend/cuda_assignment_context.hpp"
 #include "common/constants.hpp"
+#include "common/utils.hpp"
 #include "common/vector_math.hpp"
 
 #define CUDA_CHECK(call)                                                                                               \
@@ -125,7 +126,7 @@ void CudaAssignmentContext::run(const cv::Mat& frame,
 
     // 2. Launch Kernel on Stream
     int threadsPerBlock = constants::CUDA_THREADS_PER_BLOCK;
-    int blocksPerGrid = (m_width * m_height + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = common::calculateGridDim(m_width * m_height, threadsPerBlock);
     size_t sharedSize = static_cast<size_t>(m_k) * constants::FEATURE_DIMS * sizeof(float);
 
     assignPixelsKernel<<<blocksPerGrid, threadsPerBlock, sharedSize, m_stream>>>(

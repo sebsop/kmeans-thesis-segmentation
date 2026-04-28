@@ -7,6 +7,15 @@
 
 namespace kmeans::common {
 
+template <typename T1, typename T2>
+[[nodiscard]] constexpr int calculateGridDim(T1 totalItems, T2 threadsPerBlock) noexcept {
+    return (static_cast<int>(totalItems) + static_cast<int>(threadsPerBlock) - 1) / static_cast<int>(threadsPerBlock);
+}
+
+[[noreturn]] inline void fatalError(const std::string& message) {
+    throw std::runtime_error(message);
+}
+
 /**
  * @brief Create a 5D feature vector from BGR color and normalized spatial coordinates.
  *

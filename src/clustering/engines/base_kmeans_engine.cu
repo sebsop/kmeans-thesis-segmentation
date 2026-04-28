@@ -10,6 +10,7 @@
 #include "clustering/engines/quantum_engine.hpp"
 #include "common/constants.hpp"
 #include "common/scoped_timer.hpp"
+#include "common/utils.hpp"
 
 #define CUDA_CHECK(call)                                                                                               \
     do {                                                                                                               \
@@ -183,7 +184,7 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
     CUDA_CHECK(cudaMemset(m_d_labels, 0xFF, numPoints * sizeof(int)));
 
     int threadsPerBlock = constants::CUDA_THREADS_PER_BLOCK;
-    int blocksPerGrid = (numPoints + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = common::calculateGridDim(numPoints, threadsPerBlock);
 
     size_t sharedAssignSize = static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float);
     size_t sharedUpdateSize =
@@ -203,7 +204,7 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
         CUDA_CHECK(cudaDeviceSynchronize());
 
         CUDA_CHECK(cudaMemcpy(&h_changed, m_d_changed, sizeof(int), cudaMemcpyDeviceToHost));
-        if (h_changed == 0) {
+        if (h_changed == 0) [[unlikely]] {
             break; // converged
         }
 

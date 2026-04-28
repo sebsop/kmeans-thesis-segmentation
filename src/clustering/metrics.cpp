@@ -20,7 +20,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
     int numPoints = samples.rows;
     int k = static_cast<int>(centers.size());
 
-    if (numPoints == 0 || k == 0) {
+    if (numPoints == 0 || k == 0) [[unlikely]] {
         return {0.0f, 0.0f, 0.0f, iterations, executionTimeMs};
     }
 

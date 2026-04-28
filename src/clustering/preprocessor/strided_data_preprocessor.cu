@@ -5,6 +5,7 @@
 
 #include "clustering/preprocessor/strided_data_preprocessor.hpp"
 #include "common/constants.hpp"
+#include "common/utils.hpp"
 
 #define CUDA_CHECK_PREP(call)                                                                                          \
     do {                                                                                                               \
@@ -85,7 +86,7 @@ void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
     CUDA_CHECK_PREP(cudaMemcpy(m_d_frame_data, frame.ptr<uchar3>(), n * sizeof(uchar3), cudaMemcpyHostToDevice));
 
     dim3 blockSize(constants::CUDA_BLOCK_2D_X, constants::CUDA_BLOCK_2D_Y);
-    dim3 gridSize((out_cols + blockSize.x - 1) / blockSize.x, (out_rows + blockSize.y - 1) / blockSize.y);
+    dim3 gridSize(common::calculateGridDim(out_cols, blockSize.x), common::calculateGridDim(out_rows, blockSize.y));
 
     preprocess_strided_kernel<<<gridSize, blockSize>>>(
         static_cast<uchar3*>(m_d_frame_data), static_cast<float*>(m_d_samples), frame.cols, frame.rows, stride,
