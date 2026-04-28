@@ -5,9 +5,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "common/constants.hpp"
-
 #include "clustering/engines/base_kmeans_engine.hpp"
+#include "common/constants.hpp"
 
 #define CUDA_CHECK(call)                                                                                               \
     do {                                                                                                               \

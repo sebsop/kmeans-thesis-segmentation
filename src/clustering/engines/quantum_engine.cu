@@ -28,14 +28,14 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
         p[d] = samples[idx * 5 + d] * scale_factor; // Pre-scaled
     }
 
-    float minDistSq = 1e30f;
+    float minDistSq = constants::MATH_INF;
     int bestK = 0;
 
     for (int j = 0; j < k; ++j) {
         float target_prob = 1.0f;
 #pragma unroll
         for (int d = 0; d < 5; ++d) {
-            float diff = (p[d] - s_centers[j * 5 + d]) * 0.5f;
+            float diff = (p[d] - s_centers[j * 5 + d]) * constants::QUANTUM_PHASE_OFFSET;
             float cos_val = __cosf(diff);
             target_prob *= (cos_val * cos_val);
         }

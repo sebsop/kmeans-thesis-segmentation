@@ -101,7 +101,7 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
         }
     }
 
-    float inv_scale = 1.0f / fmaxf(1e-6f, color_scale);
+    float inv_scale = 1.0f / fmaxf(constants::MATH_EPSILON, color_scale);
     output[offset + 0] = static_cast<unsigned char>(fminf(255.0f, s_centers[bestIdx * 5 + 0] * inv_scale));
     output[offset + 1] = static_cast<unsigned char>(fminf(255.0f, s_centers[bestIdx * 5 + 1] * inv_scale));
     output[offset + 2] = static_cast<unsigned char>(fminf(255.0f, s_centers[bestIdx * 5 + 2] * inv_scale));

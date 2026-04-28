@@ -41,7 +41,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         contentH += textH;
         contentH += frameH;
 
-        const int gaps = 12;
+        const int gaps = constants::UI_LAYOUT_GAPS;
         contentH += gaps * style.ItemSpacing.y;
         contentH += style.WindowPadding.y * 2.0f;
 

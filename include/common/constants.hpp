@@ -2,6 +2,35 @@
 
 namespace kmeans::constants {
 
+// Color structures for logic encapsulation
+struct ColorRGBA {
+    float r, g, b, a;
+};
+
+// Premium Visual Identity
+constexpr ColorRGBA UI_COLOR_BG_DARK = {0.06f, 0.06f, 0.07f, 1.0f};
+constexpr ColorRGBA UI_COLOR_ACCENT = {0.6f, 0.4f, 0.9f, 1.0f};
+constexpr ColorRGBA UI_COLOR_TEXT_DIM = {0.5f, 0.5f, 0.5f, 1.0f};
+
+// Scientific Accuracy & Metrics
+constexpr int METRIC_APPROX_SUBSET_SIZE = 2000;
+constexpr float MATH_EPSILON = 1e-6f;
+constexpr float MATH_INF = 1e30f;
+
+// Quantum Kernel Math
+constexpr float QUANTUM_PHASE_OFFSET = 0.5f;
+
+// UI Layout Polish
+constexpr float UI_BTN_WIDTH_LG = 250.0f;
+constexpr float UI_BTN_WIDTH_MD = 150.0f;
+constexpr float UI_BTN_HEIGHT = 40.0f;
+constexpr float UI_BORDER_THICKNESS = 5.0f;
+constexpr int UI_LAYOUT_GAPS = 12;
+constexpr float UI_LAYOUT_PADDING = 10.0f;
+
+// Threading & OS
+constexpr int WORKER_FPS_MATCH_SLEEP = 33;
+
 // Mathematics & Scaling
 constexpr float PI_F = 3.1415926535f;
 constexpr float COLOR_SCALE = 1.0f / 255.0f;

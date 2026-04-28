@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include "common/constants.hpp"
+
 namespace kmeans::io::ui {
 
 void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& originalTex,
@@ -34,12 +36,13 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
         ImU32 accentColor = ImGui::GetColorU32(ImVec4(0.60f, 0.40f, 0.90f, 1.00f));
 
         ImGui::GetWindowDrawList()->AddLine(ImVec2(startPos.x, startPos.y - 10.0f),
-                                            ImVec2(startPos.x + totalWidth, startPos.y - 10.0f), accentColor, 5.0f);
+                                            ImVec2(startPos.x + totalWidth, startPos.y - 10.0f), accentColor,
+                                            constants::UI_BORDER_THICKNESS);
 
         float contentHeight = ImGui::GetTextLineHeightWithSpacing() + imgSize.y;
         ImGui::GetWindowDrawList()->AddLine(ImVec2(startPos.x, startPos.y + contentHeight + 10.0f),
                                             ImVec2(startPos.x + totalWidth, startPos.y + contentHeight + 10.0f),
-                                            accentColor, 5.0f);
+                                            accentColor, constants::UI_BORDER_THICKNESS);
 
         ImGui::BeginGroup();
         ImGui::Text("Original Frame");

@@ -5,6 +5,8 @@
 #include <numeric>
 #include <random>
 
+#include "common/constants.hpp"
+
 namespace kmeans::clustering::metrics {
 
 static float sqDistance(const float* p1, const cv::Vec<float, 5>& p2) {
@@ -33,7 +35,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
 
     for (int i = 0; i < numPoints; ++i) {
         const auto* p = samples.ptr<float>(i);
-        float minDistSq = 1e30f;
+        float minDistSq = constants::MATH_INF;
         int bestK = 0;
         for (int j = 0; j < k; ++j) {
             float d2 = sqDistance(p, centers[j]);
@@ -79,7 +81,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
     // 3. Approximate Silhouette Score
     // O(N^2) on 300k points is impossible. We approximate using a random subset of 2000 points
     // evaluated against another subset of 2000 points. (4 million operations -> instantly fast).
-    int subsetSize = std::min(numPoints, 2000);
+    int subsetSize = std::min(numPoints, constants::METRIC_APPROX_SUBSET_SIZE);
     std::vector<int> indices(numPoints);
     std::iota(indices.begin(), indices.end(), 0);
     std::mt19937 gen(42); // Fixed seed for stable comparisons between algorithms
@@ -130,7 +132,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<cv:
 
         a = (aCount > 0) ? (a / static_cast<float>(aCount)) : 0.0f;
 
-        float b = 1e30f;
+        float b = constants::MATH_INF;
         for (int j = 0; j < k; ++j) {
             if (j == myK) {
                 continue;

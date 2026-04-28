@@ -178,18 +178,18 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         }
         ImGui::Separator();
 
-        float btnWidth = 250.0f;
-        float rerunWidth = 150.0f;
+        float btnWidth = constants::UI_BTN_WIDTH_LG;
+        float rerunWidth = constants::UI_BTN_WIDTH_MD;
         float buttonsTotalWidth = btnWidth + 20.0f + rerunWidth;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - buttonsTotalWidth) * 0.5f);
 
-        if (ImGui::Button("Resume Live Feed", ImVec2(btnWidth, 40))) {
+        if (ImGui::Button("Resume Live Feed", ImVec2(btnWidth, constants::UI_BTN_HEIGHT))) {
             ctx.benchmarkRunner.reset();
         }
 
         ImGui::SameLine(0, 20.0f);
-        if (ImGui::Button("Rerun Frame", ImVec2(rerunWidth, 40))) {
+        if (ImGui::Button("Rerun Frame", ImVec2(rerunWidth, constants::UI_BTN_HEIGHT))) {
             ctx.benchmarkRunner.requestRecompute();
         }
 
