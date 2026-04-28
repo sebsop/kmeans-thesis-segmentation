@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "clustering/engines/quantum_engine.hpp"
+#include "common/constants.hpp"
 
 namespace kmeans::clustering {
 
@@ -90,7 +91,7 @@ void QuantumEngine::preRunSetup(const std::vector<cv::Vec<float, 5>>& initialCen
             max_range = range;
     }
     float global_range = max_range + 1e-8f;
-    m_scaleFactor = (static_cast<float>(CV_PI) / 2.0f) / global_range;
+    m_scaleFactor = (constants::PI_F / 2.0f) / global_range;
 }
 
 void QuantumEngine::launchAssignKernel(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,

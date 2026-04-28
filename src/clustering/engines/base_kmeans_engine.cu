@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "common/constants.hpp"
+
 #include "clustering/engines/base_kmeans_engine.hpp"
 
 #define CUDA_CHECK(call)                                                                                               \
@@ -167,7 +169,7 @@ std::vector<cv::Vec<float, 5>> BaseKMeansEngine::runInternal(float* d_samp, int 
     CUDA_CHECK(cudaMemcpy(m_d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemset(m_d_labels, 0xFF, numPoints * sizeof(int)));
 
-    int threadsPerBlock = 256;
+    int threadsPerBlock = constants::CUDA_THREADS_PER_BLOCK;
     int blocksPerGrid = (numPoints + threadsPerBlock - 1) / threadsPerBlock;
 
     size_t sharedAssignSize = static_cast<size_t>(k) * 5 * sizeof(float);

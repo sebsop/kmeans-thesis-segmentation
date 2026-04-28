@@ -123,7 +123,7 @@ void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<cv::Vec<
     CUDA_CHECK(cudaMemcpyAsync(m_d_centers, m_h_centers_pinned, m_centersSize, cudaMemcpyHostToDevice, m_stream));
 
     // 2. Launch Kernel on Stream
-    int threadsPerBlock = 256;
+    int threadsPerBlock = constants::CUDA_THREADS_PER_BLOCK;
     int blocksPerGrid = (m_width * m_height + threadsPerBlock - 1) / threadsPerBlock;
     size_t sharedSize = static_cast<size_t>(m_k) * 5 * sizeof(float);
 

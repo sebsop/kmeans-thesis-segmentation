@@ -36,7 +36,7 @@ void BenchmarkRunner::startComputing(const cv::Mat& currentFrame, const common::
     }
 
     common::SegmentationConfig benchConfig = config;
-    benchConfig.maxIterations = 1000; // Let benchmark run until true convergence
+    benchConfig.maxIterations = constants::BENCHMARK_MAX_ITERATIONS; // Let benchmark run until true convergence
 
     // 2. Pass the isolated benchFrame by value. The lambda now owns its own unique memory buffer.
     auto future = std::async(std::launch::async, [benchFrame, benchConfig]() {

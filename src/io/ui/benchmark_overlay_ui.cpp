@@ -27,8 +27,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                                  static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(img.rows)));
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
-                    cv::circle(img, pt, 6, color, -1);
-                    cv::circle(img, pt, 8, cv::Scalar(255, 255, 255), 2);
+                    cv::circle(img, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
+                    cv::circle(img, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(255, 255, 255), 2);
                 }
             };
             drawCentroids(bResults->classicalSegmented, bResults->classicalCenters);

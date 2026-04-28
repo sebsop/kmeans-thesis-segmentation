@@ -13,14 +13,14 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     ImGui::SetNextWindowSize(ImVec2(panelWidth, ImGui::GetIO().DisplaySize.y), ImGuiCond_Always);
     ImGui::Begin("Clustering Controls", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-    ImGui::SetCursorPosX(10.0f);
+    ImGui::SetCursorPosX(constants::UI_WINDOW_PADDING);
 
     {
         ImGuiStyle& style = ImGui::GetStyle();
         const float textH = ImGui::GetTextLineHeightWithSpacing();
         const float frameH = ImGui::GetFrameHeightWithSpacing();
         const float sepH = style.SeparatorSize;
-        const float plotH = 60.0f;
+        const float plotH = constants::UI_PLOT_HEIGHT;
 
         float contentH = 0.0f;
         contentH += textH;

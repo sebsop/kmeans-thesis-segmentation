@@ -42,7 +42,7 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(1750, 700, "K-Means Real-Time Segmentation Benchmark", nullptr, nullptr);
+    m_window = glfwCreateWindow(constants::WINDOW_WIDTH, constants::WINDOW_HEIGHT, "K-Means Real-Time Segmentation Benchmark", nullptr, nullptr);
     if (!m_window) {
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
@@ -114,7 +114,7 @@ void Application::run() {
         }
 
         cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
-        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, -6);
+        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, constants::CAMERA_AUTO_EXPOSURE);
 
         while (m_running) {
             cv::Mat frame;
@@ -170,8 +170,8 @@ void Application::run() {
                                  static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
-                    cv::circle(segmentedFull, pt, 6, color, -1);
-                    cv::circle(segmentedFull, pt, 8, cv::Scalar(255, 255, 255), 2);
+                    cv::circle(segmentedFull, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
+                    cv::circle(segmentedFull, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(255, 255, 255), 2);
                 }
             }
 
