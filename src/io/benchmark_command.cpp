@@ -29,7 +29,7 @@ void RunBenchmarkCommand::execute() {
         cv::Mat smallFrame;
         cv::resize(benchFrame, smallFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
 
-        std::vector<cv::Vec<float, constants::FEATURE_DIMS>> sharedCenters;
+        std::vector<FeatureVector> sharedCenters;
         {
             clustering::ClusteringManager initMgr;
             initMgr.getConfig() = benchConfig;
@@ -38,7 +38,7 @@ void RunBenchmarkCommand::execute() {
 
         auto runEngine = [&](common::AlgorithmType algo, cv::Mat& outSeg,
                              clustering::metrics::BenchmarkResults& outMetrics,
-                             std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& outCenters) {
+                             std::vector<FeatureVector>& outCenters) {
             clustering::ClusteringManager mgr;
             common::SegmentationConfig cfg = benchConfig;
             cfg.algorithm = algo;

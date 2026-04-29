@@ -4,9 +4,9 @@
 
 namespace kmeans::clustering {
 
-std::vector<cv::Vec<float, constants::FEATURE_DIMS>> RandomInitializer::initialize(const cv::Mat& samples,
+std::vector<FeatureVector> RandomInitializer::initialize(const cv::Mat& samples,
                                                                                    int k) const {
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers(k);
+    std::vector<FeatureVector> centers(k);
     int numPoints = samples.rows;
 
     thread_local static std::mt19937 gen(std::random_device{}());
@@ -15,7 +15,7 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> RandomInitializer::initiali
     std::generate(centers.begin(), centers.end(), [&]() {
         int randIdx = dis(gen);
         const auto* rowPtr = samples.ptr<float>(randIdx);
-        cv::Vec<float, constants::FEATURE_DIMS> c;
+        FeatureVector c;
         std::copy_n(rowPtr, constants::FEATURE_DIMS, c.val);
         return c;
     });

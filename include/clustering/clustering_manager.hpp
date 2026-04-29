@@ -29,7 +29,7 @@ class ClusteringManager {
     [[nodiscard]] common::SegmentationConfig& getConfig() noexcept;
     [[nodiscard]] const common::SegmentationConfig& getConfig() const noexcept;
 
-    [[nodiscard]] const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& getCenters() const noexcept;
+    [[nodiscard]] const std::vector<FeatureVector>& getCenters() const noexcept;
 
     [[nodiscard]] KMeansEngine* getEngine() const noexcept;
 
@@ -39,10 +39,10 @@ class ClusteringManager {
     void resetCenters();
 
     /** @brief Strong Exception Safety Guarantee */
-    void setInitialCenters(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers);
+    void setInitialCenters(const std::vector<FeatureVector>& centers);
 
     /** @brief Basic Exception Safety Guarantee */
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> generateInitialCenters(const cv::Mat& frame);
+    std::vector<FeatureVector> generateInitialCenters(const cv::Mat& frame);
 
     /** @brief Strong Exception Safety Guarantee */
     [[nodiscard]] cv::Mat segmentFrame(const cv::Mat& frame);

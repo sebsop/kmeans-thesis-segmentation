@@ -17,7 +17,7 @@ class QuantumEngine final : public BaseKMeansEngine<QuantumEngine> {
     QuantumEngine() = default;
     ~QuantumEngine() override = default;
 
-    void preRunSetupImpl(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters,
+    void preRunSetupImpl(const std::vector<FeatureVector>& initialCenters,
                          const cv::Mat& samples);
 
     void launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels, int* d_changed,

@@ -10,12 +10,12 @@
 
 namespace kmeans::clustering::metrics {
 
-static float sqDistance(const float* p1, const cv::Vec<float, constants::FEATURE_DIMS>& p2) {
+static float sqDistance(const float* p1, const FeatureVector& p2) {
     return common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p1, p2);
 }
 
 BenchmarkResults computeAllMetrics(const cv::Mat& samples,
-                                   const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers, int iterations,
+                                   const std::vector<FeatureVector>& centers, int iterations,
                                    float executionTimeMs) {
     int numPoints = samples.rows;
     int k = static_cast<int>(centers.size());

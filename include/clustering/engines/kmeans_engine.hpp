@@ -28,8 +28,8 @@ class KMeansEngine {
      * @brief Executes the clustering algorithm using a CPU-side cv::Mat.
      * Use this when the sample data lives in host memory.
      */
-    [[nodiscard]] virtual std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
-    run(const cv::Mat& samples, const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+    [[nodiscard]] virtual std::vector<FeatureVector>
+    run(const cv::Mat& samples, const std::vector<FeatureVector>& initialCenters, int k,
         int maxIterations) = 0;
 
     /**
@@ -37,9 +37,9 @@ class KMeansEngine {
      * Skips the H2D upload of samples for maximum throughput.
      * Engines that support this override it; default falls back to run() via D2H.
      */
-    [[nodiscard]] virtual std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+    [[nodiscard]] virtual std::vector<FeatureVector>
     runOnDevice(float* /*d_samples_ext*/, int /*numPoints*/,
-                const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& /*initialCenters*/, int /*k*/,
+                const std::vector<FeatureVector>& /*initialCenters*/, int /*k*/,
                 int /*maxIterations*/) {
         // Default: subclass must override if GPU-direct path is desired
         return {};

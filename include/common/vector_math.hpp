@@ -2,6 +2,7 @@
 
 #include <opencv2/core.hpp>
 #include <cmath>
+#include <concepts>
 
 #ifndef __host__
 #define __host__
@@ -26,6 +27,7 @@ struct VectorMath {
      * @brief Computes squared Euclidean distance between two vectors.
      */
     template <typename T1, typename T2>
+    requires std::floating_point<T1> && std::floating_point<T2>
     FORCE_INLINE static __host__ __device__ inline float sqDistance(const T1* a, const T2* b) {
         float dist = 0.0f;
         #pragma unroll
@@ -40,6 +42,7 @@ struct VectorMath {
      * @brief Computes squared Euclidean distance between a pointer and a cv::Vec.
      */
     template <typename T1, typename T2>
+    requires std::floating_point<T1> && std::floating_point<T2>
     FORCE_INLINE static __host__ __device__ inline float sqDistance(const T1* a, const cv::Vec<T2, Dims>& b) {
         float dist = 0.0f;
         #pragma unroll
@@ -54,6 +57,7 @@ struct VectorMath {
      * @brief Accumulates source elements into destination.
      */
     template <typename T1, typename T2>
+    requires std::floating_point<T1> && std::floating_point<T2>
     FORCE_INLINE static __host__ __device__ inline void accumulate(T1* dest, const T2* src) {
         #pragma unroll
         for (int i = 0; i < Dims; ++i) {

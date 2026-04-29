@@ -36,7 +36,7 @@ class CudaAssignmentContext {
     [[nodiscard]] int getWidth() const noexcept { return m_width; }
     [[nodiscard]] int getK() const noexcept { return m_k; }
 
-    void run(const cv::Mat& frame, const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers,
+    void run(const cv::Mat& frame, const std::vector<FeatureVector>& centers,
              cv::Mat& output);
 };
 

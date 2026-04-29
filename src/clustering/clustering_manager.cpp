@@ -14,7 +14,7 @@
 namespace kmeans::clustering {
 
 struct ClusteringManager::Impl {
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> m_previousCenters;
+    std::vector<FeatureVector> m_previousCenters;
     bool m_hasPrevious = false;
     int m_frameCount = 0;
 
@@ -27,7 +27,7 @@ struct ClusteringManager::Impl {
     std::unique_ptr<KMeansEngine> m_clusteringEngine;
 
     common::SegmentationConfig m_prevConfig;
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> m_centers;
+    std::vector<FeatureVector> m_centers;
 };
 
 ClusteringManager::ClusteringManager() : m_impl(std::make_unique<Impl>()) {
@@ -39,7 +39,7 @@ ClusteringManager::~ClusteringManager() = default;
 common::SegmentationConfig& ClusteringManager::getConfig() noexcept { return m_impl->m_config; }
 const common::SegmentationConfig& ClusteringManager::getConfig() const noexcept { return m_impl->m_config; }
 
-const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& ClusteringManager::getCenters() const noexcept {
+const std::vector<FeatureVector>& ClusteringManager::getCenters() const noexcept {
     return m_impl->m_centers;
 }
 
@@ -66,7 +66,7 @@ void ClusteringManager::updateStategyImplementations() {
 }
 
 cv::Mat ClusteringManager::segmentFrame(const cv::Mat& frame) {
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers = computeCenters(frame);
+    std::vector<FeatureVector> centers = computeCenters(frame);
 
     if (!m_impl->m_cudaContext || m_impl->m_cudaContext->getWidth() != frame.cols || m_impl->m_cudaContext->getK() != m_impl->m_config.k) {
         m_impl->m_cudaContext = std::make_unique<backend::CudaAssignmentContext>(frame.cols, frame.rows, m_impl->m_config.k);
@@ -80,7 +80,7 @@ cv::Mat ClusteringManager::segmentFrame(const cv::Mat& frame) {
     return result;
 }
 
-std::vector<cv::Vec<float, constants::FEATURE_DIMS>> ClusteringManager::computeCenters(const cv::Mat& frame) {
+std::vector<FeatureVector> ClusteringManager::computeCenters(const cv::Mat& frame) {
     CV_Assert(!frame.empty() && "Input frame is empty in ClusteringManager::computeCenters");
     CV_Assert(m_impl->m_config.k > 0 && "Number of clusters 'k' must be greater than 0");
 
@@ -93,8 +93,8 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> ClusteringManager::computeC
         return m_impl->m_previousCenters;
     }
 
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> initialCenters;
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> finalCenters;
+    std::vector<FeatureVector> initialCenters;
+    std::vector<FeatureVector> finalCenters;
 
     if (auto* sdp = dynamic_cast<StridedDataPreprocessor*>(m_impl->m_dataPreprocessor.get())) {
         int numPoints = 0;
@@ -127,7 +127,7 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> ClusteringManager::computeC
     return m_impl->m_previousCenters;
 }
 
-std::vector<cv::Vec<float, constants::FEATURE_DIMS>> ClusteringManager::generateInitialCenters(const cv::Mat& frame) {
+std::vector<FeatureVector> ClusteringManager::generateInitialCenters(const cv::Mat& frame) {
     updateStategyImplementations();
 
     cv::Mat cpuSamples;
@@ -142,7 +142,7 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> ClusteringManager::generate
     return m_impl->m_initializer->initialize(cpuSamples, m_impl->m_config.k);
 }
 
-void ClusteringManager::setInitialCenters(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers) {
+void ClusteringManager::setInitialCenters(const std::vector<FeatureVector>& centers) {
     m_impl->m_previousCenters = centers;
     m_impl->m_hasPrevious = true;
 }

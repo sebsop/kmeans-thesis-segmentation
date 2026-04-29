@@ -10,8 +10,8 @@ class KMeansPlusPlusInitializer final : public Initializer {
     KMeansPlusPlusInitializer() = default;
     ~KMeansPlusPlusInitializer() override = default;
 
-    [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>> initialize(const cv::Mat& samples,
-                                                                                  int k) const override final;
+    [[nodiscard]] std::vector<FeatureVector> initialize(const cv::Mat& samples,
+                                                        int k) const override final;
 };
 
 } // namespace kmeans::clustering

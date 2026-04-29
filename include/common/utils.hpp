@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/core.hpp>
+#include <concepts>
 
 #include "common/constants.hpp"
 #include "common/enums.hpp"
@@ -8,6 +9,7 @@
 namespace kmeans::common {
 
 template <typename T1, typename T2>
+requires std::integral<T1> && std::integral<T2>
 [[nodiscard]] constexpr int calculateGridDim(T1 totalItems, T2 threadsPerBlock) noexcept {
     return (static_cast<int>(totalItems) + static_cast<int>(threadsPerBlock) - 1) / static_cast<int>(threadsPerBlock);
 }
@@ -27,6 +29,6 @@ template <typename T1, typename T2>
  *
  * @return cv::Vec<float, constants::FEATURE_DIMS> A 5D feature vector with scaled color and spatial components.
  */
-[[nodiscard]] cv::Vec<float, constants::FEATURE_DIMS> makeFeature(const cv::Vec3f& bgr, float x01, float y01);
+[[nodiscard]] FeatureVector makeFeature(const cv::Vec3f& bgr, float x01, float y01);
 
 } // namespace kmeans::common

@@ -109,7 +109,7 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
 }
 
 void CudaAssignmentContext::run(const cv::Mat& frame,
-                                const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& centers, cv::Mat& output) {
+                                const std::vector<FeatureVector>& centers, cv::Mat& output) {
     // 1. Quick CPU copy to pinned memory to bypass driver staging overhead
     std::memcpy(m_h_input_pinned, frame.data, m_imgSize);
     CUDA_CHECK(cudaMemcpyAsync(m_d_input, m_h_input_pinned, m_imgSize, cudaMemcpyHostToDevice, m_stream));

@@ -24,11 +24,11 @@ __global__ void compute_min_distances_kernel(const float* __restrict__ samples, 
     }
 }
 
-std::vector<cv::Vec<float, constants::FEATURE_DIMS>> KMeansPlusPlusInitializer::initialize(const cv::Mat& samples,
+std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& samples,
                                                                                            int k) const {
     CV_Assert(samples.isContinuous() && "Samples matrix must be continuous for CUDA transfer");
 
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers;
+    std::vector<FeatureVector> centers;
     centers.reserve(k);
     int numPoints = samples.rows;
 
@@ -39,7 +39,7 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> KMeansPlusPlusInitializer::
     int firstIdx = dis(gen);
     const auto* firstPtr = samples.ptr<float>(firstIdx);
     {
-        cv::Vec<float, constants::FEATURE_DIMS> first_c;
+        FeatureVector first_c;
         for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
             first_c[d] = firstPtr[d];
         }
@@ -104,7 +104,7 @@ std::vector<cv::Vec<float, constants::FEATURE_DIMS>> KMeansPlusPlusInitializer::
         // Fetch selected center directly from CPU memory
         const auto* selPtr = samples.ptr<float>(selectedIdx);
         {
-            cv::Vec<float, constants::FEATURE_DIMS> c;
+            FeatureVector c;
             for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
                 c[d] = selPtr[d];
             }

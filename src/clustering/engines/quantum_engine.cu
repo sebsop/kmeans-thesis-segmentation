@@ -53,7 +53,7 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
     }
 }
 
-void QuantumEngine::preRunSetupImpl(const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters,
+void QuantumEngine::preRunSetupImpl(const std::vector<FeatureVector>& initialCenters,
                                     const cv::Mat& samples) {
     std::vector<float> min_vals(constants::FEATURE_DIMS, std::numeric_limits<float>::max());
     std::vector<float> max_vals(constants::FEATURE_DIMS, std::numeric_limits<float>::lowest());

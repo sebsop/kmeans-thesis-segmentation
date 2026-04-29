@@ -165,7 +165,7 @@ void Application::run() {
             cv::Mat segmentedFull;
             cv::resize(segmented, segmentedFull, frame.size(), 0, 0, constants::VIZ_RESIZE_ALGO);
 
-            std::vector<cv::Vec<float, constants::FEATURE_DIMS>> centers;
+            std::vector<FeatureVector> centers;
             if (m_showCentroids) {
                 centers = m_manager.getCenters();
                 std::for_each(centers.begin(), centers.end(), [&](const auto& c) {

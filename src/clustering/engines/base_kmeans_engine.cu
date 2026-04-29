@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <cstdlib>
 #include <cuda_runtime.h>
 #include <iostream>
@@ -113,10 +114,11 @@ void BaseKMeansEngine<Derived>::ensureBuffers(int numPoints, int k) {
 }
 
 template <typename Derived>
-std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+std::vector<FeatureVector>
 BaseKMeansEngine<Derived>::run(const cv::Mat& samples,
-                      const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+                      const std::vector<FeatureVector>& initialCenters, int k,
                       int maxIterations) {
+    assert(k >= constants::K_MIN && k <= constants::K_MAX);
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
         return initialCenters;
@@ -131,10 +133,11 @@ BaseKMeansEngine<Derived>::run(const cv::Mat& samples,
 }
 
 template <typename Derived>
-std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+std::vector<FeatureVector>
 BaseKMeansEngine<Derived>::runOnDevice(float* d_samples_ext, int numPoints,
-                              const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+                              const std::vector<FeatureVector>& initialCenters, int k,
                               int maxIterations) {
+    assert(k >= constants::K_MIN && k <= constants::K_MAX);
     if (numPoints == 0 || k <= 0)
         return initialCenters;
 
@@ -166,9 +169,9 @@ BaseKMeansEngine<Derived>::runOnDevice(float* d_samples_ext, int numPoints,
 }
 
 template <typename Derived>
-std::vector<cv::Vec<float, constants::FEATURE_DIMS>>
+std::vector<FeatureVector>
 BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
-                              const std::vector<cv::Vec<float, constants::FEATURE_DIMS>>& initialCenters, int k,
+                              const std::vector<FeatureVector>& initialCenters, int k,
                               int maxIterations) {
     common::ScopedTimer timer("KMeans Execution");
     size_t centersSize = static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float);
@@ -238,7 +241,7 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
 
     m_lastIterations = iter + 1;
 
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> finalCenters(k);
+    std::vector<FeatureVector> finalCenters(k);
     for (int i = 0; i < k; ++i) {
         for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
             finalCenters[i][d] = h_centers[i * constants::FEATURE_DIMS + d];
