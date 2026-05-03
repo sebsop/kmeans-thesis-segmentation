@@ -66,9 +66,9 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     ImGui::Text("Core Hyperparameters");
     configChanged |=
         ImGui::SliderInt("Clusters (k)", &pendingConfig.k, constants::clustering::K_MIN, constants::clustering::K_MAX);
-    configChanged |= ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
-                                      constants::clustering::LEARN_INTERVAL_MIN,
-                                      constants::clustering::LEARN_INTERVAL_MAX);
+    configChanged |=
+        ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
+                         constants::clustering::LEARN_INTERVAL_MIN, constants::clustering::LEARN_INTERVAL_MAX);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(
             "How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");

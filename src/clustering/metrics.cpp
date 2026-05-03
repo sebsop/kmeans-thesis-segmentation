@@ -69,7 +69,8 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
             float dCenter = std::sqrt(
                 common::VectorMath<constants::clustering::FEATURE_DIMS>::sqDistance(centers[i].val, centers[j].val));
             if (dCenter > constants::math::EPSILON) [[likely]] {
-                maxClusterRatio = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxClusterRatio);
+                maxClusterRatio =
+                    std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxClusterRatio);
             }
         });
         daviesBouldin += maxClusterRatio;

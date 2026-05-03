@@ -39,8 +39,8 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
         float target_prob = 1.0f;
 #pragma unroll
         for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
-            float diff = (p[d] - s_centers[j * constants::clustering::FEATURE_DIMS + d]) *
-                         scale_factor * constants::quantum::PHASE_OFFSET;
+            float diff = (p[d] - s_centers[j * constants::clustering::FEATURE_DIMS + d]) * scale_factor *
+                         constants::quantum::PHASE_OFFSET;
             float cos_val = __cosf(diff);
             target_prob *= (cos_val * cos_val);
         }

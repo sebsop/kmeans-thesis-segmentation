@@ -102,14 +102,22 @@ __global__ static void assignPixelsKernel(const unsigned char* input, unsigned c
 
     float inv_scale = 1.0f / fmaxf(constants::math::EPSILON, color_scale);
     output[offset + 0] = static_cast<unsigned char>(
-        fminf(255.0f, s_centers[bestIdx * constants::clustering::FEATURE_DIMS + 0] * inv_scale));
+        fminf(255.0f, roundf(s_centers[bestIdx * constants::clustering::FEATURE_DIMS + 0] * inv_scale)));
     output[offset + 1] = static_cast<unsigned char>(
-        fminf(255.0f, s_centers[bestIdx * constants::clustering::FEATURE_DIMS + 1] * inv_scale));
+        fminf(255.0f, roundf(s_centers[bestIdx * constants::clustering::FEATURE_DIMS + 1] * inv_scale)));
     output[offset + 2] = static_cast<unsigned char>(
-        fminf(255.0f, s_centers[bestIdx * constants::clustering::FEATURE_DIMS + 2] * inv_scale));
+        fminf(255.0f, roundf(s_centers[bestIdx * constants::clustering::FEATURE_DIMS + 2] * inv_scale)));
 }
 
 void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<FeatureVector>& centers, cv::Mat& output) {
+    if (frame.empty() || centers.empty() || frame.cols != m_width || frame.rows != m_height) {
+        return;
+    }
+
+    if (output.rows != m_height || output.cols != m_width || output.type() != frame.type()) {
+        output.create(m_height, m_width, frame.type());
+    }
+
     // 1. Quick CPU copy to pinned memory to bypass driver staging overhead
     std::memcpy(m_h_input_pinned, frame.data, m_imgSize);
     CUDA_CHECK(cudaMemcpyAsync(m_d_input, m_h_input_pinned, m_imgSize, cudaMemcpyHostToDevice, m_stream));

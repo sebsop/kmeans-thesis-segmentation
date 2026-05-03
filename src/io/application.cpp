@@ -146,7 +146,8 @@ void Application::run() {
 
             [[maybe_unused]] int frameIdx = 0;
             cv::Mat processFrame;
-            cv::resize(frame, processFrame, cv::Size(constants::video::PROCESS_WIDTH, constants::video::PROCESS_HEIGHT));
+            cv::resize(frame, processFrame,
+                       cv::Size(constants::video::PROCESS_WIDTH, constants::video::PROCESS_HEIGHT));
 
             {
                 std::scoped_lock<std::mutex> lock(m_configMutex);

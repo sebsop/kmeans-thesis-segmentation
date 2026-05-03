@@ -13,8 +13,6 @@ class ClassicalEngine final : public BaseKMeansEngine<ClassicalEngine> {
     ClassicalEngine() = default;
     ~ClassicalEngine() override = default;
 
-
-
     void launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels, int* d_changed,
                                 int threadsPerBlock, int blocksPerGrid, size_t sharedSize);
 };

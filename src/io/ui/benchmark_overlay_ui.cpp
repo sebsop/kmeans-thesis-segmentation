@@ -170,9 +170,10 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
             ImGui::TableSetColumnIndex(1);
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(constants::ui::theme::BENCH_TITLE_CLASSICAL.r, constants::ui::theme::BENCH_TITLE_CLASSICAL.g,
-                                      constants::ui::theme::BENCH_TITLE_CLASSICAL.b, constants::ui::theme::BENCH_TITLE_CLASSICAL.a),
-                               "Performance Metrics:");
+            ImGui::TextColored(
+                ImVec4(constants::ui::theme::BENCH_TITLE_CLASSICAL.r, constants::ui::theme::BENCH_TITLE_CLASSICAL.g,
+                       constants::ui::theme::BENCH_TITLE_CLASSICAL.b, constants::ui::theme::BENCH_TITLE_CLASSICAL.a),
+                "Performance Metrics:");
             ImGui::TextColored(s_wcss.c1, "WCSS: %s", s_wcss.t1.c_str());
             ImGui::TextColored(s_db.c1, "Davies-Bouldin: %s", s_db.t1.c_str());
             ImGui::TextColored(s_sil.c1, "Approx Silhouette: %s", s_sil.t1.c_str());
@@ -181,9 +182,10 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
             ImGui::TableSetColumnIndex(2);
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(constants::ui::theme::BENCH_TITLE_QUANTUM.r, constants::ui::theme::BENCH_TITLE_QUANTUM.g,
-                                      constants::ui::theme::BENCH_TITLE_QUANTUM.b, constants::ui::theme::BENCH_TITLE_QUANTUM.a),
-                               "Performance Metrics:");
+            ImGui::TextColored(
+                ImVec4(constants::ui::theme::BENCH_TITLE_QUANTUM.r, constants::ui::theme::BENCH_TITLE_QUANTUM.g,
+                       constants::ui::theme::BENCH_TITLE_QUANTUM.b, constants::ui::theme::BENCH_TITLE_QUANTUM.a),
+                "Performance Metrics:");
             ImGui::TextColored(s_wcss.c2, "WCSS: %s", s_wcss.t2.c_str());
             ImGui::TextColored(s_db.c2, "Davies-Bouldin: %s", s_db.t2.c_str());
             ImGui::TextColored(s_sil.c2, "Approx Silhouette: %s", s_sil.t2.c_str());
@@ -227,8 +229,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
         float kTextW = ImGui::CalcTextSize("K: ").x;
         float strideTextW = ImGui::CalcTextSize("Stride: ").x;
-        float row2Width = kTextW + kSliderWidth + constants::ui::BENCH_SLIDER_SPACING + strideTextW + strideSliderWidth +
-                          constants::ui::BENCH_SLIDER_SPACING + radioW;
+        float row2Width = kTextW + kSliderWidth + constants::ui::BENCH_SLIDER_SPACING + strideTextW +
+                          strideSliderWidth + constants::ui::BENCH_SLIDER_SPACING + radioW;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - row2Width) * 0.5f);
         ImGui::AlignTextToFramePadding();

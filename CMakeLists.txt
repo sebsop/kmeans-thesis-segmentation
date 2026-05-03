@@ -1,17 +1,33 @@
 cmake_minimum_required(VERSION 3.18)
 project(KMeansThesisSegmentation LANGUAGES CXX CUDA)
+ 
+# Modern CMake Policies
+cmake_policy(SET CMP0135 NEW) # FetchContent timestamp behavior
+cmake_policy(SET CMP0146 NEW) # Modern CUDA support
 
 # Dependencies
 find_package(OpenCV REQUIRED)
-find_package(CUDA REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 find_package(cppzmq CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
-
-enable_language(CUDA)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+ 
+# Google Test Integration
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+# For Windows: prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+ 
+enable_testing()
+include(CTest)
 
 # Ensure Release build by default
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -58,7 +74,7 @@ include_directories(
 # External (SYSTEM) include directories to suppress compiler/analysis warnings
 include_directories(SYSTEM
     ${OpenCV_INCLUDE_DIRS}
-    ${CUDA_INCLUDE_DIRS}
+    ${CUDAToolkit_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/src/vendor/imgui
     ${CMAKE_SOURCE_DIR}/src/vendor/imgui/backends
 )
@@ -187,3 +203,5 @@ set_target_properties(kmeans_thesis_segmentation PROPERTIES
 )
 
 target_link_libraries(kmeans_thesis_segmentation PRIVATE kmeans_core imgui)
+ 
+add_subdirectory(tests)

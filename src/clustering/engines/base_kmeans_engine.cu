@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cassert>
-#include <cuda_runtime.h>
 #include <cstdlib>
+#include <cuda_runtime.h>
 #include <numeric>
 #include <source_location>
 #include <span>
