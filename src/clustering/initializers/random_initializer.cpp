@@ -15,7 +15,7 @@ std::vector<FeatureVector> RandomInitializer::initialize(const cv::Mat& samples,
         int randIdx = dis(gen);
         const auto* rowPtr = samples.ptr<float>(randIdx);
         FeatureVector c;
-        std::copy_n(rowPtr, constants::FEATURE_DIMS, c.val);
+        std::copy_n(rowPtr, constants::clustering::FEATURE_DIMS, c.val);
         return c;
     });
 

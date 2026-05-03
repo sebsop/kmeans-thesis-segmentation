@@ -18,8 +18,8 @@ __global__ void compute_min_distances_kernel(const float* __restrict__ samples, 
                                              const float* __restrict__ latestCenter, float* __restrict__ distances) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numPoints) {
-        float distSq = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(&samples[idx * constants::FEATURE_DIMS],
-                                                                               latestCenter);
+        float distSq = common::VectorMath<constants::clustering::FEATURE_DIMS>::sqDistance(
+            &samples[idx * constants::clustering::FEATURE_DIMS], latestCenter);
         if (distSq < distances[idx]) {
             distances[idx] = distSq;
         }
@@ -41,7 +41,7 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
     const auto* firstPtr = samples.ptr<float>(firstIdx);
     {
         FeatureVector first_c;
-        std::vector<int> d_indices(constants::FEATURE_DIMS);
+        std::vector<int> d_indices(constants::clustering::FEATURE_DIMS);
         std::iota(d_indices.begin(), d_indices.end(), 0);
         std::for_each(d_indices.begin(), d_indices.end(), [&](int d) { first_c[d] = firstPtr[d]; });
         centers.push_back(first_c);
@@ -52,17 +52,17 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
     }
 
     // Use thrust::device_vector for automatic RAII
-    thrust::device_vector<float> d_samples_vec(numPoints * constants::FEATURE_DIMS);
+    thrust::device_vector<float> d_samples_vec(numPoints * constants::clustering::FEATURE_DIMS);
     cudaMemcpy(thrust::raw_pointer_cast(d_samples_vec.data()), samples.ptr<float>(),
-               numPoints * constants::FEATURE_DIMS * sizeof(float), cudaMemcpyHostToDevice);
+               numPoints * constants::clustering::FEATURE_DIMS * sizeof(float), cudaMemcpyHostToDevice);
 
-    thrust::device_vector<float> d_latestCenter_vec(constants::FEATURE_DIMS);
+    thrust::device_vector<float> d_latestCenter_vec(constants::clustering::FEATURE_DIMS);
 
     // Distances initialized to MAX_FLOAT
     thrust::device_vector<float> d_distances(numPoints, std::numeric_limits<float>::max());
     thrust::device_vector<float> d_cumulative_distances(numPoints);
 
-    int blockSize = constants::CUDA_THREADS_PER_BLOCK;
+    int blockSize = constants::cuda::THREADS_PER_BLOCK;
     int gridSize = (numPoints + blockSize - 1) / blockSize;
 
     // Dedicated stream so we only synchronize this work, not the entire GPU
@@ -76,7 +76,7 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
         // Copy latest center to device (only FEATURE_DIMS floats)
         const auto& latestCenter = centers.back();
         cudaMemcpyAsync(thrust::raw_pointer_cast(d_latestCenter_vec.data()), &latestCenter[0],
-                        constants::FEATURE_DIMS * sizeof(float), cudaMemcpyHostToDevice, stream);
+                        constants::clustering::FEATURE_DIMS * sizeof(float), cudaMemcpyHostToDevice, stream);
 
         // Update minimum distances on GPU
         compute_min_distances_kernel<<<gridSize, blockSize, 0, stream>>>(
@@ -109,7 +109,7 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
         const auto* selPtr = samples.ptr<float>(selectedIdx);
         {
             FeatureVector c;
-            std::vector<int> d_indices(constants::FEATURE_DIMS);
+            std::vector<int> d_indices(constants::clustering::FEATURE_DIMS);
             std::iota(d_indices.begin(), d_indices.end(), 0);
             std::for_each(d_indices.begin(), d_indices.end(), [&](int d) { c[d] = selPtr[d]; });
             centers.push_back(c);

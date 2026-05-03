@@ -35,10 +35,11 @@ template <typename Derived> class BaseKMeansEngine : public KMeansEngine {
   protected:
     void ensureBuffers(int numPoints, int k);
 
-    [[nodiscard]] std::vector<FeatureVector>
-    runInternal(float* d_samp, int numPoints, std::span<const FeatureVector> initialCenters, int k, int maxIterations);
+    [[nodiscard]] std::vector<FeatureVector> runInternal(float* d_samples, int numPoints,
+                                                         std::span<const FeatureVector> initialCenters, int k,
+                                                         int maxIterations);
 
-    void baseUpdateKernel(float* d_samp, int numPoints, int k, int* d_lab, float* d_nSums, int* d_cnts,
+    void baseUpdateKernel(float* d_samples, int numPoints, int k, int* d_labels, float* d_newSums, int* d_counts,
                           int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const;
 };
 

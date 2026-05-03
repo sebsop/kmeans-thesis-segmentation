@@ -32,7 +32,7 @@ template <typename T1, typename T2>
  * @param x01 Normalized spatial X coordinate of the pixel in the frame ([0, 1] range)
  * @param y01 Normalized spatial Y coordinate of the pixel in the frame ([0, 1] range)
  *
- * @return cv::Vec<float, constants::FEATURE_DIMS> A 5D feature vector with scaled color and spatial components.
+ * @return cv::Vec<float, constants::clustering::FEATURE_DIMS> A 5D feature vector with scaled color and spatial components.
  */
 [[nodiscard]] FeatureVector makeFeature(const cv::Vec3f& bgr, float x01, float y01);
 

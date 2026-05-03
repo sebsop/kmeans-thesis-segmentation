@@ -104,14 +104,14 @@ std::vector<FeatureVector> ClusteringManager::computeCenters(const cv::Mat& fram
     std::vector<FeatureVector> initialCenters;
     std::vector<FeatureVector> finalCenters;
 
-    if (auto* sdp = dynamic_cast<StridedDataPreprocessor*>(m_impl->m_dataPreprocessor.get())) {
+    if (auto* stridedPreprocessor = dynamic_cast<StridedDataPreprocessor*>(m_impl->m_dataPreprocessor.get())) {
         int numPoints = 0;
-        float* d_samples = sdp->prepareDevice(frame, m_impl->m_config.stride, numPoints);
+        float* d_samples = stridedPreprocessor->prepareDevice(frame, m_impl->m_config.stride, numPoints);
 
         if (m_impl->m_hasPrevious && static_cast<int>(m_impl->m_previousCenters.size()) == m_impl->m_config.k) {
             initialCenters = m_impl->m_previousCenters;
         } else {
-            cv::Mat cpuSamples = sdp->download();
+            cv::Mat cpuSamples = stridedPreprocessor->download();
             initialCenters = m_impl->m_initializer->initialize(cpuSamples, m_impl->m_config.k);
         }
 
@@ -140,10 +140,10 @@ std::vector<FeatureVector> ClusteringManager::generateInitialCenters(const cv::M
     updateStategyImplementations();
 
     cv::Mat cpuSamples;
-    if (auto* sdp = dynamic_cast<StridedDataPreprocessor*>(m_impl->m_dataPreprocessor.get())) {
-        int dummyPoints = 0;
-        sdp->prepareDevice(frame, m_impl->m_config.stride, dummyPoints);
-        cpuSamples = sdp->download();
+    if (auto* stridedPreprocessor = dynamic_cast<StridedDataPreprocessor*>(m_impl->m_dataPreprocessor.get())) {
+        int preprocessedCount = 0;
+        stridedPreprocessor->prepareDevice(frame, m_impl->m_config.stride, preprocessedCount);
+        cpuSamples = stridedPreprocessor->download();
     } else {
         cpuSamples = m_impl->m_dataPreprocessor->prepare(frame);
     }

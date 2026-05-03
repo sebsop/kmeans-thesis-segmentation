@@ -23,12 +23,13 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         if (!benchTexturesLoaded) {
             auto drawCentroids = [](cv::Mat& img, const std::vector<FeatureVector>& centers) {
                 std::for_each(centers.begin(), centers.end(), [&](const auto& c) {
-                    cv::Point pt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(img.cols)),
-                                 static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(img.rows)));
-                    cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
-                                     c[2] / constants::COLOR_SCALE);
-                    cv::circle(img, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
-                    cv::circle(img, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(255, 255, 255), 2);
+                    cv::Point pt(
+                        static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.cols)),
+                        static_cast<int>((c[4] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.rows)));
+                    cv::Scalar color(c[0] / constants::video::COLOR_SCALE, c[1] / constants::video::COLOR_SCALE,
+                                     c[2] / constants::video::COLOR_SCALE);
+                    cv::circle(img, pt, constants::viz::CENTROID_RADIUS, color, -1);
+                    cv::circle(img, pt, constants::viz::OUTLINE_WIDTH, cv::Scalar(255, 255, 255), 2);
                 });
             };
             drawCentroids(bResults->classicalSegmented, bResults->classicalCenters);
@@ -68,21 +69,23 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             }
             s.t1 = b1;
             s.t2 = b2;
-            s.c1 = ImVec4(1, 1, 1, 1);
-            s.c2 = ImVec4(1, 1, 1, 1);
-            if (std::abs(v1 - v2) > constants::MATH_EPSILON) {
+            s.c1 = ImVec4(constants::ui::theme::NEUTRAL_COL.r, constants::ui::theme::NEUTRAL_COL.g,
+                          constants::ui::theme::NEUTRAL_COL.b, constants::ui::theme::NEUTRAL_COL.a);
+            s.c2 = ImVec4(constants::ui::theme::NEUTRAL_COL.r, constants::ui::theme::NEUTRAL_COL.g,
+                          constants::ui::theme::NEUTRAL_COL.b, constants::ui::theme::NEUTRAL_COL.a);
+            if (std::abs(v1 - v2) > constants::math::EPSILON) {
                 bool v1Better = lowerIsBetter ? (v1 < v2) : (v1 > v2);
-                s.c1 = v1Better ? ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
-                                         constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a)
-                                : ImVec4(constants::theme::ERROR_COL.r, constants::theme::ERROR_COL.g,
-                                         constants::theme::ERROR_COL.b, constants::theme::ERROR_COL.a);
-                s.c2 = !v1Better ? ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
-                                          constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a)
-                                 : ImVec4(constants::theme::ERROR_COL.r, constants::theme::ERROR_COL.g,
-                                          constants::theme::ERROR_COL.b, constants::theme::ERROR_COL.a);
+                s.c1 = v1Better ? ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
+                                         constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a)
+                                : ImVec4(constants::ui::theme::ERROR_COL.r, constants::ui::theme::ERROR_COL.g,
+                                         constants::ui::theme::ERROR_COL.b, constants::ui::theme::ERROR_COL.a);
+                s.c2 = !v1Better ? ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
+                                          constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a)
+                                 : ImVec4(constants::ui::theme::ERROR_COL.r, constants::ui::theme::ERROR_COL.g,
+                                          constants::ui::theme::ERROR_COL.b, constants::ui::theme::ERROR_COL.a);
                 float worse = v1Better ? v2 : v1;
                 float pct =
-                    std::abs(worse) > constants::MATH_EPSILON ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
+                    std::abs(worse) > constants::math::EPSILON ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
                 char pb[32];
                 snprintf(pb, sizeof(pb), " (%.1f%% better)", pct);
                 if (v1Better) {
@@ -102,12 +105,12 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         auto s_iter = getStyle(static_cast<float>(cm.iterations), static_cast<float>(qm.iterations), true, true);
         auto s_lat = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
 
-        if (ImGui::BeginTable("BenchTable", constants::UI_BENCH_COL_COUNT, ImGuiTableFlags_None)) {
+        if (ImGui::BeginTable("BenchTable", constants::ui::BENCH_COL_COUNT, ImGuiTableFlags_None)) {
             ImVec2 avail = ImGui::GetContentRegionAvail();
             float tableInnerW = avail.x;
             float spacing = ImGui::GetStyle().ItemSpacing.x;
-            float colWidth = (tableInnerW - spacing * 2.0f) / static_cast<float>(constants::UI_BENCH_COL_COUNT);
-            const float imgScale = constants::UI_BENCH_IMG_SCALE;
+            float colWidth = (tableInnerW - spacing * 2.0f) / static_cast<float>(constants::ui::BENCH_COL_COUNT);
+            const float imgScale = constants::ui::BENCH_IMG_SCALE;
             float ratio =
                 static_cast<float>(bResults->originalFrame.rows) / static_cast<float>(bResults->originalFrame.cols);
             float imgW = colWidth * imgScale;
@@ -156,7 +159,9 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
             ImGui::TableSetColumnIndex(0);
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Metrics Guide:");
+            ImGui::TextColored(ImVec4(constants::ui::theme::BENCH_GUIDE.r, constants::ui::theme::BENCH_GUIDE.g,
+                                      constants::ui::theme::BENCH_GUIDE.b, constants::ui::theme::BENCH_GUIDE.a),
+                               "Metrics Guide:");
             ImGui::Text("WCSS (Inertia): < Lower is better");
             ImGui::Text("Davies-Bouldin: < Lower is better");
             ImGui::Text("Silhouette: > Higher is better");
@@ -165,8 +170,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
             ImGui::TableSetColumnIndex(1);
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
-                                      constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a),
+            ImGui::TextColored(ImVec4(constants::ui::theme::BENCH_TITLE_CLASSICAL.r, constants::ui::theme::BENCH_TITLE_CLASSICAL.g,
+                                      constants::ui::theme::BENCH_TITLE_CLASSICAL.b, constants::ui::theme::BENCH_TITLE_CLASSICAL.a),
                                "Performance Metrics:");
             ImGui::TextColored(s_wcss.c1, "WCSS: %s", s_wcss.t1.c_str());
             ImGui::TextColored(s_db.c1, "Davies-Bouldin: %s", s_db.t1.c_str());
@@ -176,7 +181,9 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
             ImGui::TableSetColumnIndex(2);
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.8f, 1.0f), "Performance Metrics:");
+            ImGui::TextColored(ImVec4(constants::ui::theme::BENCH_TITLE_QUANTUM.r, constants::ui::theme::BENCH_TITLE_QUANTUM.g,
+                                      constants::ui::theme::BENCH_TITLE_QUANTUM.b, constants::ui::theme::BENCH_TITLE_QUANTUM.a),
+                               "Performance Metrics:");
             ImGui::TextColored(s_wcss.c2, "WCSS: %s", s_wcss.t2.c_str());
             ImGui::TextColored(s_db.c2, "Davies-Bouldin: %s", s_db.t2.c_str());
             ImGui::TextColored(s_sil.c2, "Approx Silhouette: %s", s_sil.t2.c_str());
@@ -187,18 +194,18 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         }
         ImGui::Separator();
 
-        float btnWidth = constants::UI_BTN_WIDTH_LG;
-        float rerunWidth = constants::UI_BTN_WIDTH_MD;
-        float buttonsTotalWidth = btnWidth + constants::UI_BENCH_BTN_PADDING + rerunWidth;
+        float btnWidth = constants::ui::BTN_WIDTH_LG;
+        float rerunWidth = constants::ui::BTN_WIDTH_MD;
+        float buttonsTotalWidth = btnWidth + constants::ui::BENCH_BTN_PADDING + rerunWidth;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - buttonsTotalWidth) * 0.5f);
 
-        if (ImGui::Button("Resume Live Feed", ImVec2(btnWidth, constants::UI_BTN_HEIGHT))) {
+        if (ImGui::Button("Resume Live Feed", ImVec2(btnWidth, constants::ui::BTN_HEIGHT))) {
             ctx.benchmarkRunner.reset();
         }
 
-        ImGui::SameLine(0, constants::UI_BENCH_BTN_PADDING);
-        if (ImGui::Button("Rerun Frame", ImVec2(rerunWidth, constants::UI_BTN_HEIGHT))) {
+        ImGui::SameLine(0, constants::ui::BENCH_BTN_PADDING);
+        if (ImGui::Button("Rerun Frame", ImVec2(rerunWidth, constants::ui::BTN_HEIGHT))) {
             ctx.benchmarkRunner.requestRecompute();
         }
 
@@ -214,14 +221,14 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             currentInitType = ctx.uiConfig.init;
         }
 
-        float kSliderWidth = constants::UI_K_SLIDER_WIDTH;
-        float strideSliderWidth = constants::UI_STRIDE_SLIDER_WIDTH;
-        float radioW = constants::UI_RADIO_WIDTH;
+        float kSliderWidth = constants::ui::K_SLIDER_WIDTH;
+        float strideSliderWidth = constants::ui::STRIDE_SLIDER_WIDTH;
+        float radioW = constants::ui::RADIO_WIDTH;
 
         float kTextW = ImGui::CalcTextSize("K: ").x;
         float strideTextW = ImGui::CalcTextSize("Stride: ").x;
-        float row2Width = kTextW + kSliderWidth + constants::UI_BENCH_SLIDER_SPACING + strideTextW + strideSliderWidth +
-                          constants::UI_BENCH_SLIDER_SPACING + radioW;
+        float row2Width = kTextW + kSliderWidth + constants::ui::BENCH_SLIDER_SPACING + strideTextW + strideSliderWidth +
+                          constants::ui::BENCH_SLIDER_SPACING + radioW;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - row2Width) * 0.5f);
         ImGui::AlignTextToFramePadding();
@@ -232,13 +239,13 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
         static bool s_needsRecompute = false;
 
-        if (ImGui::SliderInt("##benchK", &tempK, constants::K_MIN, constants::K_MAX)) {
+        if (ImGui::SliderInt("##benchK", &tempK, constants::clustering::K_MIN, constants::clustering::K_MAX)) {
             std::scoped_lock<std::mutex> lock(ctx.configMutex);
             ctx.uiConfig.k = tempK;
             s_needsRecompute = true;
         }
 
-        ImGui::SameLine(0, constants::UI_BENCH_SLIDER_SPACING);
+        ImGui::SameLine(0, constants::ui::BENCH_SLIDER_SPACING);
 
         ImGui::Text("Stride:");
         ImGui::SameLine();
@@ -249,7 +256,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             s_needsRecompute = true;
         }
 
-        ImGui::SameLine(0, constants::UI_BENCH_SLIDER_SPACING);
+        ImGui::SameLine(0, constants::ui::BENCH_SLIDER_SPACING);
 
         int currentInit = (currentInitType == common::InitializationType::KMEANS_PLUSPLUS) ? 0 : 1;
         int oldInit = currentInit;

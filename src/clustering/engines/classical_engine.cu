@@ -10,25 +10,25 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     extern __shared__ float s_centers[];
 
     int tid = threadIdx.x;
-    if (tid < k * constants::FEATURE_DIMS) {
+    if (tid < k * constants::clustering::FEATURE_DIMS) {
         s_centers[tid] = centers[tid];
     }
     __syncthreads();
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numPoints) [[likely]] {
-        float p[constants::FEATURE_DIMS];
+        float p[constants::clustering::FEATURE_DIMS];
 #pragma unroll
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
-            p[d] = samples[idx * constants::FEATURE_DIMS + d];
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
+            p[d] = samples[idx * constants::clustering::FEATURE_DIMS + d];
         }
 
-        float minDistSq = constants::MATH_INF;
+        float minDistSq = constants::math::INF;
         int bestK = 0;
 
         for (int j = 0; j < k; ++j) {
-            float d2 =
-                common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p, &s_centers[j * constants::FEATURE_DIMS]);
+            float d2 = common::VectorMath<constants::clustering::FEATURE_DIMS>::sqDistance(
+                p, &s_centers[j * constants::clustering::FEATURE_DIMS]);
             if (d2 < minDistSq) {
                 minDistSq = d2;
                 bestK = j;
@@ -43,8 +43,7 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
 }
 
 void ClassicalEngine::launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,
-                                             int* d_changed, int threadsPerBlock, int blocksPerGrid,
-                                             size_t sharedSize) {
+                                             int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
     classicalAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samples, numPoints, d_centers, k, d_labels,
                                                                           d_changed);
 }

@@ -15,8 +15,8 @@ struct BenchmarkComparisonResult {
     cv::Mat quantumSegmented{};
     clustering::metrics::BenchmarkResults classicalMetrics{};
     clustering::metrics::BenchmarkResults quantumMetrics{};
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> classicalCenters{};
-    std::vector<cv::Vec<float, constants::FEATURE_DIMS>> quantumCenters{};
+    std::vector<FeatureVector> classicalCenters{};
+    std::vector<FeatureVector> quantumCenters{};
 };
 
 } // namespace kmeans::io

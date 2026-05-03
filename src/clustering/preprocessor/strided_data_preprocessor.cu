@@ -36,11 +36,11 @@ __global__ void preprocess_strided_kernel(const uchar3* __restrict__ frame_data,
         float x01 = static_cast<float>(x) * invCols;
         float y01 = static_cast<float>(y) * invRows;
 
-        samples[out_idx * constants::FEATURE_DIMS + 0] = static_cast<float>(bgr.x) * color_scale;
-        samples[out_idx * constants::FEATURE_DIMS + 1] = static_cast<float>(bgr.y) * color_scale;
-        samples[out_idx * constants::FEATURE_DIMS + 2] = static_cast<float>(bgr.z) * color_scale;
-        samples[out_idx * constants::FEATURE_DIMS + 3] = x01 * spatial_scale;
-        samples[out_idx * constants::FEATURE_DIMS + 4] = y01 * spatial_scale;
+        samples[out_idx * constants::clustering::FEATURE_DIMS + 0] = static_cast<float>(bgr.x) * color_scale;
+        samples[out_idx * constants::clustering::FEATURE_DIMS + 1] = static_cast<float>(bgr.y) * color_scale;
+        samples[out_idx * constants::clustering::FEATURE_DIMS + 2] = static_cast<float>(bgr.z) * color_scale;
+        samples[out_idx * constants::clustering::FEATURE_DIMS + 3] = x01 * spatial_scale;
+        samples[out_idx * constants::clustering::FEATURE_DIMS + 4] = y01 * spatial_scale;
     }
 }
 
@@ -76,7 +76,7 @@ void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
     if (n != m_cached_n) {
         reset();
         CUDA_CHECK_PREP(cudaMalloc(&m_d_frame_data, n * sizeof(uchar3)));
-        CUDA_CHECK_PREP(cudaMalloc(&m_d_samples, n * constants::FEATURE_DIMS *
+        CUDA_CHECK_PREP(cudaMalloc(&m_d_samples, n * constants::clustering::FEATURE_DIMS *
                                                      sizeof(float))); // Allocate full N to be safe against stride=1
         m_cached_n = n;
     }
@@ -85,12 +85,13 @@ void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
 
     CUDA_CHECK_PREP(cudaMemcpy(m_d_frame_data, frame.ptr<uchar3>(), n * sizeof(uchar3), cudaMemcpyHostToDevice));
 
-    dim3 blockSize(constants::CUDA_BLOCK_2D_X, constants::CUDA_BLOCK_2D_Y);
+    dim3 blockSize(constants::cuda::BLOCK_2D_X, constants::cuda::BLOCK_2D_Y);
     dim3 gridSize(common::calculateGridDim(out_cols, blockSize.x), common::calculateGridDim(out_rows, blockSize.y));
 
     preprocess_strided_kernel<<<gridSize, blockSize>>>(
         static_cast<uchar3*>(m_d_frame_data), static_cast<float*>(m_d_samples), frame.cols, frame.rows, stride,
-        out_cols, out_rows, invCols, invRows, kmeans::constants::COLOR_SCALE, kmeans::constants::SPATIAL_SCALE);
+        out_cols, out_rows, invCols, invRows, kmeans::constants::video::COLOR_SCALE,
+        kmeans::constants::video::SPATIAL_SCALE);
 
     CUDA_CHECK_PREP(cudaDeviceSynchronize());
 }
@@ -107,10 +108,10 @@ float* StridedDataPreprocessor::prepareDevice(const cv::Mat& frame, int stride, 
 }
 
 cv::Mat StridedDataPreprocessor::download() const {
-    cv::Mat samples(m_extracted_points, constants::FEATURE_DIMS, CV_32F);
+    cv::Mat samples(m_extracted_points, constants::clustering::FEATURE_DIMS, CV_32F);
     if (m_extracted_points > 0 && m_d_samples) {
         CUDA_CHECK_PREP(cudaMemcpy(samples.ptr<float>(), m_d_samples,
-                                   m_extracted_points * constants::FEATURE_DIMS * sizeof(float),
+                                   m_extracted_points * constants::clustering::FEATURE_DIMS * sizeof(float),
                                    cudaMemcpyDeviceToHost));
     }
     return samples;

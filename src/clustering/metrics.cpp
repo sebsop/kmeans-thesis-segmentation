@@ -11,7 +11,7 @@
 namespace kmeans::clustering::metrics {
 
 static float sqDistance(const float* p1, const FeatureVector& p2) {
-    return common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p1, p2);
+    return common::VectorMath<constants::clustering::FEATURE_DIMS>::sqDistance(p1, p2);
 }
 
 BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<FeatureVector>& centers, int iterations,
@@ -32,15 +32,15 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
     std::vector<int> point_indices(numPoints);
     std::iota(point_indices.begin(), point_indices.end(), 0);
     std::for_each(point_indices.begin(), point_indices.end(), [&](int i) {
-        const auto* p = samples.ptr<float>(i);
-        float minDistSq = constants::MATH_INF;
+        const auto* currentPoint = samples.ptr<float>(i);
+        float minDistSq = constants::math::INF;
         int bestK = 0;
         std::vector<int> k_indices_inner(k);
         std::iota(k_indices_inner.begin(), k_indices_inner.end(), 0);
         std::for_each(k_indices_inner.begin(), k_indices_inner.end(), [&](int j) {
-            float d2 = sqDistance(p, centers[j]);
-            if (d2 < minDistSq) {
-                minDistSq = d2;
+            float distanceSq = sqDistance(currentPoint, centers[j]);
+            if (distanceSq < minDistSq) {
+                minDistSq = distanceSq;
                 bestK = j;
             }
         });
@@ -61,28 +61,28 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
 
     float daviesBouldin = 0.0f;
     std::for_each(k_indices.begin(), k_indices.end(), [&](int i) {
-        float maxR = 0.0f;
+        float maxClusterRatio = 0.0f;
         std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
             if (i == j) {
                 return;
             }
-            float dCenter =
-                std::sqrt(common::VectorMath<constants::FEATURE_DIMS>::sqDistance(centers[i].val, centers[j].val));
-            if (dCenter > constants::MATH_EPSILON) [[likely]] {
-                maxR = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxR);
+            float dCenter = std::sqrt(
+                common::VectorMath<constants::clustering::FEATURE_DIMS>::sqDistance(centers[i].val, centers[j].val));
+            if (dCenter > constants::math::EPSILON) [[likely]] {
+                maxClusterRatio = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxClusterRatio);
             }
         });
-        daviesBouldin += maxR;
+        daviesBouldin += maxClusterRatio;
     });
     daviesBouldin = daviesBouldin / static_cast<float>(k);
 
     // 3. Approximate Silhouette Score
     // O(N^2) on 300k points is impossible. We approximate using a random subset of 2000 points
     // evaluated against another subset of 2000 points. (4 million operations -> instantly fast).
-    int subsetSize = std::min(numPoints, constants::METRIC_APPROX_SUBSET_SIZE);
+    int subsetSize = std::min(numPoints, constants::metrics::APPROX_SUBSET_SIZE);
     std::vector<int> indices(numPoints);
     std::iota(indices.begin(), indices.end(), 0);
-    std::mt19937 gen(constants::STABLE_RANDOM_SEED); // Fixed seed for stable comparisons between algorithms
+    std::mt19937 gen(constants::clustering::STABLE_RANDOM_SEED); // Fixed seed for stable comparisons between algorithms
     std::shuffle(indices.begin(), indices.end(), gen);
 
     float totalSilhouette = 0.0f;
@@ -92,10 +92,10 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
     std::iota(subset_indices.begin(), subset_indices.end(), 0);
     std::for_each(subset_indices.begin(), subset_indices.end(), [&](int idx1) {
         int i = indices[idx1];
-        const auto* p = samples.ptr<float>(i);
-        int myK = labels[i];
+        const auto* currentPoint = samples.ptr<float>(i);
+        int currentCluster = labels[i];
 
-        if (clusterCounts[myK] <= 1) {
+        if (clusterCounts[currentCluster] <= 1) {
             return;
         }
 
@@ -111,23 +111,23 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
             }
 
             const auto* p2 = samples.ptr<float>(j);
-            float d = std::sqrt(common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p, p2));
+            float d = std::sqrt(common::VectorMath<constants::clustering::FEATURE_DIMS>::sqDistance(currentPoint, p2));
 
-            int otherK = labels[j];
-            if (otherK == myK) {
+            int comparisonCluster = labels[j];
+            if (comparisonCluster == currentCluster) {
                 a += d;
                 aCount++;
             } else {
-                bDistSum[otherK] += d;
-                bCount[otherK]++;
+                bDistSum[comparisonCluster] += d;
+                bCount[comparisonCluster]++;
             }
         });
 
         a = (aCount > 0) ? (a / static_cast<float>(aCount)) : 0.0f;
 
-        float b = constants::MATH_INF;
+        float b = constants::math::INF;
         std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
-            if (j == myK) {
+            if (j == currentCluster) {
                 return;
             }
             if (bCount[j] > 0) {
@@ -136,7 +136,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
         });
 
         float maxAB = std::max(a, b);
-        if (maxAB > constants::MATH_EPSILON && b < constants::MATH_INF) [[likely]] {
+        if (maxAB > constants::math::EPSILON && b < constants::math::INF) [[likely]] {
             totalSilhouette += (b - a) / maxAB;
             validSilhouettePoints++;
         }

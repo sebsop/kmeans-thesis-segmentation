@@ -11,13 +11,13 @@ namespace kmeans::clustering {
 
 class QuantumEngine final : public BaseKMeansEngine<QuantumEngine> {
   private:
-    float m_scaleFactor = 1.0f;
+    float m_scaleFactor = constants::quantum::SCALE_FACTOR;
 
   public:
     QuantumEngine() = default;
     ~QuantumEngine() override = default;
 
-    void preRunSetupImpl(std::span<const FeatureVector> initialCenters, const cv::Mat& samples);
+
 
     void launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels, int* d_changed,
                                 int threadsPerBlock, int blocksPerGrid, size_t sharedSize);

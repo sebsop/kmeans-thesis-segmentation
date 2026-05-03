@@ -37,12 +37,12 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
 
         ImGui::GetWindowDrawList()->AddLine(ImVec2(startPos.x, startPos.y - 10.0f),
                                             ImVec2(startPos.x + totalWidth, startPos.y - 10.0f), accentColor,
-                                            constants::UI_BORDER_THICKNESS);
+                                            constants::ui::BORDER_THICKNESS);
 
         float contentHeight = ImGui::GetTextLineHeightWithSpacing() + imgSize.y;
         ImGui::GetWindowDrawList()->AddLine(ImVec2(startPos.x, startPos.y + contentHeight + 10.0f),
                                             ImVec2(startPos.x + totalWidth, startPos.y + contentHeight + 10.0f),
-                                            accentColor, constants::UI_BORDER_THICKNESS);
+                                            accentColor, constants::ui::BORDER_THICKNESS);
 
         ImGui::BeginGroup();
         ImGui::Text("Original Frame");

@@ -14,14 +14,14 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     ImGui::SetNextWindowSize(ImVec2(panelWidth, ImGui::GetIO().DisplaySize.y), ImGuiCond_Always);
     ImGui::Begin("Clustering Controls", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-    ImGui::SetCursorPosX(constants::UI_WINDOW_PADDING);
+    ImGui::SetCursorPosX(constants::ui::WINDOW_PADDING);
 
     {
         ImGuiStyle& style = ImGui::GetStyle();
         const float textH = ImGui::GetTextLineHeightWithSpacing();
         const float frameH = ImGui::GetFrameHeightWithSpacing();
         const float sepH = style.SeparatorSize;
-        const float plotH = constants::UI_PLOT_HEIGHT;
+        const float plotH = constants::ui::PLOT_HEIGHT;
 
         float contentH = 0.0f;
         contentH += textH;
@@ -42,7 +42,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         contentH += textH;
         contentH += frameH;
 
-        const int gaps = constants::UI_LAYOUT_GAPS;
+        const int gaps = constants::ui::LAYOUT_GAPS;
         contentH += gaps * style.ItemSpacing.y;
         contentH += style.WindowPadding.y * 2.0f;
 
@@ -64,9 +64,11 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     }
 
     ImGui::Text("Core Hyperparameters");
-    configChanged |= ImGui::SliderInt("Clusters (k)", &pendingConfig.k, constants::K_MIN, constants::K_MAX);
+    configChanged |=
+        ImGui::SliderInt("Clusters (k)", &pendingConfig.k, constants::clustering::K_MIN, constants::clustering::K_MAX);
     configChanged |= ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
-                                      constants::LEARN_INTERVAL_MIN, constants::LEARN_INTERVAL_MAX);
+                                      constants::clustering::LEARN_INTERVAL_MIN,
+                                      constants::clustering::LEARN_INTERVAL_MAX);
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(
             "How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
@@ -110,11 +112,13 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     static auto lastUIUpdateTime = std::chrono::high_resolution_clock::now();
     auto uiNow = std::chrono::high_resolution_clock::now();
     if (std::chrono::duration_cast<std::chrono::milliseconds>(uiNow - lastUIUpdateTime).count() >
-        constants::UI_REFRESH_SLOW) {
+        constants::ui::REFRESH_SLOW) {
         displayUIRenderFPS = ImGui::GetIO().Framerate;
         lastUIUpdateTime = uiNow;
     }
-    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "UI Render Speed: %.1f FPS", displayUIRenderFPS);
+    ImGui::TextColored(ImVec4(constants::ui::theme::TEXT_DIM.r, constants::ui::theme::TEXT_DIM.g,
+                              constants::ui::theme::TEXT_DIM.b, constants::ui::theme::TEXT_DIM.a),
+                       "UI Render Speed: %.1f FPS", displayUIRenderFPS);
 
     static uint32_t lastProcessedFrames = 0;
     static std::deque<float> algoFpsHistory;
@@ -124,7 +128,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     uint32_t currentFrames = ctx.processedFrames;
 
     if (currentFrames != lastProcessedFrames) {
-        if (algoFpsHistory.size() >= constants::FPS_HISTORY_WINDOW) {
+        if (algoFpsHistory.size() >= constants::ui::FPS_HISTORY_WINDOW) {
             algoFpsHistory.pop_front();
         }
         algoFpsHistory.push_back(workerFps);
@@ -144,7 +148,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         static auto lastUpdateTime = std::chrono::high_resolution_clock::now();
         auto now = std::chrono::high_resolution_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdateTime).count() >
-            constants::UI_REFRESH_FAST) {
+            constants::ui::REFRESH_FAST) {
             displayFps = workerFps;
             displayMs = algoTimeMs;
             displayAvg = avgFps;
@@ -153,11 +157,11 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
         ImGui::Text("Algorithm Execution: %.2f ms", displayMs);
         ImGui::Text("Camera Pipeline: %.1f FPS", displayFps);
-        ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
-                                  constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a),
+        ImGui::TextColored(ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
+                                  constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a),
                            "Avg FPS: %.1f", displayAvg);
 
-        int window = constants::UI_FPS_PLOT_WINDOW;
+        int window = constants::ui::FPS_PLOT_WINDOW;
         std::vector<int> plot_indices(algoFpsHistory.size());
         std::iota(plot_indices.begin(), plot_indices.end(), 0);
         std::vector<float> fpsPlotBuf(algoFpsHistory.size());
@@ -182,18 +186,20 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
             ctx.benchmarkRunner.requestCapture();
         }
     } else if (bState == BenchmarkState::CAPTURING || bState == BenchmarkState::RECOMPUTING) {
-        ImGui::TextColored(ImVec4(constants::theme::WARNING_COL.r, constants::theme::WARNING_COL.g,
-                                  constants::theme::WARNING_COL.b, constants::theme::WARNING_COL.a),
+        ImGui::TextColored(ImVec4(constants::ui::theme::WARNING_COL.r, constants::ui::theme::WARNING_COL.g,
+                                  constants::ui::theme::WARNING_COL.b, constants::ui::theme::WARNING_COL.a),
                            "%s", ctx.benchmarkRunner.getStatusText().c_str());
     } else if (bState == BenchmarkState::COMPUTING) {
-        ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.9f, 1.0f), "%s", ctx.benchmarkRunner.getStatusText().c_str());
+        ImGui::TextColored(ImVec4(constants::ui::theme::ACCENT.r, constants::ui::theme::ACCENT.g,
+                                  constants::ui::theme::ACCENT.b, constants::ui::theme::ACCENT.a),
+                           "%s", ctx.benchmarkRunner.getStatusText().c_str());
         ctx.benchmarkRunner.poll();
         if (ctx.benchmarkRunner.getState() == BenchmarkState::DONE) {
             benchTexturesLoaded = false;
         }
     } else if (bState == BenchmarkState::DONE) {
-        ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
-                                  constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a),
+        ImGui::TextColored(ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
+                                  constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a),
                            "%s", ctx.benchmarkRunner.getStatusText().c_str());
         ImGui::Text("View the full-screen results.");
     }

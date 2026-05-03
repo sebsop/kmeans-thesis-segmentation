@@ -44,7 +44,7 @@ void Application::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(constants::WINDOW_WIDTH, constants::WINDOW_HEIGHT,
+    m_window = glfwCreateWindow(constants::ui::WINDOW_WIDTH, constants::ui::WINDOW_HEIGHT,
                                 "K-Means Real-Time Segmentation Benchmark", nullptr, nullptr);
     if (!m_window) {
         glfwTerminate();
@@ -105,7 +105,7 @@ void Application::run() {
     m_workerThread = std::thread([this]() {
         cv::VideoCapture cap(0, cv::CAP_FFMPEG);
         if (cap.isOpened()) {
-            cap.set(cv::CAP_PROP_HW_ACCELERATION, constants::CAMERA_HW_ACCEL);
+            cap.set(cv::CAP_PROP_HW_ACCELERATION, constants::video::HW_ACCEL);
         } else {
             cap.open(0);
         }
@@ -116,7 +116,7 @@ void Application::run() {
         }
 
         cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
-        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, constants::CAMERA_AUTO_EXPOSURE);
+        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, constants::video::CAMERA_AUTO_EXPOSURE);
 
         while (m_running) [[likely]] {
             cv::Mat frame;
@@ -146,7 +146,7 @@ void Application::run() {
 
             [[maybe_unused]] int frameIdx = 0;
             cv::Mat processFrame;
-            cv::resize(frame, processFrame, cv::Size(constants::PROCESS_WIDTH, constants::PROCESS_HEIGHT));
+            cv::resize(frame, processFrame, cv::Size(constants::video::PROCESS_WIDTH, constants::video::PROCESS_HEIGHT));
 
             {
                 std::scoped_lock<std::mutex> lock(m_configMutex);
@@ -163,20 +163,21 @@ void Application::run() {
             float execMs = std::chrono::duration<float, std::milli>(end - start).count();
 
             cv::Mat segmentedFull;
-            cv::resize(segmented, segmentedFull, frame.size(), 0, 0, constants::VIZ_RESIZE_ALGO);
+            cv::resize(segmented, segmentedFull, frame.size(), 0, 0, constants::viz::RESIZE_ALGO);
 
             std::vector<FeatureVector> centers;
             if (m_showCentroids) {
                 centers = m_manager.getCenters();
                 std::for_each(centers.begin(), centers.end(), [&](const auto& c) {
-                    cv::Point pt(static_cast<int>((c[3] / constants::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
-                                 static_cast<int>((c[4] / constants::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
-                    cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
-                                     c[2] / constants::COLOR_SCALE);
-                    cv::circle(segmentedFull, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
-                    cv::circle(segmentedFull, pt, constants::VIZ_OUTLINE_WIDTH,
-                               cv::Scalar(constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR,
-                                          constants::VIZ_OUTLINE_COLOR),
+                    cv::Point pt(
+                        static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
+                        static_cast<int>((c[4] / constants::video::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
+                    cv::Scalar color(c[0] / constants::video::COLOR_SCALE, c[1] / constants::video::COLOR_SCALE,
+                                     c[2] / constants::video::COLOR_SCALE);
+                    cv::circle(segmentedFull, pt, constants::viz::CENTROID_RADIUS, color, -1);
+                    cv::circle(segmentedFull, pt, constants::viz::OUTLINE_WIDTH,
+                               cv::Scalar(constants::viz::OUTLINE_COLOR, constants::viz::OUTLINE_COLOR,
+                                          constants::viz::OUTLINE_COLOR),
                                2);
                 });
             }

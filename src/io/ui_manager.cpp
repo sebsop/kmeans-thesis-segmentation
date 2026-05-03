@@ -33,35 +33,35 @@ void UIManager::applyPremiumTheme() {
 
     auto toImVec4 = [](const constants::ColorRGBA& c) { return ImVec4(c.r, c.g, c.b, c.a); };
 
-    colors[ImGuiCol_Text] = toImVec4(constants::theme::TEXT);
-    colors[ImGuiCol_WindowBg] = toImVec4(constants::theme::WINDOW_BG);
-    colors[ImGuiCol_PopupBg] = toImVec4(constants::theme::POPUP_BG);
-    colors[ImGuiCol_Border] = toImVec4(constants::theme::BORDER);
-    colors[ImGuiCol_FrameBg] = toImVec4(constants::theme::FRAME_BG);
-    colors[ImGuiCol_FrameBgHovered] = toImVec4(constants::theme::FRAME_BG_HOVERED);
-    colors[ImGuiCol_FrameBgActive] = toImVec4(constants::theme::FRAME_BG_ACTIVE);
-    colors[ImGuiCol_TitleBg] = toImVec4(constants::theme::TITLE_BG);
-    colors[ImGuiCol_TitleBgActive] = toImVec4(constants::theme::TITLE_BG_ACTIVE);
-    colors[ImGuiCol_Button] = toImVec4(constants::theme::BUTTON);
-    colors[ImGuiCol_ButtonHovered] = toImVec4(constants::theme::BUTTON_HOVERED);
-    colors[ImGuiCol_ButtonActive] = toImVec4(constants::theme::BUTTON_ACTIVE);
-    colors[ImGuiCol_Header] = toImVec4(constants::theme::HEADER);
-    colors[ImGuiCol_HeaderHovered] = toImVec4(constants::theme::HEADER_HOVERED);
-    colors[ImGuiCol_HeaderActive] = toImVec4(constants::theme::HEADER_ACTIVE);
-    colors[ImGuiCol_CheckMark] = toImVec4(constants::theme::CHECK_MARK);
-    colors[ImGuiCol_SliderGrab] = toImVec4(constants::theme::SLIDER_GRAB);
-    colors[ImGuiCol_SliderGrabActive] = toImVec4(constants::theme::SLIDER_GRAB_ACTIVE);
-    colors[ImGuiCol_PlotLines] = toImVec4(constants::theme::PLOT_LINES);
-    colors[ImGuiCol_PlotLinesHovered] = toImVec4(constants::theme::PLOT_LINES_HOVERED);
+    colors[ImGuiCol_Text] = toImVec4(constants::ui::theme::TEXT);
+    colors[ImGuiCol_WindowBg] = toImVec4(constants::ui::theme::WINDOW_BG);
+    colors[ImGuiCol_PopupBg] = toImVec4(constants::ui::theme::POPUP_BG);
+    colors[ImGuiCol_Border] = toImVec4(constants::ui::theme::BORDER);
+    colors[ImGuiCol_FrameBg] = toImVec4(constants::ui::theme::FRAME_BG);
+    colors[ImGuiCol_FrameBgHovered] = toImVec4(constants::ui::theme::FRAME_BG_HOVERED);
+    colors[ImGuiCol_FrameBgActive] = toImVec4(constants::ui::theme::FRAME_BG_ACTIVE);
+    colors[ImGuiCol_TitleBg] = toImVec4(constants::ui::theme::TITLE_BG);
+    colors[ImGuiCol_TitleBgActive] = toImVec4(constants::ui::theme::TITLE_BG_ACTIVE);
+    colors[ImGuiCol_Button] = toImVec4(constants::ui::theme::BUTTON);
+    colors[ImGuiCol_ButtonHovered] = toImVec4(constants::ui::theme::BUTTON_HOVERED);
+    colors[ImGuiCol_ButtonActive] = toImVec4(constants::ui::theme::BUTTON_ACTIVE);
+    colors[ImGuiCol_Header] = toImVec4(constants::ui::theme::HEADER);
+    colors[ImGuiCol_HeaderHovered] = toImVec4(constants::ui::theme::HEADER_HOVERED);
+    colors[ImGuiCol_HeaderActive] = toImVec4(constants::ui::theme::HEADER_ACTIVE);
+    colors[ImGuiCol_CheckMark] = toImVec4(constants::ui::theme::CHECK_MARK);
+    colors[ImGuiCol_SliderGrab] = toImVec4(constants::ui::theme::SLIDER_GRAB);
+    colors[ImGuiCol_SliderGrabActive] = toImVec4(constants::ui::theme::SLIDER_GRAB_ACTIVE);
+    colors[ImGuiCol_PlotLines] = toImVec4(constants::ui::theme::PLOT_LINES);
+    colors[ImGuiCol_PlotLinesHovered] = toImVec4(constants::ui::theme::PLOT_LINES_HOVERED);
 
-    style.WindowRounding = constants::theme::WINDOW_ROUNDING;
-    style.ChildRounding = constants::theme::CHILD_ROUNDING;
-    style.FrameRounding = constants::theme::FRAME_ROUNDING;
-    style.PopupRounding = constants::theme::POPUP_ROUNDING;
-    style.GrabRounding = constants::theme::GRAB_ROUNDING;
-    style.FramePadding = ImVec2(constants::theme::FRAME_PADDING_X, constants::theme::FRAME_PADDING_Y);
-    style.WindowPadding = ImVec2(constants::theme::WINDOW_PADDING_X, constants::theme::WINDOW_PADDING_Y);
-    style.ItemSpacing = ImVec2(constants::theme::ITEM_SPACING_X, constants::theme::ITEM_SPACING_Y);
+    style.WindowRounding = constants::ui::theme::WINDOW_ROUNDING;
+    style.ChildRounding = constants::ui::theme::CHILD_ROUNDING;
+    style.FrameRounding = constants::ui::theme::FRAME_ROUNDING;
+    style.PopupRounding = constants::ui::theme::POPUP_ROUNDING;
+    style.GrabRounding = constants::ui::theme::GRAB_ROUNDING;
+    style.FramePadding = ImVec2(constants::ui::theme::FRAME_PADDING_X, constants::ui::theme::FRAME_PADDING_Y);
+    style.WindowPadding = ImVec2(constants::ui::theme::WINDOW_PADDING_X, constants::ui::theme::WINDOW_PADDING_Y);
+    style.ItemSpacing = ImVec2(constants::ui::theme::ITEM_SPACING_X, constants::ui::theme::ITEM_SPACING_Y);
 }
 
 void UIManager::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {
@@ -91,7 +91,7 @@ void UIManager::render(UIDataContext& ctx) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    float panelWidth = constants::UI_PANEL_WIDTH;
+    float panelWidth = constants::ui::PANEL_WIDTH;
 
     m_controlPanel->render(ctx, panelWidth, m_benchTexturesLoaded);
     m_videoFeed->render(ctx, panelWidth, m_originalTexture, m_segmentedTexture, &UIManager::matToTexture);
@@ -126,14 +126,14 @@ void UIManager::renderLoadingScreen(GLFWwindow* window) {
     const char* loadingText = "INITIALIZING K-MEANS ENGINE";
     ImVec2 textSize = ImGui::CalcTextSize(loadingText);
 
-    int dots = static_cast<int>(ImGui::GetTime() * constants::UI_ANIM_DOT_SPEED) % 4;
+    int dots = static_cast<int>(ImGui::GetTime() * constants::ui::ANIM_DOT_SPEED) % 4;
     std::string dotStr(dots, '.');
     std::string fullText = std::string(loadingText) + dotStr;
 
     ImGui::SetCursorPos(ImVec2((display_w - textSize.x) * 0.5f, (display_h - textSize.y) * 0.5f));
 
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(constants::UI_COLOR_ACCENT.r, constants::UI_COLOR_ACCENT.g,
-                                                constants::UI_COLOR_ACCENT.b, constants::UI_COLOR_ACCENT.a));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(constants::ui::theme::ACCENT.r, constants::ui::theme::ACCENT.g,
+                                                constants::ui::theme::ACCENT.b, constants::ui::theme::ACCENT.a));
     ImGui::TextUnformatted(fullText.c_str());
     ImGui::PopStyleColor();
 
@@ -147,8 +147,8 @@ void UIManager::renderLoadingScreen(GLFWwindow* window) {
     ImGui::Render();
     glViewport(0, 0, display_w, display_h);
 
-    glClearColor(constants::UI_COLOR_BG_DARK.r, constants::UI_COLOR_BG_DARK.g, constants::UI_COLOR_BG_DARK.b,
-                 constants::UI_COLOR_BG_DARK.a);
+    glClearColor(constants::ui::theme::BG_LIGHT.r, constants::ui::theme::BG_LIGHT.g, constants::ui::theme::BG_LIGHT.b,
+                 constants::ui::theme::BG_LIGHT.a);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

@@ -48,7 +48,7 @@ class ClusteringManager {
     /** @brief Strong Exception Safety Guarantee */
     [[nodiscard]] cv::Mat segmentFrame(const cv::Mat& frame);
     /** @brief Basic Exception Safety Guarantee */
-    [[nodiscard]] std::vector<cv::Vec<float, constants::FEATURE_DIMS>> computeCenters(const cv::Mat& frame);
+    [[nodiscard]] std::vector<FeatureVector> computeCenters(const cv::Mat& frame);
 };
 
 } // namespace kmeans::clustering
