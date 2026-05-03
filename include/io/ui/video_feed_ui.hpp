@@ -20,8 +20,8 @@ class VideoFeedUI {
      * @param segmentedTex The texture to draw the segmented frame to.
      * @param matToTexFunc A function pointer to convert a cv::Mat to a TextureResource.
      */
-    void render(UIDataContext& ctx, float panelWidth, TextureResource& originalTex, TextureResource& segmentedTex,
-                void (*matToTexFunc)(const cv::Mat&, TextureResource&));
+    static void render(UIDataContext& ctx, float panelWidth, TextureResource& originalTex,
+                       TextureResource& segmentedTex, void (*matToTexFunc)(const cv::Mat&, TextureResource&));
 };
 
 } // namespace kmeans::io::ui

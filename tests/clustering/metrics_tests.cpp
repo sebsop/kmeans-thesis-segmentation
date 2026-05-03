@@ -18,12 +18,14 @@ TEST_F(Clustering_Metrics, SilhouetteOnPerfectSeparation) {
     // 2 clusters at (0,0,0,0,0) and (1,1,1,1,1)
     cv::Mat samples(20, constants::clustering::FEATURE_DIMS, CV_32F);
     for (int i = 0; i < 10; ++i) {
-        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
             samples.at<float>(i, d) = 0.0f;
+        }
     }
     for (int i = 10; i < 20; ++i) {
-        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
             samples.at<float>(i, d) = 1.0f;
+        }
     }
 
     std::vector<FeatureVector> centers(2);
@@ -57,12 +59,16 @@ TEST_F(Clustering_Metrics, SilhouetteOnOverlappingData) {
 TEST_F(Clustering_Metrics, DaviesBouldinIndexScaling) {
     // Case A: Compact clusters far apart
     cv::Mat samplesA(20, constants::clustering::FEATURE_DIMS, CV_32F);
-    for (int i = 0; i < 10; ++i)
-        for (int d = 0; d < 5; ++d)
+    for (int i = 0; i < 10; ++i) {
+        for (int d = 0; d < 5; ++d) {
             samplesA.at<float>(i, d) = 0.0f;
-    for (int i = 10; i < 20; ++i)
-        for (int d = 0; d < 5; ++d)
+        }
+    }
+    for (int i = 10; i < 20; ++i) {
+        for (int d = 0; d < 5; ++d) {
             samplesA.at<float>(i, d) = 1.0f;
+        }
+    }
 
     std::vector<FeatureVector> centers(2);
     centers[0] = FeatureVector(0, 0, 0, 0, 0);
@@ -72,12 +78,16 @@ TEST_F(Clustering_Metrics, DaviesBouldinIndexScaling) {
 
     // Case B: Broad clusters closer together
     cv::Mat samplesB(20, constants::clustering::FEATURE_DIMS, CV_32F);
-    for (int i = 0; i < 10; ++i)
-        for (int d = 0; d < 5; ++d)
+    for (int i = 0; i < 10; ++i) {
+        for (int d = 0; d < 5; ++d) {
             samplesB.at<float>(i, d) = 0.45f;
-    for (int i = 10; i < 20; ++i)
-        for (int d = 0; d < 5; ++d)
+        }
+    }
+    for (int i = 10; i < 20; ++i) {
+        for (int d = 0; d < 5; ++d) {
             samplesB.at<float>(i, d) = 0.55f;
+        }
+    }
 
     auto metricsB = metrics::computeAllMetrics(samplesB, centers, 1, 0.1f);
 

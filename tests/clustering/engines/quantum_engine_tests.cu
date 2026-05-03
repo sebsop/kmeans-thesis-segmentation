@@ -51,12 +51,14 @@ TEST_F(Clustering_QuantumEngine, QuantumConvergence) {
     // 2 clusters far apart
     cv::Mat samples(10, constants::clustering::FEATURE_DIMS, CV_32F);
     for (int i = 0; i < 5; ++i) {
-        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
             samples.at<float>(i, d) = 0.1f;
+        }
     }
     for (int i = 5; i < 10; ++i) {
-        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
             samples.at<float>(i, d) = 0.9f;
+        }
     }
 
     std::vector<FeatureVector> initialCenters(2);
@@ -80,7 +82,7 @@ TEST_F(Clustering_QuantumEngine, QuantumHighK) {
     cv::Mat samples(100, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
     std::vector<FeatureVector> centers(K, FeatureVector(0.5f, 0.5f, 0.5f, 0, 0));
 
-    EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
+    EXPECT_NO_THROW((void)engine.run(samples, centers, K, 2));
 }
 
 // 6. Quantum Scale-Factor Stress (Aliasing Prevention)
@@ -91,10 +93,12 @@ TEST_F(Clustering_QuantumEngine, QuantumScaleAliasingPrevention) {
     // Extreme range: Points at 0.0 and 1,000,000.0
     // If the scale factor is too large, 1,000,000 might wrap around the 2*PI circle.
     cv::Mat samples(2, constants::clustering::FEATURE_DIMS, CV_32F);
-    for (int d = 0; d < 5; ++d)
+    for (int d = 0; d < 5; ++d) {
         samples.at<float>(0, d) = 0.0f;
-    for (int d = 0; d < 5; ++d)
+    }
+    for (int d = 0; d < 5; ++d) {
         samples.at<float>(1, d) = 1000000.0f;
+    }
 
     std::vector<FeatureVector> initialCenters(K);
     initialCenters[0] = FeatureVector(0, 0, 0, 0, 0);

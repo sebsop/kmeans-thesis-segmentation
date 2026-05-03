@@ -136,7 +136,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     }
 
     if (!algoFpsHistory.empty()) {
-        auto [min_it, max_it] = std::minmax_element(algoFpsHistory.begin(), algoFpsHistory.end());
+        auto [min_it, max_it] = std::ranges::minmax_element(algoFpsHistory);
         [[maybe_unused]] float minFps = *min_it;
         [[maybe_unused]] float maxFps = *max_it;
         float sumFps = std::accumulate(algoFpsHistory.begin(), algoFpsHistory.end(), 0.0f);
@@ -166,7 +166,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         std::iota(plot_indices.begin(), plot_indices.end(), 0);
         std::vector<float> fpsPlotBuf(algoFpsHistory.size());
 
-        std::transform(plot_indices.begin(), plot_indices.end(), fpsPlotBuf.begin(), [&](int i) {
+        std::ranges::transform(plot_indices, fpsPlotBuf.begin(), [&](int i) {
             int start = std::max(0, i - (window / 2));
             int end = std::min(static_cast<int>(algoFpsHistory.size()) - 1, i + (window / 2));
             float sum = std::accumulate(algoFpsHistory.begin() + start, algoFpsHistory.begin() + end + 1, 0.0f);

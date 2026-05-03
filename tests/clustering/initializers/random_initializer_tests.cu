@@ -53,8 +53,9 @@ TEST_F(Initializer_Random, CentersWithinInputRange) {
 TEST_F(Initializer_Random, IsNotConstant) {
     RandomInitializer init;
     cv::Mat samples(100, constants::clustering::FEATURE_DIMS, CV_32F);
-    for (int i = 0; i < 100; ++i)
+    for (int i = 0; i < 100; ++i) {
         samples.at<float>(i, 0) = static_cast<float>(i);
+    }
 
     auto centers1 = init.initialize(samples, 1);
     auto centers2 = init.initialize(samples, 1);

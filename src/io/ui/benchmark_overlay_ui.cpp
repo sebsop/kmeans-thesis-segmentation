@@ -22,7 +22,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         bResults) {
         if (!benchTexturesLoaded) {
             auto drawCentroids = [](cv::Mat& img, const std::vector<FeatureVector>& centers) {
-                std::for_each(centers.begin(), centers.end(), [&](const auto& c) {
+                std::ranges::for_each(centers, [&](const auto& c) {
                     cv::Point pt(
                         static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.cols)),
                         static_cast<int>((c[4] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.rows)));

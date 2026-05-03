@@ -45,7 +45,7 @@ TEST_F(Clustering_ClassicalEngine, AssignmentCorrectness) {
     centers[1] = FeatureVector(1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 
     // We run for only 1 iteration to test the ASSIGNMENT kernel specifically
-    engine.run(samples, centers, 2, 1);
+    (void)engine.run(samples, centers, 2, 1);
 
     EXPECT_EQ(engine.getLastIterations(), 2); // 1st iter detects change (-1 -> 0), 2nd iter breaks
 }
@@ -58,11 +58,12 @@ TEST_F(Clustering_ClassicalEngine, HighKAssignment) {
 
     cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
     std::vector<FeatureVector> centers(K);
-    for (int i = 0; i < K; ++i)
+    for (int i = 0; i < K; ++i) {
         centers[i] = FeatureVector(i / 20.0f, i / 20.0f, i / 20.0f, 0, 0);
+    }
 
     // Verify it handles the shared memory allocation for 20 centroids
-    EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
+    EXPECT_NO_THROW((void)engine.run(samples, centers, K, 2));
 }
 
 // 3. Mathematical Edge Case: Tied Distances
@@ -91,8 +92,9 @@ TEST_F(Clustering_ClassicalEngine, EmptyClusterRobustness) {
 
     // Centers spread out - most will have 0 members
     std::vector<FeatureVector> initialCenters(K);
-    for (int i = 0; i < K; ++i)
+    for (int i = 0; i < K; ++i) {
         initialCenters[i] = FeatureVector(static_cast<float>(i), 0, 0, 0, 0);
+    }
 
     auto finalCenters = engine.run(samples, initialCenters, K, 5);
 

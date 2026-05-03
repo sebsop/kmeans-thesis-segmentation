@@ -44,7 +44,7 @@ TEST_F(Clustering_Manager, FullPipelineExecution) {
     EXPECT_EQ(result.rows, frame.rows);
     EXPECT_EQ(result.cols, frame.cols);
 
-    auto centers = manager.getCenters();
+    const auto& centers = manager.getCenters();
     EXPECT_EQ(centers.size(), 2);
 }
 
@@ -64,7 +64,7 @@ TEST_F(Clustering_Manager, AlgorithmHotSwapping) {
     (void)manager.segmentFrame(frame);
     auto* engine2 = manager.getEngine();
 
-    EXPECT_NE(engine1, engine2);
+    EXPECT_TRUE(engine1 != engine2);
 }
 
 // 3. Temporal Coherence (Center Reuse)

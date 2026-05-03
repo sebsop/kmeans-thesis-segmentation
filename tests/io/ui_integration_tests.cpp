@@ -61,7 +61,16 @@ TEST_F(IO_UIIntegration, DataContextPropagatesConfig) {
     std::atomic<bool> forceReset = false;
     BenchmarkRunner runner;
 
-    UIDataContext ctx{dummy, dummy, config, mtx, showCentroids, forceReset, 60.0f, 16.0f, 100, runner};
+    UIDataContext ctx{.latestOriginal = dummy,
+                      .latestSegmented = dummy,
+                      .uiConfig = config,
+                      .configMutex = mtx,
+                      .showCentroids = showCentroids,
+                      .forceReset = forceReset,
+                      .currentWorkerFps = 60.0f,
+                      .currentAlgoTimeMs = 16.0f,
+                      .processedFrames = 100,
+                      .benchmarkRunner = runner};
 
     // Simulate UI changing a value
     {

@@ -21,9 +21,9 @@ class BenchmarkOverlayUI {
      * @param benchTexturesLoaded Reference to the flag indicating if textures are loaded.
      * @param matToTexFunc Function pointer to convert cv::Mat to TextureResource.
      */
-    void render(UIDataContext& ctx, TextureResource& benchOriginalTex, TextureResource& benchClassicalTex,
-                TextureResource& benchQuantumTex, bool& benchTexturesLoaded,
-                void (*matToTexFunc)(const cv::Mat&, TextureResource&));
+    static void render(UIDataContext& ctx, TextureResource& benchOriginalTex, TextureResource& benchClassicalTex,
+                       TextureResource& benchQuantumTex, bool& benchTexturesLoaded,
+                       void (*matToTexFunc)(const cv::Mat&, TextureResource&));
 };
 
 } // namespace kmeans::io::ui

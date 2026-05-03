@@ -20,7 +20,11 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
     int k = static_cast<int>(centers.size());
 
     if (numPoints == 0 || k == 0) [[unlikely]] {
-        return {0.0f, 0.0f, 0.0f, iterations, executionTimeMs};
+        return {.wcss = 0.0f,
+                .daviesBouldin = 0.0f,
+                .silhouetteScore = 0.0f,
+                .iterations = iterations,
+                .executionTimeMs = executionTimeMs};
     }
 
     // 1. Assign labels and compute WCSS (Inertia) simultaneously
@@ -31,13 +35,13 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
 
     std::vector<int> point_indices(numPoints);
     std::iota(point_indices.begin(), point_indices.end(), 0);
-    std::for_each(point_indices.begin(), point_indices.end(), [&](int i) {
+    std::ranges::for_each(point_indices, [&](int i) {
         const auto* currentPoint = samples.ptr<float>(i);
         float minDistSq = constants::math::INF;
         int bestK = 0;
         std::vector<int> k_indices_inner(k);
         std::iota(k_indices_inner.begin(), k_indices_inner.end(), 0);
-        std::for_each(k_indices_inner.begin(), k_indices_inner.end(), [&](int j) {
+        std::ranges::for_each(k_indices_inner, [&](int j) {
             float distanceSq = sqDistance(currentPoint, centers[j]);
             if (distanceSq < minDistSq) {
                 minDistSq = distanceSq;
@@ -53,16 +57,16 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
     // 2. Davies-Bouldin Index
     std::vector<int> k_indices(k);
     std::iota(k_indices.begin(), k_indices.end(), 0);
-    std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
+    std::ranges::for_each(k_indices, [&](int j) {
         if (clusterCounts[j] > 0) {
             intraClusterScatter[j] /= static_cast<float>(clusterCounts[j]);
         }
     });
 
     float daviesBouldin = 0.0f;
-    std::for_each(k_indices.begin(), k_indices.end(), [&](int i) {
+    std::ranges::for_each(k_indices, [&](int i) {
         float maxClusterRatio = 0.0f;
-        std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
+        std::ranges::for_each(k_indices, [&](int j) {
             if (i == j) {
                 return;
             }
@@ -91,7 +95,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
 
     std::vector<int> subset_indices(subsetSize);
     std::iota(subset_indices.begin(), subset_indices.end(), 0);
-    std::for_each(subset_indices.begin(), subset_indices.end(), [&](int idx1) {
+    std::ranges::for_each(subset_indices, [&](int idx1) {
         int i = indices[idx1];
         const auto* currentPoint = samples.ptr<float>(i);
         int currentCluster = labels[i];
@@ -105,8 +109,9 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
         std::vector<float> bDistSum(k, 0.0f);
         std::vector<int> bCount(k, 0);
 
-        std::for_each(subset_indices.begin(), subset_indices.end(), [&](int idx2) {
-            int j = indices[(idx1 + idx2 + 1) % numPoints];
+        std::ranges::for_each(subset_indices, [&](int idx2) {
+            int j =
+                indices[(idx1 + static_cast<std::vector<int, std::allocator<int>>::size_type>(idx2) + 1) % numPoints];
             if (i == j) {
                 return;
             }
@@ -127,7 +132,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
         a = (aCount > 0) ? (a / static_cast<float>(aCount)) : 0.0f;
 
         float b = constants::math::INF;
-        std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
+        std::ranges::for_each(k_indices, [&](int j) {
             if (j == currentCluster) {
                 return;
             }
@@ -146,7 +151,11 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<Fea
     float avgSilhouette =
         (validSilhouettePoints > 0) ? (totalSilhouette / static_cast<float>(validSilhouettePoints)) : 0.0f;
 
-    return {wcss, daviesBouldin, avgSilhouette, iterations, executionTimeMs};
+    return {.wcss = wcss,
+            .daviesBouldin = daviesBouldin,
+            .silhouetteScore = avgSilhouette,
+            .iterations = iterations,
+            .executionTimeMs = executionTimeMs};
 }
 
 } // namespace kmeans::clustering::metrics

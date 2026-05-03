@@ -93,10 +93,10 @@ void UIManager::render(UIDataContext& ctx) {
 
     float panelWidth = constants::ui::PANEL_WIDTH;
 
-    m_controlPanel->render(ctx, panelWidth, m_benchTexturesLoaded);
-    m_videoFeed->render(ctx, panelWidth, m_originalTexture, m_segmentedTexture, &UIManager::matToTexture);
-    m_benchmarkOverlay->render(ctx, m_benchOriginalTexture, m_benchClassicalTexture, m_benchQuantumTexture,
-                               m_benchTexturesLoaded, &UIManager::matToTexture);
+    ui::ControlPanelUI::render(ctx, panelWidth, m_benchTexturesLoaded);
+    ui::VideoFeedUI::render(ctx, panelWidth, m_originalTexture, m_segmentedTexture, &UIManager::matToTexture);
+    ui::BenchmarkOverlayUI::render(ctx, m_benchOriginalTexture, m_benchClassicalTexture, m_benchQuantumTexture,
+                                   m_benchTexturesLoaded, &UIManager::matToTexture);
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -111,7 +111,8 @@ void UIManager::renderLoadingScreen(GLFWwindow* window) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    int display_w = 0, display_h = 0;
+    int display_w = 0;
+    int display_h = 0;
     glfwGetFramebufferSize(window, &display_w, &display_h);
 
     ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
@@ -130,7 +131,9 @@ void UIManager::renderLoadingScreen(GLFWwindow* window) {
     std::string dotStr(dots, '.');
     std::string fullText = std::string(loadingText) + dotStr;
 
-    ImGui::SetCursorPos(ImVec2((display_w - textSize.x) * 0.5f, (display_h - textSize.y) * 0.5f));
+    auto fw = static_cast<float>(display_w);
+    auto fh = static_cast<float>(display_h);
+    ImGui::SetCursorPos(ImVec2((fw - textSize.x) * 0.5f, (fh - textSize.y) * 0.5f));
 
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(constants::ui::theme::ACCENT.r, constants::ui::theme::ACCENT.g,
                                                 constants::ui::theme::ACCENT.b, constants::ui::theme::ACCENT.a));
@@ -139,7 +142,7 @@ void UIManager::renderLoadingScreen(GLFWwindow* window) {
 
     const char* subText = "Connecting to camera stream and allocating VRAM...";
     ImVec2 subSize = ImGui::CalcTextSize(subText);
-    ImGui::SetCursorPos(ImVec2((display_w - subSize.x) * 0.5f, (display_h - textSize.y) * 0.5f + 40.0f));
+    ImGui::SetCursorPos(ImVec2((fw - subSize.x) * 0.5f, ((fh - textSize.y) * 0.5f) + 40.0f));
     ImGui::TextUnformatted(subText);
 
     ImGui::End();

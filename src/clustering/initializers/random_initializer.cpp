@@ -11,7 +11,7 @@ std::vector<FeatureVector> RandomInitializer::initialize(const cv::Mat& samples,
     thread_local static std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
-    std::generate(centers.begin(), centers.end(), [&]() {
+    std::ranges::generate(centers, [&]() {
         int randIdx = dis(gen);
         const auto* rowPtr = samples.ptr<float>(randIdx);
         FeatureVector c;

@@ -25,6 +25,14 @@ FetchContent_Declare(
 # For Windows: prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+
+# Mark GTest as SYSTEM to suppress warnings from its headers
+if(TARGET gtest)
+    set_target_properties(gtest PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>)
+endif()
+if(TARGET gtest_main)
+    set_target_properties(gtest_main PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:gtest_main,INTERFACE_INCLUDE_DIRECTORIES>)
+endif()
  
 enable_testing()
 include(CTest)
@@ -54,6 +62,8 @@ if(MSVC)
         "$<$<COMPILE_LANGUAGE:CXX>:/analyze:external->"
         # Ensure exceptions are enabled for clang-tidy (C++ only)
         "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>"
+        # Global suppression of specific analysis false positives in external headers
+        "$<$<COMPILE_LANGUAGE:CXX>:/wd6201>"
     )
 else()
     add_compile_options(
@@ -168,7 +178,6 @@ if(MSVC)
         $<$<COMPILE_LANGUAGE:CXX>:/W4 /WX /permissive- /Zc:preprocessor>
         $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/W4 -Xcompiler=/WX -Xcompiler=/permissive- -Xcompiler=/Zc:preprocessor>
     )
-    target_link_options(kmeans_core PUBLIC /PROFILE)
     target_compile_options(kmeans_core PRIVATE
         "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/O2>"
         "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/fp:fast>"
@@ -178,6 +187,7 @@ if(MSVC)
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/analyze:external->"
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/EHsc>"
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd4505>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd6201>"
     )
 endif()
 
@@ -208,7 +218,7 @@ target_link_libraries(kmeans_core PUBLIC imgui)
 add_executable(kmeans_thesis_segmentation WIN32 src/main.cpp)
 
 if(MSVC)
-    target_link_options(kmeans_thesis_segmentation PRIVATE "/ENTRY:mainCRTStartup")
+    target_link_options(kmeans_thesis_segmentation PRIVATE "LINKER:/ENTRY:mainCRTStartup")
 endif()
 
 # Set CUDA properties for the main executable

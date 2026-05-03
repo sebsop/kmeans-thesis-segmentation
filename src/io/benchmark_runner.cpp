@@ -47,11 +47,12 @@ void BenchmarkRunner::addObserver(IBenchmarkObserver* observer) {
 }
 
 void BenchmarkRunner::removeObserver(IBenchmarkObserver* observer) {
-    m_observers.erase(std::remove(m_observers.begin(), m_observers.end(), observer), m_observers.end());
+    auto [newEnd, _] = std::ranges::remove(m_observers, observer);
+    m_observers.erase(newEnd, m_observers.end());
 }
 
 void BenchmarkRunner::notifyObservers(const BenchmarkComparisonResult& result) {
-    std::for_each(m_observers.begin(), m_observers.end(), [&](auto* obs) {
+    std::ranges::for_each(m_observers, [&](auto* obs) {
         if (obs) {
             obs->onBenchmarkComplete(result);
         }

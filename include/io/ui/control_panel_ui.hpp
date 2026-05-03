@@ -19,7 +19,7 @@ class ControlPanelUI {
      * @param panelWidth The desired width of the panel.
      * @param benchTexturesLoaded Reference to the flag indicating if benchmark textures are loaded.
      */
-    void render(UIDataContext& ctx, float panelWidth, bool& benchTexturesLoaded);
+    static void render(UIDataContext& ctx, float panelWidth, bool& benchTexturesLoaded);
 };
 
 } // namespace kmeans::io::ui

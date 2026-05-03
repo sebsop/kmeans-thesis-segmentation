@@ -54,11 +54,13 @@ TEST_F(Initializer_KMeansPlusPlus, SeparationOnDistantClusters) {
 
     cv::Mat samples(2, constants::clustering::FEATURE_DIMS, CV_32F);
     // Point A at 0.0
-    for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+    for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
         samples.at<float>(0, d) = 0.0f;
+    }
     // Point B at 100.0 (Far away)
-    for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+    for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
         samples.at<float>(1, d) = 100.0f;
+    }
 
     auto centers = init.initialize(samples, K);
 

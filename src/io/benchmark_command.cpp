@@ -65,7 +65,7 @@ void RunBenchmarkCommand::execute() {
 
             std::vector<int> pixel_indices(n);
             std::iota(pixel_indices.begin(), pixel_indices.end(), 0);
-            std::for_each(pixel_indices.begin(), pixel_indices.end(), [&](int idx) {
+            std::ranges::for_each(pixel_indices, [&](int idx) {
                 int y = idx / smallFrame.cols;
                 int x = idx % smallFrame.cols;
                 cv::Vec3b px = smallFrame.at<cv::Vec3b>(y, x);

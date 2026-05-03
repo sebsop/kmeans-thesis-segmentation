@@ -23,11 +23,10 @@
 
 namespace kmeans::io {
 
-Application::Application() {
+Application::Application() : m_uiConfig(m_manager.getConfig()) {
     initWindow();
     initImGui();
     UIManager::applyPremiumTheme();
-    m_uiConfig = m_manager.getConfig();
     m_benchmarkRunner.addObserver(&m_uiManager);
 }
 
@@ -37,7 +36,7 @@ Application::~Application() noexcept {
 }
 
 void Application::initWindow() {
-    if (!glfwInit()) {
+    if (glfwInit() == 0) {
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
@@ -47,7 +46,7 @@ void Application::initWindow() {
 
     m_window = glfwCreateWindow(constants::ui::WINDOW_WIDTH, constants::ui::WINDOW_HEIGHT,
                                 "K-Means Real-Time Segmentation Benchmark", nullptr, nullptr);
-    if (!m_window) {
+    if (m_window == nullptr) {
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
     }
@@ -60,13 +59,13 @@ void Application::initWindow() {
     const char* iconPaths[] = {"assets/icon.ico", "../assets/icon.ico", "../../assets/icon.ico",
                                "../../../assets/icon.ico"};
 
-    [[maybe_unused]] auto it = std::find_if(std::begin(iconPaths), std::end(iconPaths), [&](const char* path) {
+    [[maybe_unused]] auto* it = std::ranges::find_if(iconPaths, [&](const char* path) {
         hIcon =
             reinterpret_cast<HICON>(LoadImageA(hInstance, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE));
         return hIcon != nullptr;
     });
 
-    if (hIcon) {
+    if (hIcon != nullptr) {
         SendMessage(hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(hIcon));
         SendMessage(hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
     }
@@ -178,7 +177,7 @@ void Application::run() {
             std::vector<FeatureVector> centers;
             if (m_showCentroids) {
                 centers = m_manager.getCenters();
-                std::for_each(centers.begin(), centers.end(), [&](const auto& c) {
+                std::ranges::for_each(centers, [&](const auto& c) {
                     cv::Point pt(
                         static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
                         static_cast<int>((c[4] / constants::video::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
@@ -210,7 +209,7 @@ void Application::run() {
         }
     });
 
-    while (!glfwWindowShouldClose(m_window) && m_running) [[likely]] {
+    while (glfwWindowShouldClose(m_window) == 0 && m_running) [[likely]] {
         glfwPollEvents();
 
         auto bState = m_benchmarkRunner.getState();
@@ -225,7 +224,7 @@ void Application::run() {
         }
 
         if (!m_initialized) {
-            m_uiManager.renderLoadingScreen(m_window);
+            UIManager::renderLoadingScreen(m_window);
             glfwSwapBuffers(m_window);
             continue;
         }
@@ -238,9 +237,16 @@ void Application::run() {
             displaySegmented = m_latestSegmented;
         }
 
-        UIDataContext ctx{displayOriginal,   displaySegmented, m_uiConfig,         m_configMutex,
-                          m_showCentroids,   m_forceReset,     m_currentWorkerFps, m_currentAlgoTimeMs,
-                          m_processedFrames, m_benchmarkRunner};
+        UIDataContext ctx{.latestOriginal = displayOriginal,
+                          .latestSegmented = displaySegmented,
+                          .uiConfig = m_uiConfig,
+                          .configMutex = m_configMutex,
+                          .showCentroids = m_showCentroids,
+                          .forceReset = m_forceReset,
+                          .currentWorkerFps = m_currentWorkerFps,
+                          .currentAlgoTimeMs = m_currentAlgoTimeMs,
+                          .processedFrames = m_processedFrames,
+                          .benchmarkRunner = m_benchmarkRunner};
 
         m_uiManager.render(ctx);
 

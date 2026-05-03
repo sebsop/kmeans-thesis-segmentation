@@ -15,10 +15,10 @@ add_executable(all_tests
 )
 
 if(MSVC)
-    target_link_options(all_tests PRIVATE /PROFILE /DEBUG:FULL)
+    target_link_options(all_tests PRIVATE /DEBUG:FULL)
     target_compile_options(all_tests PRIVATE 
-        $<$<COMPILE_LANGUAGE:CXX>:/Zi>
-        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/Zi>
+        $<$<COMPILE_LANGUAGE:CXX>:/Zi /wd6326 /external:W0 /external:anglebrackets /analyze:external->
+        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/Zi -Xcompiler=/wd6326 -Xcompiler=/external:W0 -Xcompiler=/external:anglebrackets -Xcompiler=/analyze:external->
     )
 endif()
 
@@ -29,6 +29,13 @@ set_target_properties(all_tests PROPERTIES
     CUDA_STANDARD_REQUIRED ON
     CUDA_ARCHITECTURES "native"
 )
+
+# Disable the "make static" check for tests because GTest methods must be virtual overrides
+if(CLANG_TIDY_EXE)
+    set_target_properties(all_tests PROPERTIES 
+        CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-checks=-readability-convert-member-functions-to-static;--extra-arg=/EHsc"
+    )
+endif()
 
 target_link_libraries(all_tests PRIVATE kmeans_core GTest::gtest_main)
 

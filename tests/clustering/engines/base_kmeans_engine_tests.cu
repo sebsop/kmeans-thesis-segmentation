@@ -33,12 +33,14 @@ TEST_F(Clustering_BaseEngine, SimpleConvergence) {
     // 4 points: 2 at (0,0,0,0,0), 2 at (1,1,1,1,1)
     cv::Mat samples(4, constants::clustering::FEATURE_DIMS, CV_32F);
     for (int i = 0; i < 2; ++i) {
-        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
             samples.at<float>(i, d) = 0.0f;
+        }
     }
     for (int i = 2; i < 4; ++i) {
-        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d)
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
             samples.at<float>(i, d) = 1.0f;
+        }
     }
 
     // Initial centers: slightly off
@@ -62,11 +64,11 @@ TEST_F(Clustering_BaseEngine, BufferResizing) {
     // Run small
     cv::Mat small(10, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0));
     std::vector<FeatureVector> c(2, FeatureVector(0, 0, 0, 0, 0));
-    EXPECT_NO_THROW(engine.run(small, c, 2, 1));
+    EXPECT_NO_THROW((void)engine.run(small, c, 2, 1));
 
     // Run large
     cv::Mat large(1000, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0));
-    EXPECT_NO_THROW(engine.run(large, c, 2, 1));
+    EXPECT_NO_THROW((void)engine.run(large, c, 2, 1));
 }
 
 // 3. Early Exit Test (Convergence)
@@ -79,7 +81,7 @@ TEST_F(Clustering_BaseEngine, EarlyExitOnConvergence) {
     perfectCenters[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     perfectCenters[1] = FeatureVector(1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 
-    engine.run(samples, perfectCenters, 2, 100);
+    (void)engine.run(samples, perfectCenters, 2, 100);
 
     // It should exit after the second iteration because the first one transition from -1 to 0
     EXPECT_EQ(engine.getLastIterations(), 2);
@@ -94,7 +96,7 @@ TEST_F(Clustering_BaseEngine, RespectsMaxIterations) {
     std::vector<FeatureVector> centers(2, FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
 
     const int MAX_ITER = 3;
-    engine.run(samples, centers, 2, MAX_ITER);
+    (void)engine.run(samples, centers, 2, MAX_ITER);
 
     EXPECT_LE(engine.getLastIterations(), MAX_ITER);
 }
@@ -137,7 +139,7 @@ TEST_F(Clustering_BaseEngine, HostileMemoryReallocation) {
         cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
         std::vector<FeatureVector> centers(K, FeatureVector(0.5f, 0.5f, 0.5f, 0.5f, 0.5f));
 
-        EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
+        EXPECT_NO_THROW((void)engine.run(samples, centers, K, 2));
     }
 }
 
@@ -150,7 +152,7 @@ TEST_F(Clustering_BaseEngine, LargeScaleStability) {
     cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
     std::vector<FeatureVector> centers(K, FeatureVector(0.5f, 0.5f, 0.5f, 0.5f, 0.5f));
 
-    EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
+    EXPECT_NO_THROW((void)engine.run(samples, centers, K, 2));
 }
 
 // 8. Resilience: Zero-Point Input
