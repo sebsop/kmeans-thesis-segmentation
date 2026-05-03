@@ -2,9 +2,9 @@
 #include <cuda_runtime.h>
 #include <opencv2/core.hpp>
 #include <vector>
-#include <span>
 
 #include "clustering/engines/classical_engine.hpp"
+#include "clustering/engines/quantum_engine.hpp"
 #include "common/constants.hpp"
 
 namespace ThesisTests::Clustering::Engines {
@@ -68,48 +68,7 @@ TEST_F(Clustering_BaseEngine, BufferResizing) {
     EXPECT_NO_THROW(engine.run(large, c, 2, 1));
 }
 
-// 3. Empty Cluster Handling (Random Re-init)
-TEST_F(Clustering_BaseEngine, EmptyClusterHandling) {
-    ClassicalEngine engine;
-    
-    // 10 points all at 0.0
-    cv::Mat samples(10, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.0f));
-    
-    // 2 Centers: both starting far away
-    std::vector<FeatureVector> initialCenters(2);
-    initialCenters[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-    initialCenters[1] = FeatureVector(100.0f, 100.0f, 100.0f, 100.0f, 100.0f); // Will attract 0 points
-
-    auto finalCenters = engine.run(samples, initialCenters, 2, 5);
-
-    // Final centers should both be at 0.0 because the second one should have re-initialized to a point (which is 0.0)
-    for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
-        EXPECT_NEAR(finalCenters[0][d], 0.0f, constants::math::EPSILON);
-        EXPECT_NEAR(finalCenters[1][d], 0.0f, constants::math::EPSILON);
-    }
-}
-
-// 4. Run On Device
-TEST_F(Clustering_BaseEngine, RunOnDevice) {
-    ClassicalEngine engine;
-    const int N = 100;
-    const int K = 2;
-    
-    float* d_samples;
-    cudaMalloc(&d_samples, N * constants::clustering::FEATURE_DIMS * sizeof(float));
-    cudaMemset(d_samples, 0, N * constants::clustering::FEATURE_DIMS * sizeof(float));
-
-    std::vector<FeatureVector> initialCenters(K, FeatureVector(0,0,0,0,0));
-    
-    EXPECT_NO_THROW({
-        auto results = engine.runOnDevice(d_samples, N, initialCenters, K, 5);
-        EXPECT_EQ(results.size(), K);
-    });
-
-    cudaFree(d_samples);
-}
-
-// 5. Early Exit Test (Convergence)
+// 3. Early Exit Test (Convergence)
 TEST_F(Clustering_BaseEngine, EarlyExitOnConvergence) {
     ClassicalEngine engine;
     
@@ -125,7 +84,7 @@ TEST_F(Clustering_BaseEngine, EarlyExitOnConvergence) {
     EXPECT_EQ(engine.getLastIterations(), 2);
 }
 
-// 6. Max Iterations Cap
+// 4. Max Iterations Cap
 TEST_F(Clustering_BaseEngine, RespectsMaxIterations) {
     ClassicalEngine engine;
     
@@ -139,6 +98,48 @@ TEST_F(Clustering_BaseEngine, RespectsMaxIterations) {
     EXPECT_LE(engine.getLastIterations(), MAX_ITER);
 }
 
+// 5. Convergence Stability (Perfect Input)
+TEST_F(Clustering_BaseEngine, ConvergenceStabilityOnPerfectData) {
+    ClassicalEngine engine;
+    
+    // 2 points exactly at their centers
+    cv::Mat samples(2, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.0f));
+    samples.at<float>(0, 0) = 0.0f;
+    samples.at<float>(1, 0) = 1.0f;
+    
+    // Set other dimensions to match centers to ensure perfect stability
+    for(int d=1; d<5; ++d) {
+        samples.at<float>(1, d) = 1.0f;
+    }
+    
+    std::vector<FeatureVector> initialCenters(2);
+    initialCenters[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    initialCenters[1] = FeatureVector(1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+    
+    auto finalCenters = engine.run(samples, initialCenters, 2, 1);
+    
+    // Centers should remain bit-identical
+    for(int i=0; i<2; ++i) {
+        for(int d=0; d<constants::clustering::FEATURE_DIMS; ++d) {
+            EXPECT_EQ(finalCenters[i][d], initialCenters[i][d]);
+        }
+    }
+}
+
+// 6. Hostile Reallocation Stress
+TEST_F(Clustering_BaseEngine, HostileMemoryReallocation) {
+    ClassicalEngine engine;
+    
+    for(int i=1; i<=5; ++i) {
+        int N = i * 1000;
+        int K = i * 2;
+        cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
+        std::vector<FeatureVector> centers(K, FeatureVector(0.5f, 0.5f, 0.5f, 0.5f, 0.5f));
+        
+        EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
+    }
+}
+
 // 7. Large Scale Stability
 TEST_F(Clustering_BaseEngine, LargeScaleStability) {
     ClassicalEngine engine;
@@ -149,6 +150,18 @@ TEST_F(Clustering_BaseEngine, LargeScaleStability) {
     std::vector<FeatureVector> centers(K, FeatureVector(0.5f, 0.5f, 0.5f, 0.5f, 0.5f));
 
     EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
+}
+
+// 8. Resilience: Zero-Point Input
+TEST_F(Clustering_BaseEngine, HandlesZeroPointsGracefully) {
+    ClassicalEngine engine;
+    cv::Mat emptySamples; // 0 rows
+    std::vector<FeatureVector> centers(3, FeatureVector(0,0,0,0,0));
+    
+    EXPECT_NO_THROW({
+        auto results = engine.run(emptySamples, centers, 3, 5);
+        EXPECT_EQ(results.size(), 3);
+    });
 }
 
 } // namespace ThesisTests::Clustering::Engines

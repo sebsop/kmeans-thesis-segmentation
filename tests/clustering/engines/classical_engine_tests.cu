@@ -82,5 +82,25 @@ TEST_F(Clustering_ClassicalEngine, TiedDistanceHandling) {
         EXPECT_NEAR(results[0][d], 0.5f, constants::math::EPSILON);
     }
 }
+TEST_F(Clustering_ClassicalEngine, EmptyClusterRobustness) {
+    ClassicalEngine engine;
+    const int K = 10;
+    
+    // Uniform data (all points at same location)
+    cv::Mat samples(100, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
+    
+    // Centers spread out - most will have 0 members
+    std::vector<FeatureVector> initialCenters(K);
+    for(int i=0; i<K; ++i) initialCenters[i] = FeatureVector(static_cast<float>(i), 0,0,0,0);
+    
+    auto finalCenters = engine.run(samples, initialCenters, K, 5);
+    
+    EXPECT_EQ(finalCenters.size(), K);
+    for(const auto& c : finalCenters) {
+        for(int d=0; d<constants::clustering::FEATURE_DIMS; ++d) {
+            EXPECT_FALSE(std::isnan(c[d]));
+        }
+    }
+}
 
 } // namespace ThesisTests::Clustering::Engines

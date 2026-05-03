@@ -82,4 +82,27 @@ TEST_F(Clustering_QuantumEngine, QuantumHighK) {
     EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
 }
 
+// 6. Quantum Scale-Factor Stress (Aliasing Prevention)
+TEST_F(Clustering_QuantumEngine, QuantumScaleAliasingPrevention) {
+    QuantumEngine engine;
+    const int K = 2;
+    
+    // Extreme range: Points at 0.0 and 1,000,000.0
+    // If the scale factor is too large, 1,000,000 might wrap around the 2*PI circle.
+    cv::Mat samples(2, constants::clustering::FEATURE_DIMS, CV_32F);
+    for(int d=0; d<5; ++d) samples.at<float>(0, d) = 0.0f;
+    for(int d=0; d<5; ++d) samples.at<float>(1, d) = 1000000.0f;
+    
+    std::vector<FeatureVector> initialCenters(K);
+    initialCenters[0] = FeatureVector(0,0,0,0,0);
+    initialCenters[1] = FeatureVector(1000000.0f, 1000000.0f, 1000000.0f, 1000000.0f, 1000000.0f);
+    
+    // The engine should normalize this so that the centers move towards their clusters
+    // instead of oscillating due to aliasing.
+    auto finalCenters = engine.run(samples, initialCenters, K, 2);
+    
+    EXPECT_NEAR(finalCenters[0][0], 0.0f, 1.0f);
+    EXPECT_NEAR(finalCenters[1][0], 1000000.0f, 1.0f);
+}
+
 } // namespace ThesisTests::Clustering::Engines
