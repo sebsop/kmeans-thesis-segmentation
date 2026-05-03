@@ -40,9 +40,11 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
     const auto* firstPtr = samples.ptr<float>(firstIdx);
     {
         FeatureVector first_c;
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+        std::vector<int> d_indices(constants::FEATURE_DIMS);
+        std::iota(d_indices.begin(), d_indices.end(), 0);
+        std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
             first_c[d] = firstPtr[d];
-        }
+        });
         centers.push_back(first_c);
     }
 
@@ -68,7 +70,10 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
     cudaStream_t stream;
     cudaStreamCreate(&stream);
 
-    for (int i = 1; i < k; ++i) {
+    std::vector<int> k_indices(k - 1);
+    std::iota(k_indices.begin(), k_indices.end(), 1);
+
+    std::for_each(k_indices.begin(), k_indices.end(), [&](int /*i*/) {
         // Copy latest center to device (only FEATURE_DIMS floats)
         const auto& latestCenter = centers.back();
         cudaMemcpyAsync(thrust::raw_pointer_cast(d_latestCenter_vec.data()), &latestCenter[0],
@@ -105,12 +110,14 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
         const auto* selPtr = samples.ptr<float>(selectedIdx);
         {
             FeatureVector c;
-            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            std::vector<int> d_indices(constants::FEATURE_DIMS);
+            std::iota(d_indices.begin(), d_indices.end(), 0);
+            std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
                 c[d] = selPtr[d];
-            }
+            });
             centers.push_back(c);
         }
-    }
+    });
 
     cudaStreamDestroy(stream);
 

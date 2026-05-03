@@ -79,7 +79,7 @@ void UIManager::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    } else {
+    } else [[likely]] {
         glBindTexture(GL_TEXTURE_2D, textureRes.id);
     }
 

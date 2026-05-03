@@ -118,7 +118,7 @@ void Application::run() {
         cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
         cap.set(cv::CAP_PROP_AUTO_EXPOSURE, constants::CAMERA_AUTO_EXPOSURE);
 
-        while (m_running) {
+        while (m_running) [[likely]] {
             cv::Mat frame;
             cap >> frame;
             if (frame.empty()) {
@@ -196,7 +196,7 @@ void Application::run() {
         }
     });
 
-    while (!glfwWindowShouldClose(m_window) && m_running) {
+    while (!glfwWindowShouldClose(m_window) && m_running) [[likely]] {
         glfwPollEvents();
 
         auto bState = m_benchmarkRunner.getState();

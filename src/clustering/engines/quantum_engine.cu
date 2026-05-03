@@ -58,36 +58,41 @@ void QuantumEngine::preRunSetupImpl(const std::vector<FeatureVector>& initialCen
     std::vector<float> min_vals(constants::FEATURE_DIMS, std::numeric_limits<float>::max());
     std::vector<float> max_vals(constants::FEATURE_DIMS, std::numeric_limits<float>::lowest());
 
+    std::vector<int> dim_indices(constants::FEATURE_DIMS);
+    std::iota(dim_indices.begin(), dim_indices.end(), 0);
+
     if (!samples.empty()) {
         int numPoints = samples.rows;
-        for (int i = 0; i < numPoints; ++i) {
+        std::vector<int> point_indices(numPoints);
+        std::iota(point_indices.begin(), point_indices.end(), 0);
+        std::for_each(point_indices.begin(), point_indices.end(), [&](int i) {
             const float* rowPtr = samples.ptr<float>(i);
-            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            std::for_each(dim_indices.begin(), dim_indices.end(), [&](int d) {
                 float val = rowPtr[d];
                 if (val < min_vals[d])
                     min_vals[d] = val;
                 if (val > max_vals[d])
                     max_vals[d] = val;
-            }
-        }
+            });
+        });
     } else {
         // Compute from centers if samples matrix is empty
-        for (const auto& c : initialCenters) {
-            for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+        std::for_each(initialCenters.begin(), initialCenters.end(), [&](const auto& c) {
+            std::for_each(dim_indices.begin(), dim_indices.end(), [&](int d) {
                 if (c[d] < min_vals[d])
                     min_vals[d] = c[d];
                 if (c[d] > max_vals[d])
                     max_vals[d] = c[d];
-            }
-        }
+            });
+        });
     }
 
     float max_range = 0.0f;
-    for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+    std::for_each(dim_indices.begin(), dim_indices.end(), [&](int d) {
         float range = max_vals[d] - min_vals[d];
         if (range > max_range)
             max_range = range;
-    }
+    });
     float global_range = max_range + constants::QUANTUM_RANGE_EPSILON;
     m_scaleFactor = (constants::PI_F / 2.0f) / global_range;
 }

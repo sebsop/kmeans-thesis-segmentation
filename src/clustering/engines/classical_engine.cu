@@ -16,29 +16,28 @@ __global__ static void classicalAssignKernel(const float* __restrict__ samples, 
     __syncthreads();
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numPoints)
-        return;
-
-    float p[constants::FEATURE_DIMS];
+    if (idx < numPoints) [[likely]] {
+        float p[constants::FEATURE_DIMS];
 #pragma unroll
-    for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
-        p[d] = samples[idx * constants::FEATURE_DIMS + d];
-    }
-
-    float minDistSq = constants::MATH_INF;
-    int bestK = 0;
-
-    for (int j = 0; j < k; ++j) {
-        float d2 = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p, &s_centers[j * constants::FEATURE_DIMS]);
-        if (d2 < minDistSq) {
-            minDistSq = d2;
-            bestK = j;
+        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+            p[d] = samples[idx * constants::FEATURE_DIMS + d];
         }
-    }
 
-    if (labels[idx] != bestK) {
-        labels[idx] = bestK;
-        atomicOr(changed, 1);
+        float minDistSq = constants::MATH_INF;
+        int bestK = 0;
+
+        for (int j = 0; j < k; ++j) {
+            float d2 = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(p, &s_centers[j * constants::FEATURE_DIMS]);
+            if (d2 < minDistSq) {
+                minDistSq = d2;
+                bestK = j;
+            }
+        }
+
+        if (labels[idx] != bestK) {
+            labels[idx] = bestK;
+            atomicOr(changed, 1);
+        }
     }
 }
 

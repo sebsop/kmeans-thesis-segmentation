@@ -68,7 +68,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
                 return;
             }
             float dCenter = std::sqrt(common::VectorMath<constants::FEATURE_DIMS>::sqDistance(centers[i].val, centers[j].val));
-            if (dCenter > constants::MATH_EPSILON) {
+            if (dCenter > constants::MATH_EPSILON) [[likely]] {
                 maxR = std::max((intraClusterScatter[i] + intraClusterScatter[j]) / dCenter, maxR);
             }
         });
@@ -136,7 +136,7 @@ BenchmarkResults computeAllMetrics(const cv::Mat& samples,
         });
 
         float maxAB = std::max(a, b);
-        if (maxAB > constants::MATH_EPSILON && b < constants::MATH_INF) {
+        if (maxAB > constants::MATH_EPSILON && b < constants::MATH_INF) [[likely]] {
             totalSilhouette += (b - a) / maxAB;
             validSilhouettePoints++;
         }

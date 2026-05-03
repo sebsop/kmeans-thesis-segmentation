@@ -39,9 +39,9 @@ __global__ static void internalBaseUpdateKernel(const float* __restrict__ sample
     __syncthreads();
 
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < numPoints) {
+    if (idx < numPoints) [[likely]] {
         int cluster = labels[idx];
-        if (cluster >= 0 && cluster < k) {
+        if (cluster >= 0 && cluster < k) [[likely]] {
             atomicAdd(&s_counts[cluster], 1);
 #pragma unroll
             for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
@@ -52,7 +52,7 @@ __global__ static void internalBaseUpdateKernel(const float* __restrict__ sample
     __syncthreads();
 
     if (tid < k) {
-        if (s_counts[tid] > 0) {
+        if (s_counts[tid] > 0) [[likely]] {
             atomicAdd(&counts[tid], s_counts[tid]);
 #pragma unroll
             for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
@@ -176,12 +176,16 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
     common::ScopedTimer timer("KMeans Execution");
     size_t centersSize = static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float);
 
-    std::vector<float> h_centers(k * constants::FEATURE_DIMS);
-    for (int i = 0; i < k; ++i) {
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+    std::vector<int> k_indices(k);
+    std::iota(k_indices.begin(), k_indices.end(), 0);
+    std::vector<int> d_indices(constants::FEATURE_DIMS);
+    std::iota(d_indices.begin(), d_indices.end(), 0);
+
+    std::for_each(k_indices.begin(), k_indices.end(), [&](int i) {
+        std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
             h_centers[i * constants::FEATURE_DIMS + d] = initialCenters[i][d];
-        }
-    }
+        });
+    });
 
     CUDA_CHECK(cudaMemcpy(m_d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemset(m_d_labels, 0xFF, numPoints * sizeof(int)));
@@ -223,30 +227,30 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
         CUDA_CHECK(cudaMemcpy(h_counts.data(), m_d_counts, k * sizeof(int), cudaMemcpyDeviceToHost));
 
         // CPU center averaging
-        for (int j = 0; j < k; ++j) {
-            if (h_counts[j] > 0) {
-                for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+        std::for_each(k_indices.begin(), k_indices.end(), [&](int j) {
+            if (h_counts[j] > 0) [[likely]] {
+                std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
                     h_centers[j * constants::FEATURE_DIMS + d] =
                         h_newSums[j * constants::FEATURE_DIMS + d] / static_cast<float>(h_counts[j]);
-                }
+                });
             } else if (numPoints > 0) {
                 int randomIdx = rand() % numPoints;
                 CUDA_CHECK(cudaMemcpy(&h_centers[j * constants::FEATURE_DIMS],
                                       &d_samp[randomIdx * constants::FEATURE_DIMS],
                                       constants::FEATURE_DIMS * sizeof(float), cudaMemcpyDeviceToHost));
             }
-        }
+        });
         CUDA_CHECK(cudaMemcpy(m_d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
     }
 
     m_lastIterations = iter + 1;
 
     std::vector<FeatureVector> finalCenters(k);
-    for (int i = 0; i < k; ++i) {
-        for (int d = 0; d < constants::FEATURE_DIMS; ++d) {
+    std::for_each(k_indices.begin(), k_indices.end(), [&](int i) {
+        std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
             finalCenters[i][d] = h_centers[i * constants::FEATURE_DIMS + d];
-        }
-    }
+        });
+    });
     return finalCenters;
 }
 
