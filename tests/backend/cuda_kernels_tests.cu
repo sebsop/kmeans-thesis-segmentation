@@ -6,7 +6,7 @@
 #include "backend/cuda_assignment_context.hpp"
 #include "common/constants.hpp"
 
-namespace ThesisTests {
+namespace ThesisTests::Backend {
 
 using namespace kmeans;
 using namespace kmeans::backend;
@@ -144,4 +144,4 @@ TEST_F(Backend_CudaKernels, ContextReuse) {
     EXPECT_EQ(out2.at<cv::Vec3b>(0,0), cv::Vec3b(255,255,255));
 }
 
-} // namespace ThesisTests
+} // namespace ThesisTests::Backend

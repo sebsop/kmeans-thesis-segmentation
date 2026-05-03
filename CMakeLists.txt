@@ -151,6 +151,11 @@ target_link_libraries(kmeans_core PUBLIC ${OpenCV_LIBS} glfw cppzmq)
 # Each host flag is passed as its own `-Xcompiler` entry to avoid nvcc command-line parsing issues
 # that arise when multiple flags are combined/quoted into a single `-Xcompiler` argument.
 if(MSVC)
+    target_compile_options(kmeans_core PRIVATE 
+        $<$<COMPILE_LANGUAGE:CXX>:/W4 /WX /permissive- /Zc:preprocessor>
+        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/W4 -Xcompiler=/WX -Xcompiler=/permissive- -Xcompiler=/Zc:preprocessor>
+    )
+    target_link_options(kmeans_core PUBLIC /PROFILE)
     target_compile_options(kmeans_core PRIVATE
         "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/O2>"
         "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/fp:fast>"
@@ -159,6 +164,7 @@ if(MSVC)
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/external:anglebrackets>"
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/analyze:external->"
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/EHsc>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd4505>"
     )
 endif()
 

@@ -1,10 +1,26 @@
-# Master Test Suite (All tests in one executable)
 add_executable(all_tests 
+    common/utils_tests.cpp
+    common/vector_math_tests.cpp
+    io/ui_integration_tests.cpp
     backend/cuda_kernels_tests.cu
-    clustering/engines/base_engine_tests.cu
+    clustering/engines/base_kmeans_engine_tests.cu
     clustering/engines/classical_engine_tests.cu
     clustering/engines/quantum_engine_tests.cu
+    clustering/clustering_factory_tests.cpp
+    clustering/clustering_manager_tests.cpp
+    clustering/metrics_tests.cpp
+    clustering/preprocessor/strided_data_preprocessor_tests.cu
+    clustering/initializers/kmeans_plus_plus_initializer_tests.cu
+    clustering/initializers/random_initializer_tests.cu
 )
+
+if(MSVC)
+    target_link_options(all_tests PRIVATE /PROFILE /DEBUG:FULL)
+    target_compile_options(all_tests PRIVATE 
+        $<$<COMPILE_LANGUAGE:CXX>:/Zi>
+        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/Zi>
+    )
+endif()
 
 set_target_properties(all_tests PROPERTIES
     CXX_STANDARD 20

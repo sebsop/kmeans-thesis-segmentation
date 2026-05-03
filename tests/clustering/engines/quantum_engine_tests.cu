@@ -6,7 +6,7 @@
 #include "clustering/engines/quantum_engine.hpp"
 #include "common/constants.hpp"
 
-namespace ThesisTests {
+namespace ThesisTests::Clustering::Engines {
 
 using namespace kmeans;
 using namespace kmeans::clustering;
@@ -82,4 +82,4 @@ TEST_F(Clustering_QuantumEngine, QuantumHighK) {
     EXPECT_NO_THROW(engine.run(samples, centers, K, 2));
 }
 
-} // namespace ThesisTests
+} // namespace ThesisTests::Clustering::Engines

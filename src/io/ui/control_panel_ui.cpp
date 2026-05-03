@@ -137,8 +137,8 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
     if (!algoFpsHistory.empty()) {
         auto [min_it, max_it] = std::minmax_element(algoFpsHistory.begin(), algoFpsHistory.end());
-        float minFps = *min_it;
-        float maxFps = *max_it;
+        [[maybe_unused]] float minFps = *min_it;
+        [[maybe_unused]] float maxFps = *max_it;
         float sumFps = std::accumulate(algoFpsHistory.begin(), algoFpsHistory.end(), 0.0f);
         float avgFps = sumFps / static_cast<float>(algoFpsHistory.size());
 

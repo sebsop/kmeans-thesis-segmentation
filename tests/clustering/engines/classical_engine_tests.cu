@@ -6,7 +6,7 @@
 #include "clustering/engines/classical_engine.hpp"
 #include "common/constants.hpp"
 
-namespace ThesisTests {
+namespace ThesisTests::Clustering::Engines {
 
 using namespace kmeans;
 using namespace kmeans::clustering;
@@ -83,4 +83,4 @@ TEST_F(Clustering_ClassicalEngine, TiedDistanceHandling) {
     }
 }
 
-} // namespace ThesisTests
+} // namespace ThesisTests::Clustering::Engines
