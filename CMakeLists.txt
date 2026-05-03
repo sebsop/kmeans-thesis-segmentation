@@ -90,11 +90,22 @@ else()
 endif()
 
 # Custom target to format all source files (excluding vendor libraries)
-find_program(CLANG_FORMAT_EXE NAMES "clang-format" "clang-format.exe")
+find_program(CLANG_FORMAT_EXE 
+    NAMES "clang-format" "clang-format.exe"
+    PATHS "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin"
+          "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin"
+          "D:/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin"
+          "D:/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin"
+          "C:/Program Files/LLVM/bin"
+          "D:/Program Files/LLVM/bin"
+)
+
 if(CLANG_FORMAT_EXE)
+    message(STATUS "clang-format found: ${CLANG_FORMAT_EXE}")
     file(GLOB_RECURSE ALL_SOURCE_FILES
         "src/*.cpp" "src/*.hpp" "src/*.cu" "src/*.cuh"
         "include/*.cpp" "include/*.hpp" "include/*.cu" "include/*.cuh"
+        "tests/*.cpp" "tests/*.hpp" "tests/*.cu" "tests/*.cuh"
     )
     # Remove all files inside src/vendor/ from the list
     list(FILTER ALL_SOURCE_FILES EXCLUDE REGEX ".*/vendor/.*")
@@ -104,6 +115,8 @@ if(CLANG_FORMAT_EXE)
         COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${ALL_SOURCE_FILES}
         COMMENT "Formatting all source files (excluding vendor) with clang-format..."
     )
+else()
+    message(WARNING "clang-format not found. The 'format' target will not be available.")
 endif()
 
 # Core Logic Library
