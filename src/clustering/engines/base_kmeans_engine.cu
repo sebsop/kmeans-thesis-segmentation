@@ -13,7 +13,6 @@
 #include "clustering/engines/classical_engine.hpp"
 #include "clustering/engines/quantum_engine.hpp"
 #include "common/constants.hpp"
-#include "common/scoped_timer.hpp"
 #include "common/utils.hpp"
 
 namespace {
@@ -155,7 +154,6 @@ template <typename Derived>
 std::vector<FeatureVector> BaseKMeansEngine<Derived>::runInternal(float* d_samples, int numPoints,
                                                                   std::span<const FeatureVector> initialCenters, int k,
                                                                   int maxIterations) {
-    common::ScopedTimer timer("KMeans Execution");
     size_t centersSize = static_cast<size_t>(k) * constants::clustering::FEATURE_DIMS * sizeof(float);
     std::vector<float> h_centers(k * constants::clustering::FEATURE_DIMS);
 

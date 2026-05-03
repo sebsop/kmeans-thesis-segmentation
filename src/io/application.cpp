@@ -1,4 +1,5 @@
 #include "io/application.hpp"
+#include <cuda_runtime.h>
 
 #include <chrono>
 #include <imgui.h>
@@ -112,6 +113,14 @@ void Application::run() {
 
         if (!cap.isOpened()) {
             std::cerr << "Failed to open webcam inside worker thread." << std::endl;
+            return;
+        }
+
+        // Background CUDA check to avoid hanging the main UI thread
+        int deviceCount = 0;
+        if (cudaGetDeviceCount(&deviceCount) != cudaSuccess || deviceCount == 0) {
+            std::cerr << "Error: No CUDA-capable GPU detected inside worker thread.\n";
+            m_running = false;
             return;
         }
 
