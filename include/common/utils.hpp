@@ -2,6 +2,8 @@
 
 #include <opencv2/core.hpp>
 #include <concepts>
+#include <source_location>
+#include <string_view>
 
 #include "common/constants.hpp"
 #include "common/enums.hpp"
@@ -14,8 +16,10 @@ requires std::integral<T1> && std::integral<T2>
     return (static_cast<int>(totalItems) + static_cast<int>(threadsPerBlock) - 1) / static_cast<int>(threadsPerBlock);
 }
 
-[[noreturn]] inline void fatalError(const std::string& message) {
-    throw std::runtime_error(message);
+[[noreturn]] inline void fatalError(std::string_view message,
+                                    const std::source_location loc = std::source_location::current()) {
+    std::string err = std::string(message) + " at " + loc.file_name() + ":" + std::to_string(loc.line());
+    throw std::runtime_error(err);
 }
 
 /**

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <chrono>
-#include <string>
 #include <iostream>
+#include <string>
+#include <string_view>
 #include <utility>
 
 namespace kmeans::common {
@@ -13,8 +14,8 @@ class ScopedTimer {
     std::chrono::high_resolution_clock::time_point m_start;
 
   public:
-    explicit ScopedTimer(std::string name)
-        : m_name(std::move(name)), m_start(std::chrono::high_resolution_clock::now()) {}
+    explicit ScopedTimer(std::string_view name)
+        : m_name(name), m_start(std::chrono::high_resolution_clock::now()) {}
 
     ~ScopedTimer() {
         auto end = std::chrono::high_resolution_clock::now();

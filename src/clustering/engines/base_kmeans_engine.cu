@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <cassert>
-#include <cstdlib>
 #include <cuda_runtime.h>
-#include <iostream>
+#include <numeric>
+#include <source_location>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "clustering/engines/base_kmeans_engine.hpp"
 #include "clustering/engines/classical_engine.hpp"
@@ -13,14 +15,17 @@
 #include "common/scoped_timer.hpp"
 #include "common/utils.hpp"
 
-#define CUDA_CHECK(call)                                                                                               \
-    do {                                                                                                               \
-        cudaError_t err = call;                                                                                        \
-        if (err != cudaSuccess) {                                                                                      \
-            throw std::runtime_error(std::string("CUDA Error: ") + cudaGetErrorString(err) + " at " + __FILE__ + ":" + \
-                                     std::to_string(__LINE__));                                                        \
-        }                                                                                                              \
-    } while (0)
+namespace {
+inline void cudaCheck(cudaError_t err, const std::source_location loc = std::source_location::current()) {
+    if (err != cudaSuccess) {
+        std::string msg = std::string("CUDA Error: ") + cudaGetErrorString(err) + " at " + loc.file_name() + ":" +
+                          std::to_string(loc.line());
+        throw std::runtime_error(msg);
+    }
+}
+} // namespace
+
+#define CUDA_CHECK(call) cudaCheck(call)
 
 namespace kmeans::clustering {
 
@@ -116,12 +121,12 @@ void BaseKMeansEngine<Derived>::ensureBuffers(int numPoints, int k) {
 template <typename Derived>
 std::vector<FeatureVector>
 BaseKMeansEngine<Derived>::run(const cv::Mat& samples,
-                      const std::vector<FeatureVector>& initialCenters, int k,
+                      std::span<const FeatureVector> initialCenters, int k,
                       int maxIterations) {
     assert(k >= constants::K_MIN && k <= constants::K_MAX);
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
-        return initialCenters;
+        return std::vector<FeatureVector>(initialCenters.begin(), initialCenters.end());
 
     ensureBuffers(numPoints, k);
     CUDA_CHECK(cudaMemcpy(m_d_samples, samples.ptr<float>(0), numPoints * constants::FEATURE_DIMS * sizeof(float),
@@ -135,11 +140,11 @@ BaseKMeansEngine<Derived>::run(const cv::Mat& samples,
 template <typename Derived>
 std::vector<FeatureVector>
 BaseKMeansEngine<Derived>::runOnDevice(float* d_samples_ext, int numPoints,
-                              const std::vector<FeatureVector>& initialCenters, int k,
+                              std::span<const FeatureVector> initialCenters, int k,
                               int maxIterations) {
     assert(k >= constants::K_MIN && k <= constants::K_MAX);
     if (numPoints == 0 || k <= 0)
-        return initialCenters;
+        return std::vector<FeatureVector>(initialCenters.begin(), initialCenters.end());
 
     if (static_cast<size_t>(numPoints) > m_maxPoints || k > m_maxK) {
         if (m_d_centers)
@@ -171,10 +176,11 @@ BaseKMeansEngine<Derived>::runOnDevice(float* d_samples_ext, int numPoints,
 template <typename Derived>
 std::vector<FeatureVector>
 BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
-                              const std::vector<FeatureVector>& initialCenters, int k,
+                              std::span<const FeatureVector> initialCenters, int k,
                               int maxIterations) {
     common::ScopedTimer timer("KMeans Execution");
     size_t centersSize = static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float);
+    std::vector<float> h_centers(k * constants::FEATURE_DIMS);
 
     std::vector<int> k_indices(k);
     std::iota(k_indices.begin(), k_indices.end(), 0);

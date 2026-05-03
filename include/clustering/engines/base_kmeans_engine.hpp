@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <vector>
 
 #include <opencv2/core.hpp>
@@ -26,12 +27,12 @@ class BaseKMeansEngine : public KMeansEngine {
     ~BaseKMeansEngine() override;
 
     [[nodiscard]] std::vector<FeatureVector>
-    run(const cv::Mat& samples, const std::vector<FeatureVector>& initialCenters, int k,
+    run(const cv::Mat& samples, std::span<const FeatureVector> initialCenters, int k,
         int maxIterations) override;
 
     [[nodiscard]] std::vector<FeatureVector>
     runOnDevice(float* d_samples_ext, int numPoints,
-                const std::vector<FeatureVector>& initialCenters, int k,
+                std::span<const FeatureVector> initialCenters, int k,
                 int maxIterations) override;
 
   protected:
@@ -39,7 +40,7 @@ class BaseKMeansEngine : public KMeansEngine {
 
     [[nodiscard]] std::vector<FeatureVector>
     runInternal(float* d_samp, int numPoints,
-                const std::vector<FeatureVector>& initialCenters, int k, int maxIterations);
+                std::span<const FeatureVector> initialCenters, int k, int maxIterations);
 
     void baseUpdateKernel(float* d_samp, int numPoints, int k, int* d_lab, float* d_nSums, int* d_cnts,
                           int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const;

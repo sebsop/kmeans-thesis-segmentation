@@ -142,8 +142,8 @@ std::vector<FeatureVector> ClusteringManager::generateInitialCenters(const cv::M
     return m_impl->m_initializer->initialize(cpuSamples, m_impl->m_config.k);
 }
 
-void ClusteringManager::setInitialCenters(const std::vector<FeatureVector>& centers) {
-    m_impl->m_previousCenters = centers;
+void ClusteringManager::setInitialCenters(std::span<const FeatureVector> centers) {
+    m_impl->m_previousCenters = std::vector<FeatureVector>(centers.begin(), centers.end());
     m_impl->m_hasPrevious = true;
 }
 

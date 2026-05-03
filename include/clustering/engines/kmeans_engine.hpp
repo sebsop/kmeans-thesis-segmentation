@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <vector>
 
 #include <opencv2/core.hpp>
@@ -29,7 +30,7 @@ class KMeansEngine {
      * Use this when the sample data lives in host memory.
      */
     [[nodiscard]] virtual std::vector<FeatureVector>
-    run(const cv::Mat& samples, const std::vector<FeatureVector>& initialCenters, int k,
+    run(const cv::Mat& samples, std::span<const FeatureVector> initialCenters, int k,
         int maxIterations) = 0;
 
     /**
@@ -39,7 +40,7 @@ class KMeansEngine {
      */
     [[nodiscard]] virtual std::vector<FeatureVector>
     runOnDevice(float* /*d_samples_ext*/, int /*numPoints*/,
-                const std::vector<FeatureVector>& /*initialCenters*/, int /*k*/,
+                std::span<const FeatureVector> /*initialCenters*/, int /*k*/,
                 int /*maxIterations*/) {
         // Default: subclass must override if GPU-direct path is desired
         return {};

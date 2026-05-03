@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <limits>
 #include <random>
+#include <numeric>
 
 #include <thrust/binary_search.h>
 #include <thrust/device_vector.h>

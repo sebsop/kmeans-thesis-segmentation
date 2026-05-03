@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <memory>
 #include <vector>
 
@@ -39,7 +40,7 @@ class ClusteringManager {
     void resetCenters();
 
     /** @brief Strong Exception Safety Guarantee */
-    void setInitialCenters(const std::vector<FeatureVector>& centers);
+    void setInitialCenters(std::span<const FeatureVector> centers);
 
     /** @brief Basic Exception Safety Guarantee */
     std::vector<FeatureVector> generateInitialCenters(const cv::Mat& frame);
