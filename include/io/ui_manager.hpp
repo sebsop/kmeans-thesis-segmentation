@@ -9,8 +9,8 @@
 #include <opencv2/core.hpp>
 
 #include "common/config.hpp"
-#include "io/benchmark_runner.hpp"
 #include "io/benchmark_observer.hpp"
+#include "io/benchmark_runner.hpp"
 
 namespace kmeans::io {
 

@@ -30,18 +30,16 @@ class KMeansEngine {
      * Use this when the sample data lives in host memory.
      */
     [[nodiscard]] virtual std::vector<FeatureVector>
-    run(const cv::Mat& samples, std::span<const FeatureVector> initialCenters, int k,
-        int maxIterations) = 0;
+    run(const cv::Mat& samples, std::span<const FeatureVector> initialCenters, int k, int maxIterations) = 0;
 
     /**
      * @brief GPU-direct path: samples already reside on the device.
      * Skips the H2D upload of samples for maximum throughput.
      * Engines that support this override it; default falls back to run() via D2H.
      */
-    [[nodiscard]] virtual std::vector<FeatureVector>
-    runOnDevice(float* /*d_samples_ext*/, int /*numPoints*/,
-                std::span<const FeatureVector> /*initialCenters*/, int /*k*/,
-                int /*maxIterations*/) {
+    [[nodiscard]] virtual std::vector<FeatureVector> runOnDevice(float* /*d_samples_ext*/, int /*numPoints*/,
+                                                                 std::span<const FeatureVector> /*initialCenters*/,
+                                                                 int /*k*/, int /*maxIterations*/) {
         // Default: subclass must override if GPU-direct path is desired
         return {};
     }

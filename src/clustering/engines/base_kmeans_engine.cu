@@ -68,14 +68,14 @@ __global__ static void internalBaseUpdateKernel(const float* __restrict__ sample
 }
 
 template <typename Derived>
-void BaseKMeansEngine<Derived>::baseUpdateKernel(float* d_samp, int numPoints, int k, int* d_lab, float* d_nSums, int* d_cnts,
-                                                int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const {
+void BaseKMeansEngine<Derived>::baseUpdateKernel(float* d_samp, int numPoints, int k, int* d_lab, float* d_nSums,
+                                                 int* d_cnts, int threadsPerBlock, int blocksPerGrid,
+                                                 size_t sharedSize) const {
     internalBaseUpdateKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samp, numPoints, d_lab, k, d_nSums,
                                                                              d_cnts);
 }
 
-template <typename Derived>
-BaseKMeansEngine<Derived>::~BaseKMeansEngine() {
+template <typename Derived> BaseKMeansEngine<Derived>::~BaseKMeansEngine() {
     if (m_d_samples)
         cudaFree(m_d_samples);
     if (m_d_centers)
@@ -90,8 +90,7 @@ BaseKMeansEngine<Derived>::~BaseKMeansEngine() {
         cudaFree(m_d_changed);
 }
 
-template <typename Derived>
-void BaseKMeansEngine<Derived>::ensureBuffers(int numPoints, int k) {
+template <typename Derived> void BaseKMeansEngine<Derived>::ensureBuffers(int numPoints, int k) {
     if (static_cast<size_t>(numPoints) > m_maxPoints || k > m_maxK) {
         if (m_d_samples)
             cudaFree(m_d_samples);
@@ -119,10 +118,9 @@ void BaseKMeansEngine<Derived>::ensureBuffers(int numPoints, int k) {
 }
 
 template <typename Derived>
-std::vector<FeatureVector>
-BaseKMeansEngine<Derived>::run(const cv::Mat& samples,
-                      std::span<const FeatureVector> initialCenters, int k,
-                      int maxIterations) {
+std::vector<FeatureVector> BaseKMeansEngine<Derived>::run(const cv::Mat& samples,
+                                                          std::span<const FeatureVector> initialCenters, int k,
+                                                          int maxIterations) {
     assert(k >= constants::K_MIN && k <= constants::K_MAX);
     int numPoints = samples.rows;
     if (numPoints == 0 || k <= 0)
@@ -138,10 +136,9 @@ BaseKMeansEngine<Derived>::run(const cv::Mat& samples,
 }
 
 template <typename Derived>
-std::vector<FeatureVector>
-BaseKMeansEngine<Derived>::runOnDevice(float* d_samples_ext, int numPoints,
-                              std::span<const FeatureVector> initialCenters, int k,
-                              int maxIterations) {
+std::vector<FeatureVector> BaseKMeansEngine<Derived>::runOnDevice(float* d_samples_ext, int numPoints,
+                                                                  std::span<const FeatureVector> initialCenters, int k,
+                                                                  int maxIterations) {
     assert(k >= constants::K_MIN && k <= constants::K_MAX);
     if (numPoints == 0 || k <= 0)
         return std::vector<FeatureVector>(initialCenters.begin(), initialCenters.end());
@@ -174,10 +171,9 @@ BaseKMeansEngine<Derived>::runOnDevice(float* d_samples_ext, int numPoints,
 }
 
 template <typename Derived>
-std::vector<FeatureVector>
-BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
-                              std::span<const FeatureVector> initialCenters, int k,
-                              int maxIterations) {
+std::vector<FeatureVector> BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
+                                                                  std::span<const FeatureVector> initialCenters, int k,
+                                                                  int maxIterations) {
     common::ScopedTimer timer("KMeans Execution");
     size_t centersSize = static_cast<size_t>(k) * constants::FEATURE_DIMS * sizeof(float);
     std::vector<float> h_centers(k * constants::FEATURE_DIMS);
@@ -188,9 +184,8 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
     std::iota(d_indices.begin(), d_indices.end(), 0);
 
     std::for_each(k_indices.begin(), k_indices.end(), [&](int i) {
-        std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
-            h_centers[i * constants::FEATURE_DIMS + d] = initialCenters[i][d];
-        });
+        std::for_each(d_indices.begin(), d_indices.end(),
+                      [&](int d) { h_centers[i * constants::FEATURE_DIMS + d] = initialCenters[i][d]; });
     });
 
     CUDA_CHECK(cudaMemcpy(m_d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
@@ -211,8 +206,8 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(m_d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
 
-        static_cast<Derived*>(this)->launchAssignKernelImpl(d_samp, numPoints, m_d_centers, k, m_d_labels, m_d_changed, threadsPerBlock, blocksPerGrid,
-                           sharedAssignSize);
+        static_cast<Derived*>(this)->launchAssignKernelImpl(d_samp, numPoints, m_d_centers, k, m_d_labels, m_d_changed,
+                                                            threadsPerBlock, blocksPerGrid, sharedAssignSize);
         CUDA_CHECK(cudaPeekAtLastError());
         CUDA_CHECK(cudaDeviceSynchronize());
 
@@ -253,9 +248,8 @@ BaseKMeansEngine<Derived>::runInternal(float* d_samp, int numPoints,
 
     std::vector<FeatureVector> finalCenters(k);
     std::for_each(k_indices.begin(), k_indices.end(), [&](int i) {
-        std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
-            finalCenters[i][d] = h_centers[i * constants::FEATURE_DIMS + d];
-        });
+        std::for_each(d_indices.begin(), d_indices.end(),
+                      [&](int d) { finalCenters[i][d] = h_centers[i * constants::FEATURE_DIMS + d]; });
     });
     return finalCenters;
 }

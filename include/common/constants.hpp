@@ -31,42 +31,42 @@ constexpr ColorRGBA UI_COLOR_TEXT_DIM = {.r = 0.5f, .g = 0.5f, .b = 0.5f, .a = 1
 
 // UITheme Palettes
 namespace theme {
-    constexpr ColorRGBA TEXT = {.r = 1.00f, .g = 1.00f, .b = 1.00f, .a = 1.00f};
-    constexpr ColorRGBA WINDOW_BG = {.r = 0.08f, .g = 0.08f, .b = 0.08f, .a = 0.94f};
-    constexpr ColorRGBA POPUP_BG = {.r = 0.12f, .g = 0.12f, .b = 0.12f, .a = 0.94f};
-    constexpr ColorRGBA BORDER = {.r = 0.43f, .g = 0.43f, .b = 0.50f, .a = 0.50f};
-    constexpr ColorRGBA FRAME_BG = {.r = 0.16f, .g = 0.16f, .b = 0.18f, .a = 1.00f};
-    constexpr ColorRGBA FRAME_BG_HOVERED = {.r = 0.24f, .g = 0.24f, .b = 0.28f, .a = 1.00f};
-    constexpr ColorRGBA FRAME_BG_ACTIVE = {.r = 0.35f, .g = 0.35f, .b = 0.40f, .a = 1.00f};
-    constexpr ColorRGBA TITLE_BG = {.r = 0.08f, .g = 0.08f, .b = 0.08f, .a = 1.00f};
-    constexpr ColorRGBA TITLE_BG_ACTIVE = {.r = 0.08f, .g = 0.08f, .b = 0.08f, .a = 1.00f};
-    constexpr ColorRGBA BUTTON = {.r = 0.24f, .g = 0.24f, .b = 0.28f, .a = 1.00f};
-    constexpr ColorRGBA BUTTON_HOVERED = {.r = 0.35f, .g = 0.35f, .b = 0.40f, .a = 1.00f};
-    constexpr ColorRGBA BUTTON_ACTIVE = {.r = 0.45f, .g = 0.45f, .b = 0.50f, .a = 1.00f};
-    constexpr ColorRGBA HEADER = {.r = 0.24f, .g = 0.24f, .b = 0.28f, .a = 1.00f};
-    constexpr ColorRGBA HEADER_HOVERED = {.r = 0.35f, .g = 0.35f, .b = 0.40f, .a = 1.00f};
-    constexpr ColorRGBA HEADER_ACTIVE = {.r = 0.45f, .g = 0.45f, .b = 0.50f, .a = 1.00f};
-    constexpr ColorRGBA CHECK_MARK = {.r = 0.60f, .g = 0.40f, .b = 0.90f, .a = 1.00f};
-    constexpr ColorRGBA SLIDER_GRAB = {.r = 0.60f, .g = 0.40f, .b = 0.90f, .a = 1.00f};
-    constexpr ColorRGBA SLIDER_GRAB_ACTIVE = {.r = 0.70f, .g = 0.50f, .b = 1.00f, .a = 1.00f};
-    constexpr ColorRGBA PLOT_LINES = {.r = 0.60f, .g = 0.40f, .b = 0.90f, .a = 1.00f};
-    constexpr ColorRGBA PLOT_LINES_HOVERED = {.r = 0.70f, .g = 0.50f, .b = 1.00f, .a = 1.00f};
-    constexpr ColorRGBA SUCCESS_COL = {.r = 0.40f, .g = 1.00f, .b = 0.40f, .a = 1.00f};
-    constexpr ColorRGBA ERROR_COL = {.r = 1.00f, .g = 0.40f, .b = 0.40f, .a = 1.00f};
-    constexpr ColorRGBA WARNING_COL = {.r = 0.80f, .g = 0.80f, .b = 0.20f, .a = 1.00f};
+constexpr ColorRGBA TEXT = {.r = 1.00f, .g = 1.00f, .b = 1.00f, .a = 1.00f};
+constexpr ColorRGBA WINDOW_BG = {.r = 0.08f, .g = 0.08f, .b = 0.08f, .a = 0.94f};
+constexpr ColorRGBA POPUP_BG = {.r = 0.12f, .g = 0.12f, .b = 0.12f, .a = 0.94f};
+constexpr ColorRGBA BORDER = {.r = 0.43f, .g = 0.43f, .b = 0.50f, .a = 0.50f};
+constexpr ColorRGBA FRAME_BG = {.r = 0.16f, .g = 0.16f, .b = 0.18f, .a = 1.00f};
+constexpr ColorRGBA FRAME_BG_HOVERED = {.r = 0.24f, .g = 0.24f, .b = 0.28f, .a = 1.00f};
+constexpr ColorRGBA FRAME_BG_ACTIVE = {.r = 0.35f, .g = 0.35f, .b = 0.40f, .a = 1.00f};
+constexpr ColorRGBA TITLE_BG = {.r = 0.08f, .g = 0.08f, .b = 0.08f, .a = 1.00f};
+constexpr ColorRGBA TITLE_BG_ACTIVE = {.r = 0.08f, .g = 0.08f, .b = 0.08f, .a = 1.00f};
+constexpr ColorRGBA BUTTON = {.r = 0.24f, .g = 0.24f, .b = 0.28f, .a = 1.00f};
+constexpr ColorRGBA BUTTON_HOVERED = {.r = 0.35f, .g = 0.35f, .b = 0.40f, .a = 1.00f};
+constexpr ColorRGBA BUTTON_ACTIVE = {.r = 0.45f, .g = 0.45f, .b = 0.50f, .a = 1.00f};
+constexpr ColorRGBA HEADER = {.r = 0.24f, .g = 0.24f, .b = 0.28f, .a = 1.00f};
+constexpr ColorRGBA HEADER_HOVERED = {.r = 0.35f, .g = 0.35f, .b = 0.40f, .a = 1.00f};
+constexpr ColorRGBA HEADER_ACTIVE = {.r = 0.45f, .g = 0.45f, .b = 0.50f, .a = 1.00f};
+constexpr ColorRGBA CHECK_MARK = {.r = 0.60f, .g = 0.40f, .b = 0.90f, .a = 1.00f};
+constexpr ColorRGBA SLIDER_GRAB = {.r = 0.60f, .g = 0.40f, .b = 0.90f, .a = 1.00f};
+constexpr ColorRGBA SLIDER_GRAB_ACTIVE = {.r = 0.70f, .g = 0.50f, .b = 1.00f, .a = 1.00f};
+constexpr ColorRGBA PLOT_LINES = {.r = 0.60f, .g = 0.40f, .b = 0.90f, .a = 1.00f};
+constexpr ColorRGBA PLOT_LINES_HOVERED = {.r = 0.70f, .g = 0.50f, .b = 1.00f, .a = 1.00f};
+constexpr ColorRGBA SUCCESS_COL = {.r = 0.40f, .g = 1.00f, .b = 0.40f, .a = 1.00f};
+constexpr ColorRGBA ERROR_COL = {.r = 1.00f, .g = 0.40f, .b = 0.40f, .a = 1.00f};
+constexpr ColorRGBA WARNING_COL = {.r = 0.80f, .g = 0.80f, .b = 0.20f, .a = 1.00f};
 
-    constexpr float WINDOW_ROUNDING = 8.0f;
-    constexpr float CHILD_ROUNDING = 6.0f;
-    constexpr float FRAME_ROUNDING = 6.0f;
-    constexpr float POPUP_ROUNDING = 6.0f;
-    constexpr float GRAB_ROUNDING = 6.0f;
-    constexpr float FRAME_PADDING_X = 10.0f;
-    constexpr float FRAME_PADDING_Y = 6.0f;
-    constexpr float WINDOW_PADDING_X = 12.0f;
-    constexpr float WINDOW_PADDING_Y = 12.0f;
-    constexpr float ITEM_SPACING_X = 8.0f;
-    constexpr float ITEM_SPACING_Y = 8.0f;
-}
+constexpr float WINDOW_ROUNDING = 8.0f;
+constexpr float CHILD_ROUNDING = 6.0f;
+constexpr float FRAME_ROUNDING = 6.0f;
+constexpr float POPUP_ROUNDING = 6.0f;
+constexpr float GRAB_ROUNDING = 6.0f;
+constexpr float FRAME_PADDING_X = 10.0f;
+constexpr float FRAME_PADDING_Y = 6.0f;
+constexpr float WINDOW_PADDING_X = 12.0f;
+constexpr float WINDOW_PADDING_Y = 12.0f;
+constexpr float ITEM_SPACING_X = 8.0f;
+constexpr float ITEM_SPACING_Y = 8.0f;
+} // namespace theme
 
 // Logic Defaults
 constexpr int DEFAULT_STRIDE = 4;
@@ -145,5 +145,5 @@ constexpr float UI_WINDOW_PADDING = 10.0f;
 } // namespace kmeans::constants
 
 namespace kmeans {
-    using FeatureVector = cv::Vec<float, constants::FEATURE_DIMS>;
+using FeatureVector = cv::Vec<float, constants::FEATURE_DIMS>;
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "common/enums.hpp"
 #include "common/constants.hpp"
+#include "common/enums.hpp"
 
 namespace kmeans::common {
 

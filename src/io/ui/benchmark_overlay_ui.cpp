@@ -72,12 +72,17 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             s.c2 = ImVec4(1, 1, 1, 1);
             if (std::abs(v1 - v2) > constants::MATH_EPSILON) {
                 bool v1Better = lowerIsBetter ? (v1 < v2) : (v1 > v2);
-                s.c1 = v1Better ? ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g, constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a) 
-                                : ImVec4(constants::theme::ERROR_COL.r, constants::theme::ERROR_COL.g, constants::theme::ERROR_COL.b, constants::theme::ERROR_COL.a);
-                s.c2 = !v1Better ? ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g, constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a) 
-                                 : ImVec4(constants::theme::ERROR_COL.r, constants::theme::ERROR_COL.g, constants::theme::ERROR_COL.b, constants::theme::ERROR_COL.a);
+                s.c1 = v1Better ? ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
+                                         constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a)
+                                : ImVec4(constants::theme::ERROR_COL.r, constants::theme::ERROR_COL.g,
+                                         constants::theme::ERROR_COL.b, constants::theme::ERROR_COL.a);
+                s.c2 = !v1Better ? ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
+                                          constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a)
+                                 : ImVec4(constants::theme::ERROR_COL.r, constants::theme::ERROR_COL.g,
+                                          constants::theme::ERROR_COL.b, constants::theme::ERROR_COL.a);
                 float worse = v1Better ? v2 : v1;
-                float pct = std::abs(worse) > constants::MATH_EPSILON ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
+                float pct =
+                    std::abs(worse) > constants::MATH_EPSILON ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
                 char pb[32];
                 snprintf(pb, sizeof(pb), " (%.1f%% better)", pct);
                 if (v1Better) {
@@ -160,7 +165,9 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
             ImGui::TableSetColumnIndex(1);
             ImGui::Separator();
-            ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g, constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a), "Performance Metrics:");
+            ImGui::TextColored(ImVec4(constants::theme::SUCCESS_COL.r, constants::theme::SUCCESS_COL.g,
+                                      constants::theme::SUCCESS_COL.b, constants::theme::SUCCESS_COL.a),
+                               "Performance Metrics:");
             ImGui::TextColored(s_wcss.c1, "WCSS: %s", s_wcss.t1.c_str());
             ImGui::TextColored(s_db.c1, "Davies-Bouldin: %s", s_db.t1.c_str());
             ImGui::TextColored(s_sil.c1, "Approx Silhouette: %s", s_sil.t1.c_str());
@@ -213,7 +220,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
 
         float kTextW = ImGui::CalcTextSize("K: ").x;
         float strideTextW = ImGui::CalcTextSize("Stride: ").x;
-        float row2Width = kTextW + kSliderWidth + constants::UI_BENCH_SLIDER_SPACING + strideTextW + strideSliderWidth + constants::UI_BENCH_SLIDER_SPACING + radioW;
+        float row2Width = kTextW + kSliderWidth + constants::UI_BENCH_SLIDER_SPACING + strideTextW + strideSliderWidth +
+                          constants::UI_BENCH_SLIDER_SPACING + radioW;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - row2Width) * 0.5f);
         ImGui::AlignTextToFramePadding();

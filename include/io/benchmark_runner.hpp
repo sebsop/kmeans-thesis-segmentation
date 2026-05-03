@@ -3,6 +3,7 @@
 #include <chrono>
 #include <future>
 #include <optional>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -11,10 +12,8 @@
 #include "clustering/metrics.hpp"
 #include "common/config.hpp"
 #include "common/constants.hpp"
-
-#include <queue>
-#include "io/benchmark_observer.hpp"
 #include "io/benchmark_command.hpp"
+#include "io/benchmark_observer.hpp"
 #include "io/benchmark_result.hpp"
 
 namespace kmeans::io {

@@ -23,8 +23,7 @@ struct BenchmarkResults {
  * @param iterations The number of iterations the algorithm took
  * @param executionTimeMs The total time the algorithm took
  */
-[[nodiscard]] BenchmarkResults computeAllMetrics(const cv::Mat& samples,
-                                                 const std::vector<FeatureVector>& centers,
+[[nodiscard]] BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<FeatureVector>& centers,
                                                  int iterations, float executionTimeMs);
 
 } // namespace kmeans::clustering::metrics

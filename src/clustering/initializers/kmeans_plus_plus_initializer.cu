@@ -1,7 +1,7 @@
 #include <cuda_runtime.h>
 #include <limits>
-#include <random>
 #include <numeric>
+#include <random>
 
 #include <thrust/binary_search.h>
 #include <thrust/device_vector.h>
@@ -18,15 +18,15 @@ __global__ void compute_min_distances_kernel(const float* __restrict__ samples, 
                                              const float* __restrict__ latestCenter, float* __restrict__ distances) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numPoints) {
-        float distSq = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(&samples[idx * constants::FEATURE_DIMS], latestCenter);
+        float distSq = common::VectorMath<constants::FEATURE_DIMS>::sqDistance(&samples[idx * constants::FEATURE_DIMS],
+                                                                               latestCenter);
         if (distSq < distances[idx]) {
             distances[idx] = distSq;
         }
     }
 }
 
-std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& samples,
-                                                                                           int k) const {
+std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& samples, int k) const {
     CV_Assert(samples.isContinuous() && "Samples matrix must be continuous for CUDA transfer");
 
     std::vector<FeatureVector> centers;
@@ -43,9 +43,7 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
         FeatureVector first_c;
         std::vector<int> d_indices(constants::FEATURE_DIMS);
         std::iota(d_indices.begin(), d_indices.end(), 0);
-        std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
-            first_c[d] = firstPtr[d];
-        });
+        std::for_each(d_indices.begin(), d_indices.end(), [&](int d) { first_c[d] = firstPtr[d]; });
         centers.push_back(first_c);
     }
 
@@ -113,9 +111,7 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
             FeatureVector c;
             std::vector<int> d_indices(constants::FEATURE_DIMS);
             std::iota(d_indices.begin(), d_indices.end(), 0);
-            std::for_each(d_indices.begin(), d_indices.end(), [&](int d) {
-                c[d] = selPtr[d];
-            });
+            std::for_each(d_indices.begin(), d_indices.end(), [&](int d) { c[d] = selPtr[d]; });
             centers.push_back(c);
         }
     });

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <span>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include <opencv2/core.hpp>

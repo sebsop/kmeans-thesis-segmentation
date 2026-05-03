@@ -10,8 +10,7 @@
 
 namespace kmeans::clustering {
 
-template <typename Derived>
-class BaseKMeansEngine : public KMeansEngine {
+template <typename Derived> class BaseKMeansEngine : public KMeansEngine {
   protected:
     float* m_d_samples = nullptr;
     float* m_d_centers = nullptr;
@@ -26,21 +25,18 @@ class BaseKMeansEngine : public KMeansEngine {
     BaseKMeansEngine() = default;
     ~BaseKMeansEngine() override;
 
-    [[nodiscard]] std::vector<FeatureVector>
-    run(const cv::Mat& samples, std::span<const FeatureVector> initialCenters, int k,
-        int maxIterations) override;
+    [[nodiscard]] std::vector<FeatureVector> run(const cv::Mat& samples, std::span<const FeatureVector> initialCenters,
+                                                 int k, int maxIterations) override;
 
-    [[nodiscard]] std::vector<FeatureVector>
-    runOnDevice(float* d_samples_ext, int numPoints,
-                std::span<const FeatureVector> initialCenters, int k,
-                int maxIterations) override;
+    [[nodiscard]] std::vector<FeatureVector> runOnDevice(float* d_samples_ext, int numPoints,
+                                                         std::span<const FeatureVector> initialCenters, int k,
+                                                         int maxIterations) override;
 
   protected:
     void ensureBuffers(int numPoints, int k);
 
     [[nodiscard]] std::vector<FeatureVector>
-    runInternal(float* d_samp, int numPoints,
-                std::span<const FeatureVector> initialCenters, int k, int maxIterations);
+    runInternal(float* d_samp, int numPoints, std::span<const FeatureVector> initialCenters, int k, int maxIterations);
 
     void baseUpdateKernel(float* d_samp, int numPoints, int k, int* d_lab, float* d_nSums, int* d_cnts,
                           int threadsPerBlock, int blocksPerGrid, size_t sharedSize) const;

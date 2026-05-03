@@ -14,8 +14,7 @@ class ScopedTimer {
     std::chrono::high_resolution_clock::time_point m_start;
 
   public:
-    explicit ScopedTimer(std::string_view name)
-        : m_name(name), m_start(std::chrono::high_resolution_clock::now()) {}
+    explicit ScopedTimer(std::string_view name) : m_name(name), m_start(std::chrono::high_resolution_clock::now()) {}
 
     ~ScopedTimer() {
         auto end = std::chrono::high_resolution_clock::now();

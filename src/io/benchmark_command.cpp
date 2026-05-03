@@ -1,15 +1,16 @@
 #include "io/benchmark_command.hpp"
-#include "io/benchmark_runner.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <future>
 #include <numeric>
-#include <algorithm>
+
 #include <opencv2/imgproc.hpp>
 
 #include "clustering/clustering_manager.hpp"
 #include "clustering/engines/kmeans_engine.hpp"
 #include "common/constants.hpp"
+#include "io/benchmark_runner.hpp"
 
 namespace kmeans::io {
 

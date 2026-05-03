@@ -4,8 +4,7 @@
 
 namespace kmeans::clustering {
 
-std::vector<FeatureVector> RandomInitializer::initialize(const cv::Mat& samples,
-                                                                                   int k) const {
+std::vector<FeatureVector> RandomInitializer::initialize(const cv::Mat& samples, int k) const {
     std::vector<FeatureVector> centers(k);
     int numPoints = samples.rows;
 

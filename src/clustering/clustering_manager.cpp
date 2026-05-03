@@ -36,14 +36,20 @@ ClusteringManager::ClusteringManager() : m_impl(std::make_unique<Impl>()) {
 
 ClusteringManager::~ClusteringManager() = default;
 
-common::SegmentationConfig& ClusteringManager::getConfig() noexcept { return m_impl->m_config; }
-const common::SegmentationConfig& ClusteringManager::getConfig() const noexcept { return m_impl->m_config; }
+common::SegmentationConfig& ClusteringManager::getConfig() noexcept {
+    return m_impl->m_config;
+}
+const common::SegmentationConfig& ClusteringManager::getConfig() const noexcept {
+    return m_impl->m_config;
+}
 
 const std::vector<FeatureVector>& ClusteringManager::getCenters() const noexcept {
     return m_impl->m_centers;
 }
 
-KMeansEngine* ClusteringManager::getEngine() const noexcept { return m_impl->m_clusteringEngine.get(); }
+KMeansEngine* ClusteringManager::getEngine() const noexcept {
+    return m_impl->m_clusteringEngine.get();
+}
 
 void ClusteringManager::resetCenters() {
     m_impl->m_hasPrevious = false;
@@ -68,8 +74,10 @@ void ClusteringManager::updateStategyImplementations() {
 cv::Mat ClusteringManager::segmentFrame(const cv::Mat& frame) {
     std::vector<FeatureVector> centers = computeCenters(frame);
 
-    if (!m_impl->m_cudaContext || m_impl->m_cudaContext->getWidth() != frame.cols || m_impl->m_cudaContext->getK() != m_impl->m_config.k) {
-        m_impl->m_cudaContext = std::make_unique<backend::CudaAssignmentContext>(frame.cols, frame.rows, m_impl->m_config.k);
+    if (!m_impl->m_cudaContext || m_impl->m_cudaContext->getWidth() != frame.cols ||
+        m_impl->m_cudaContext->getK() != m_impl->m_config.k) {
+        m_impl->m_cudaContext =
+            std::make_unique<backend::CudaAssignmentContext>(frame.cols, frame.rows, m_impl->m_config.k);
     }
 
     cv::Mat result(frame.rows, frame.cols, CV_8UC3);
@@ -107,8 +115,8 @@ std::vector<FeatureVector> ClusteringManager::computeCenters(const cv::Mat& fram
             initialCenters = m_impl->m_initializer->initialize(cpuSamples, m_impl->m_config.k);
         }
 
-        finalCenters =
-            m_impl->m_clusteringEngine->runOnDevice(d_samples, numPoints, initialCenters, m_impl->m_config.k, m_impl->m_config.maxIterations);
+        finalCenters = m_impl->m_clusteringEngine->runOnDevice(d_samples, numPoints, initialCenters, m_impl->m_config.k,
+                                                               m_impl->m_config.maxIterations);
     } else {
         cv::Mat samples = m_impl->m_dataPreprocessor->prepare(frame);
 
@@ -118,7 +126,8 @@ std::vector<FeatureVector> ClusteringManager::computeCenters(const cv::Mat& fram
             initialCenters = m_impl->m_initializer->initialize(samples, m_impl->m_config.k);
         }
 
-        finalCenters = m_impl->m_clusteringEngine->run(samples, initialCenters, m_impl->m_config.k, m_impl->m_config.maxIterations);
+        finalCenters = m_impl->m_clusteringEngine->run(samples, initialCenters, m_impl->m_config.k,
+                                                       m_impl->m_config.maxIterations);
     }
 
     m_impl->m_previousCenters = finalCenters;

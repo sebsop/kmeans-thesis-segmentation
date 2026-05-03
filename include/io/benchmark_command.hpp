@@ -1,6 +1,7 @@
 #pragma once
 
 #include <future>
+
 #include <opencv2/core.hpp>
 
 #include "common/config.hpp"
@@ -27,13 +28,9 @@ class RunBenchmarkCommand : public IBenchmarkCommand {
 
     void execute() override;
 
-    std::future<BenchmarkComparisonResult>& getFuture() override {
-        return m_future;
-    }
+    std::future<BenchmarkComparisonResult>& getFuture() override { return m_future; }
 
-    const common::SegmentationConfig& getConfig() const override {
-        return m_config;
-    }
+    const common::SegmentationConfig& getConfig() const override { return m_config; }
 };
 
 } // namespace kmeans::io

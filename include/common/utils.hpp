@@ -1,9 +1,10 @@
 #pragma once
 
-#include <opencv2/core.hpp>
 #include <concepts>
 #include <source_location>
 #include <string_view>
+
+#include <opencv2/core.hpp>
 
 #include "common/constants.hpp"
 #include "common/enums.hpp"
@@ -11,7 +12,7 @@
 namespace kmeans::common {
 
 template <typename T1, typename T2>
-requires std::integral<T1> && std::integral<T2>
+    requires std::integral<T1> && std::integral<T2>
 [[nodiscard]] constexpr int calculateGridDim(T1 totalItems, T2 threadsPerBlock) noexcept {
     return (static_cast<int>(totalItems) + static_cast<int>(threadsPerBlock) - 1) / static_cast<int>(threadsPerBlock);
 }

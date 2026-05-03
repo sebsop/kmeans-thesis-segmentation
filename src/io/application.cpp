@@ -174,7 +174,10 @@ void Application::run() {
                     cv::Scalar color(c[0] / constants::COLOR_SCALE, c[1] / constants::COLOR_SCALE,
                                      c[2] / constants::COLOR_SCALE);
                     cv::circle(segmentedFull, pt, constants::VIZ_CENTROID_RADIUS, color, -1);
-                    cv::circle(segmentedFull, pt, constants::VIZ_OUTLINE_WIDTH, cv::Scalar(constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR), 2);
+                    cv::circle(segmentedFull, pt, constants::VIZ_OUTLINE_WIDTH,
+                               cv::Scalar(constants::VIZ_OUTLINE_COLOR, constants::VIZ_OUTLINE_COLOR,
+                                          constants::VIZ_OUTLINE_COLOR),
+                               2);
                 });
             }
 
