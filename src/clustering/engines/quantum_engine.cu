@@ -60,7 +60,7 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
 void QuantumEngine::launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,
                                            int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
     quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samples, numPoints, d_centers, k, d_labels,
-                                                                        d_changed, m_scaleFactor);
+                                                                        d_changed, constants::quantum::SCALE_FACTOR);
 }
 
 } // namespace kmeans::clustering

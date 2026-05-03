@@ -10,9 +10,6 @@
 namespace kmeans::clustering {
 
 class QuantumEngine final : public BaseKMeansEngine<QuantumEngine> {
-  private:
-    float m_scaleFactor = constants::quantum::SCALE_FACTOR;
-
   public:
     QuantumEngine() = default;
     ~QuantumEngine() override = default;
