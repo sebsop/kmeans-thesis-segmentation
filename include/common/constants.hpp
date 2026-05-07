@@ -1,59 +1,83 @@
+/**
+ * @file constants.hpp
+ * @brief Central repository for all application-wide constants and type definitions.
+ */
+
 #pragma once
-#include <opencv2/core.hpp>
+
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
 namespace kmeans::constants {
 
-// Color structures for logic encapsulation
+/**
+ * @struct ColorRGBA
+ * @brief Simple RGBA color structure for UI and internal logic.
+ */
 struct ColorRGBA {
     float r, g, b, a;
 };
 
+/** @namespace math
+ *  @brief Mathematical constants used in distance and phase calculations.
+ */
 namespace math {
 constexpr float PI_F = 3.1415926535f;
 constexpr float EPSILON = 1e-6f;
 constexpr float INF = 1e30f;
 } // namespace math
 
+/** @namespace clustering
+ *  @brief Hyper-parameters for the K-Means algorithm.
+ */
 namespace clustering {
-constexpr int FEATURE_DIMS = 5;
-constexpr int K_MIN = 2;
-constexpr int K_MAX = 20;
+constexpr int FEATURE_DIMS = 5; ///< Dimensions per point: R, G, B, X, Y
+constexpr int K_MIN = 2;        ///< Minimum number of clusters allowed
+constexpr int K_MAX = 20;       ///< Maximum number of clusters allowed
 constexpr int LEARN_INTERVAL_MIN = 1;
 constexpr int LEARN_INTERVAL_MAX = 60;
-constexpr int DEFAULT_STRIDE = 4;
-constexpr int DEFAULT_LEARN_INTERVAL = 15;
-constexpr int SAMPLE_COUNT = 5000;
-constexpr int BENCHMARK_MAX_ITERATIONS = 1000;
-constexpr float CONVERGENCE_EPSILON = 1e-4f;
-constexpr int STABLE_RANDOM_SEED = 42;
+constexpr int DEFAULT_STRIDE = 4;              ///< Default sampling rate for preprocessing
+constexpr int DEFAULT_LEARN_INTERVAL = 15;     ///< Default frames between re-clustering
+constexpr int SAMPLE_COUNT = 5000;             ///< Target number of samples for re-clustering
+constexpr int BENCHMARK_MAX_ITERATIONS = 1000; ///< Safety limit for convergence
+constexpr int STABLE_RANDOM_SEED = 42;         ///< Fixed seed for reproducible results
 } // namespace clustering
 
+/** @namespace video
+ *  @brief Constraints and scaling for the video processing pipeline.
+ */
 namespace video {
-constexpr int WIDTH = 640;
-constexpr int HEIGHT = 480;
-constexpr int PROCESS_WIDTH = 320;
-constexpr int PROCESS_HEIGHT = 240;
-constexpr float COLOR_SCALE = 1.0f / 255.0f;
-constexpr float SPATIAL_SCALE = 1.0f / (320.0f * 240.0f);
+constexpr int WIDTH = 640;                                ///< Native capture width
+constexpr int HEIGHT = 480;                               ///< Native capture height
+constexpr int PROCESS_WIDTH = 320;                        ///< Internal processing width (downscaled)
+constexpr int PROCESS_HEIGHT = 240;                       ///< Internal processing height (downscaled)
+constexpr float COLOR_SCALE = 1.0f / 255.0f;              ///< Normalization for RGB values
+constexpr float SPATIAL_SCALE = 1.0f / (320.0f * 240.0f); ///< Normalization for XY values
 
-constexpr int CAMERA_AUTO_EXPOSURE = -6;
+constexpr int CAMERA_AUTO_EXPOSURE = -6; ///< Specific exposure setting for standard webcams
 constinit inline const int HW_ACCEL = cv::VIDEO_ACCELERATION_ANY;
 } // namespace video
 
+/** @namespace quantum
+ *  @brief Parameters for the simulated quantum distance estimation.
+ */
 namespace quantum {
 constexpr float PHASE_OFFSET = 0.5f;
-constexpr float RANGE_EPSILON = 1e-8f;
-constexpr float SCALE_FACTOR = math::PI_F / 2.0f;
+constexpr float SCALE_FACTOR = math::PI_F / 2.0f; ///< Maps normalized distance to phase [0, PI/2]
 } // namespace quantum
 
+/** @namespace cuda
+ *  @brief Hardware-specific execution parameters for CUDA kernels.
+ */
 namespace cuda {
-constexpr int THREADS_PER_BLOCK = 256;
-constexpr int BLOCK_2D_X = 16;
-constexpr int BLOCK_2D_Y = 16;
+constexpr int THREADS_PER_BLOCK = 256; ///< Standard 1D block size
+constexpr int BLOCK_2D_X = 16;         ///< 2D block width for image kernels
+constexpr int BLOCK_2D_Y = 16;         ///< 2D block height for image kernels
 } // namespace cuda
 
+/** @namespace ui
+ *  @brief UI layout, theme, and timing constants for the ImGui interface.
+ */
 namespace ui {
 constexpr int WINDOW_WIDTH = 1750;
 constexpr int WINDOW_HEIGHT = 700;
@@ -66,7 +90,6 @@ constexpr int BENCH_COL_COUNT = 3;
 constexpr float BENCH_BTN_PADDING = 20.0f;
 constexpr float BENCH_SLIDER_SPACING = 30.0f;
 
-constexpr float LANDING_OFFSET = 15.0f;
 constexpr float K_SLIDER_WIDTH = 120.0f;
 constexpr float STRIDE_SLIDER_WIDTH = 100.0f;
 constexpr float RADIO_WIDTH = 260.0f;
@@ -76,13 +99,15 @@ constexpr float BTN_WIDTH_MD = 150.0f;
 constexpr float BTN_HEIGHT = 40.0f;
 constexpr float BORDER_THICKNESS = 5.0f;
 constexpr int LAYOUT_GAPS = 12;
-constexpr float LAYOUT_PADDING = 10.0f;
 constexpr int REFRESH_FAST = 500;
 constexpr int REFRESH_SLOW = 1000;
 constexpr float BENCH_IMG_SCALE = 0.825f;
 constexpr double ANIM_DOT_SPEED = 4.0;
 constexpr int FPS_HISTORY_WINDOW = 90;
 
+/** @namespace theme
+ *  @brief Color palette and rounding settings for the premium UI design.
+ */
 namespace theme {
 constexpr ColorRGBA BG_LIGHT = {.r = 0.98f, .g = 0.98f, .b = 0.98f, .a = 1.0f};
 constexpr ColorRGBA ACCENT = {.r = 0.35f, .g = 0.20f, .b = 0.70f, .a = 1.0f};
@@ -131,6 +156,9 @@ constexpr float ITEM_SPACING_Y = 8.0f;
 } // namespace theme
 } // namespace ui
 
+/** @namespace viz
+ *  @brief Constants for the visual overlay and segmentation display.
+ */
 namespace viz {
 constexpr int CENTROID_RADIUS = 6;
 constexpr int OUTLINE_WIDTH = 8;
@@ -138,16 +166,19 @@ constinit inline const int RESIZE_ALGO = cv::INTER_NEAREST;
 constinit inline const int OUTLINE_COLOR = 255;
 } // namespace viz
 
+/** @namespace metrics
+ *  @brief Constraints for the metrics calculation engine.
+ */
 namespace metrics {
-constexpr int APPROX_SUBSET_SIZE = 2000;
-}
-
-namespace threading {
-constexpr int WORKER_FPS_MATCH_SLEEP = 33;
+constexpr int APPROX_SUBSET_SIZE = 2000; ///< Number of points used for Silhouette approximation
 }
 
 } // namespace kmeans::constants
 
 namespace kmeans {
+/**
+ * @brief Represents a single data point or centroid in the 5D feature space.
+ * Layout: [Red, Green, Blue, X, Y] (all normalized to float).
+ */
 using FeatureVector = cv::Vec<float, constants::clustering::FEATURE_DIMS>;
-}
+} // namespace kmeans

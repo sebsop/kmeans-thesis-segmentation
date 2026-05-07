@@ -1,3 +1,8 @@
+/**
+ * @file metrics_tests.cpp
+ * @brief Unit tests for clustering quality metrics (Silhouette, Davies-Bouldin, WCSS).
+ */
+
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -11,9 +16,17 @@ namespace ThesisTests::Clustering {
 using namespace kmeans;
 using namespace kmeans::clustering;
 
+/**
+ * @brief Test fixture for verifying mathematical clustering metrics.
+ */
 class Clustering_Metrics : public ::testing::Test {};
 
-// 1. Perfect Separation Check (Ideal Silhouette)
+/**
+ * @brief Verifies that the Silhouette Score approaches 1.0 for perfectly separated data.
+ *
+ * Also checks that WCSS (Within-Cluster Sum of Squares) is near zero when
+ * samples align perfectly with their centroids.
+ */
 TEST_F(Clustering_Metrics, SilhouetteOnPerfectSeparation) {
     // 2 clusters at (0,0,0,0,0) and (1,1,1,1,1)
     cv::Mat samples(20, constants::clustering::FEATURE_DIMS, CV_32F);
@@ -34,15 +47,15 @@ TEST_F(Clustering_Metrics, SilhouetteOnPerfectSeparation) {
 
     auto results = metrics::computeAllMetrics(samples, centers, 1, 0.1f);
 
-    // Silhouette should be very high (close to 1.0)
     EXPECT_GT(results.silhouetteScore, 0.9f);
-    // WCSS should be 0 since points are exactly on centers
     EXPECT_NEAR(results.wcss, 0.0f, 1e-5);
 }
 
-// 2. Poor Separation Check (Low Silhouette)
+/**
+ * @brief Verifies that the Silhouette Score penalizes ambiguous or overlapping clusters.
+ */
 TEST_F(Clustering_Metrics, SilhouetteOnOverlappingData) {
-    // All points at the same location, but assigned to different centers
+    // Overlapping points assigned to different centers
     cv::Mat samples(20, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
 
     std::vector<FeatureVector> centers(2);
@@ -51,11 +64,16 @@ TEST_F(Clustering_Metrics, SilhouetteOnOverlappingData) {
 
     auto results = metrics::computeAllMetrics(samples, centers, 1, 0.1f);
 
-    // Silhouette should be low or zero because points are not closer to their own center than others
+    // Score should be significantly lower than the ideal case
     EXPECT_LT(results.silhouetteScore, 0.3f);
 }
 
-// 3. Davies-Bouldin Scaling
+/**
+ * @brief Validates the Davies-Bouldin Index behavior for different cluster densities.
+ *
+ * Verifies that the DB index is lower (indicating better clustering) when
+ * clusters are compact and well-separated.
+ */
 TEST_F(Clustering_Metrics, DaviesBouldinIndexScaling) {
     // Case A: Compact clusters far apart
     cv::Mat samplesA(20, constants::clustering::FEATURE_DIMS, CV_32F);
@@ -91,11 +109,12 @@ TEST_F(Clustering_Metrics, DaviesBouldinIndexScaling) {
 
     auto metricsB = metrics::computeAllMetrics(samplesB, centers, 1, 0.1f);
 
-    // Davies-Bouldin is lower (better) when clusters are better separated
     EXPECT_LT(metricsA.daviesBouldin, metricsB.daviesBouldin);
 }
 
-// 4. Edge Case: Zero Data
+/**
+ * @brief Ensures the metrics module handles empty datasets without crashing.
+ */
 TEST_F(Clustering_Metrics, HandlesZeroData) {
     cv::Mat empty;
     std::vector<FeatureVector> centers;

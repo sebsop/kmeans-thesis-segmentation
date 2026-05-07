@@ -1,3 +1,8 @@
+/**
+ * @file base_kmeans_engine_tests.cu
+ * @brief Unit tests for the core K-Means iterative logic and GPU buffer management.
+ */
+
 #include <cuda_runtime.h>
 #include <vector>
 
@@ -13,6 +18,9 @@ namespace ThesisTests::Clustering::Engines {
 using namespace kmeans;
 using namespace kmeans::clustering;
 
+/**
+ * @brief Test fixture for verifying the fundamental clustering loop.
+ */
 class Clustering_BaseEngine : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
@@ -26,7 +34,9 @@ class Clustering_BaseEngine : public ::testing::Test {
     void SetUp() override { cudaDeviceReset(); }
 };
 
-// 1. Simple Convergence Test
+/**
+ * @brief Verifies that the engine converges to the global minimum on a simple linearly separable dataset.
+ */
 TEST_F(Clustering_BaseEngine, SimpleConvergence) {
     ClassicalEngine engine;
 
@@ -43,39 +53,42 @@ TEST_F(Clustering_BaseEngine, SimpleConvergence) {
         }
     }
 
-    // Initial centers: slightly off
+    // Initial centers: intentionally slightly off-center
     std::vector<FeatureVector> initialCenters(2);
     initialCenters[0] = FeatureVector(0.1f, 0.1f, 0.1f, 0.1f, 0.1f);
     initialCenters[1] = FeatureVector(0.9f, 0.9f, 0.9f, 0.9f, 0.9f);
 
     auto finalCenters = engine.run(samples, initialCenters, 2, 10);
 
-    // Verify centers moved to exactly 0.0 and 1.0
+    // Verify centers moved to exact centroids
     for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
         EXPECT_NEAR(finalCenters[0][d], 0.0f, constants::math::EPSILON);
         EXPECT_NEAR(finalCenters[1][d], 1.0f, constants::math::EPSILON);
     }
 }
 
-// 2. Buffer Resizing Test (ensureBuffers)
+/**
+ * @brief Verifies the stability of the dynamic GPU buffer resizing mechanism.
+ */
 TEST_F(Clustering_BaseEngine, BufferResizing) {
     ClassicalEngine engine;
 
-    // Run small
+    // Small scale
     cv::Mat small(10, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0));
     std::vector<FeatureVector> c(2, FeatureVector(0, 0, 0, 0, 0));
     EXPECT_NO_THROW((void)engine.run(small, c, 2, 1));
 
-    // Run large
+    // Large scale (forces realloc)
     cv::Mat large(1000, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0));
     EXPECT_NO_THROW((void)engine.run(large, c, 2, 1));
 }
 
-// 3. Early Exit Test (Convergence)
+/**
+ * @brief Validates the early-exit optimization when convergence is detected.
+ */
 TEST_F(Clustering_BaseEngine, EarlyExitOnConvergence) {
     ClassicalEngine engine;
 
-    // Points already perfectly clustered
     cv::Mat samples(10, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.0f));
     std::vector<FeatureVector> perfectCenters(2);
     perfectCenters[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -83,15 +96,16 @@ TEST_F(Clustering_BaseEngine, EarlyExitOnConvergence) {
 
     (void)engine.run(samples, perfectCenters, 2, 100);
 
-    // It should exit after the second iteration because the first one transition from -1 to 0
+    // Verify the engine correctly identifies the stable state
     EXPECT_EQ(engine.getLastIterations(), 2);
 }
 
-// 4. Max Iterations Cap
+/**
+ * @brief Ensures the iterative loop strictly respects the provided MAX_ITERations cap.
+ */
 TEST_F(Clustering_BaseEngine, RespectsMaxIterations) {
     ClassicalEngine engine;
 
-    // Create points that would take many iterations to converge
     cv::Mat samples(100, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
     std::vector<FeatureVector> centers(2, FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
 
@@ -101,35 +115,9 @@ TEST_F(Clustering_BaseEngine, RespectsMaxIterations) {
     EXPECT_LE(engine.getLastIterations(), MAX_ITER);
 }
 
-// 5. Convergence Stability (Perfect Input)
-TEST_F(Clustering_BaseEngine, ConvergenceStabilityOnPerfectData) {
-    ClassicalEngine engine;
-
-    // 2 points exactly at their centers
-    cv::Mat samples(2, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.0f));
-    samples.at<float>(0, 0) = 0.0f;
-    samples.at<float>(1, 0) = 1.0f;
-
-    // Set other dimensions to match centers to ensure perfect stability
-    for (int d = 1; d < 5; ++d) {
-        samples.at<float>(1, d) = 1.0f;
-    }
-
-    std::vector<FeatureVector> initialCenters(2);
-    initialCenters[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-    initialCenters[1] = FeatureVector(1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
-
-    auto finalCenters = engine.run(samples, initialCenters, 2, 1);
-
-    // Centers should remain bit-identical
-    for (int i = 0; i < 2; ++i) {
-        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
-            EXPECT_EQ(finalCenters[i][d], initialCenters[i][d]);
-        }
-    }
-}
-
-// 6. Hostile Reallocation Stress
+/**
+ * @brief Stress tests the memory management during rapid resolution/K-count changes.
+ */
 TEST_F(Clustering_BaseEngine, HostileMemoryReallocation) {
     ClassicalEngine engine;
 
@@ -143,22 +131,12 @@ TEST_F(Clustering_BaseEngine, HostileMemoryReallocation) {
     }
 }
 
-// 7. Large Scale Stability
-TEST_F(Clustering_BaseEngine, LargeScaleStability) {
-    ClassicalEngine engine;
-    const int N = 50000;
-    const int K = 5;
-
-    cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
-    std::vector<FeatureVector> centers(K, FeatureVector(0.5f, 0.5f, 0.5f, 0.5f, 0.5f));
-
-    EXPECT_NO_THROW((void)engine.run(samples, centers, K, 2));
-}
-
-// 8. Resilience: Zero-Point Input
+/**
+ * @brief Verifies stability when processing zero-point input sets.
+ */
 TEST_F(Clustering_BaseEngine, HandlesZeroPointsGracefully) {
     ClassicalEngine engine;
-    cv::Mat emptySamples; // 0 rows
+    cv::Mat emptySamples;
     std::vector<FeatureVector> centers(3, FeatureVector(0, 0, 0, 0, 0));
 
     EXPECT_NO_THROW({

@@ -1,3 +1,8 @@
+/**
+ * @file control_panel_ui.cpp
+ * @brief Implementation of the primary sidebar control interface.
+ */
+
 #include "io/ui/control_panel_ui.hpp"
 
 #include <algorithm>
@@ -9,15 +14,31 @@
 
 namespace kmeans::io::ui {
 
+/**
+ * @brief Renders the side control panel with real-time parameter tuning and metrics.
+ *
+ * This method handles:
+ * 1. Vertical centering of UI elements based on available region.
+ * 2. Real-time configuration updates (k, stride, algorithm type).
+ * 3. Performance tracking (FPS, latency, execution history plots).
+ * 4. Benchmarking state orchestration.
+ *
+ * @param ctx The UI data context containing shared state.
+ * @param panelWidth Fixed width for the sidebar.
+ * @param benchTexturesLoaded [In/Out] Flag to trigger texture refresh when benchmarking completes.
+ */
 void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTexturesLoaded) {
+    // 1. Initial window setup (docked to the left)
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(panelWidth, ImGui::GetIO().DisplaySize.y), ImGuiCond_Always);
     ImGui::Begin("Clustering Controls", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
     ImGui::SetCursorPosX(constants::ui::WINDOW_PADDING);
 
+    // 2. Vertical Centering Logic
+    // We pre-calculate the height of all widgets to ensure the panel looks balanced.
     {
-        ImGuiStyle& style = ImGui::GetStyle();
+        const ImGuiStyle& style = ImGui::GetStyle();
         const float textH = ImGui::GetTextLineHeightWithSpacing();
         const float frameH = ImGui::GetFrameHeightWithSpacing();
         const float sepH = style.SeparatorSize;
@@ -26,21 +47,21 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         float contentH = 0.0f;
         contentH += textH;
         contentH += frameH * 2.0f;
-        contentH += sepH;
+        contentH += sepH; // Hyperparams
         contentH += textH;
         contentH += frameH;
         contentH += frameH;
-        contentH += sepH;
+        contentH += sepH; // Strategy
         contentH += textH;
         contentH += frameH;
         contentH += frameH;
-        contentH += sepH * 2.0f;
+        contentH += sepH * 2.0f; // Overlays
         contentH += textH;
         contentH += textH;
         contentH += plotH;
-        contentH += sepH;
+        contentH += sepH; // Dashboard
         contentH += textH;
-        contentH += frameH;
+        contentH += frameH; // Benchmarking
 
         const int gaps = constants::ui::LAYOUT_GAPS;
         contentH += gaps * style.ItemSpacing.y;
@@ -56,6 +77,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         ImGui::SetCursorPosY(curY + offset);
     }
 
+    // 3. Configuration Management (Hot-Swapping)
     bool configChanged = false;
     common::SegmentationConfig pendingConfig;
     {
@@ -69,6 +91,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     configChanged |=
         ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
                          constants::clustering::LEARN_INTERVAL_MIN, constants::clustering::LEARN_INTERVAL_MAX);
+
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(
             "How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
@@ -108,6 +131,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     ImGui::Separator();
     ImGui::Text("Performance Dashboard");
 
+    // 4. UI Frame Rate Monitoring
     static float displayUIRenderFPS = 0.0f;
     static auto lastUIUpdateTime = std::chrono::high_resolution_clock::now();
     auto uiNow = std::chrono::high_resolution_clock::now();
@@ -120,6 +144,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
                               constants::ui::theme::TEXT_DIM.b, constants::ui::theme::TEXT_DIM.a),
                        "UI Render Speed: %.1f FPS", displayUIRenderFPS);
 
+    // 5. Algorithm Pipeline Metrics
     static uint32_t lastProcessedFrames = 0;
     static std::deque<float> algoFpsHistory;
 
@@ -137,7 +162,6 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
     if (!algoFpsHistory.empty()) {
         auto [min_it, max_it] = std::ranges::minmax_element(algoFpsHistory);
-        [[maybe_unused]] float minFps = *min_it;
         [[maybe_unused]] float maxFps = *max_it;
         float sumFps = std::accumulate(algoFpsHistory.begin(), algoFpsHistory.end(), 0.0f);
         float avgFps = sumFps / static_cast<float>(algoFpsHistory.size());
@@ -161,6 +185,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
                                   constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a),
                            "Avg FPS: %.1f", displayAvg);
 
+        // Render moving average history plot
         int window = constants::ui::FPS_PLOT_WINDOW;
         std::vector<int> plot_indices(algoFpsHistory.size());
         std::iota(plot_indices.begin(), plot_indices.end(), 0);
@@ -180,6 +205,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     ImGui::Separator();
     ImGui::Text("Static Benchmarking");
 
+    // 6. Benchmark Runner State Machine Integration
     auto bState = ctx.benchmarkRunner.getState();
     if (bState == BenchmarkState::IDLE) {
         if (ImGui::Button("Capture & Run Comparison", ImVec2(-1, 30))) {

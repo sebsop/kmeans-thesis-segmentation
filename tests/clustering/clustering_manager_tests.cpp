@@ -1,3 +1,8 @@
+/**
+ * @file clustering_manager_tests.cpp
+ * @brief Integration tests for the ClusteringManager orchestration layer.
+ */
+
 #include <cuda_runtime.h>
 #include <vector>
 
@@ -13,6 +18,11 @@ namespace ThesisTests::Clustering {
 using namespace kmeans;
 using namespace kmeans::clustering;
 
+/**
+ * @brief Test fixture for verifying the high-level Clustering Manager.
+ *
+ * Ensures a valid GPU context for full-pipeline execution.
+ */
 class Clustering_Manager : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
@@ -26,14 +36,19 @@ class Clustering_Manager : public ::testing::Test {
     void SetUp() override { cudaDeviceReset(); }
 };
 
-// 1. Integration: Full Segmentation Pipeline
+/**
+ * @brief Verifies the end-to-end segmentation pipeline.
+ *
+ * Checks that an input OpenCV frame is correctly processed into a segmented
+ * output frame with the requested number of clusters.
+ */
 TEST_F(Clustering_Manager, FullPipelineExecution) {
     ClusteringManager manager;
     auto& config = manager.getConfig();
     config.k = 2;
     config.algorithm = kmeans::common::AlgorithmType::KMEANS_REGULAR;
 
-    // 64x64 frame with two distinct colors
+    // 64x64 frame with two distinct color regions
     cv::Mat frame(64, 64, CV_8UC3);
     frame(cv::Rect(0, 0, 32, 64)).setTo(cv::Scalar(255, 0, 0));  // Blue
     frame(cv::Rect(32, 0, 32, 64)).setTo(cv::Scalar(0, 0, 255)); // Red
@@ -48,7 +63,12 @@ TEST_F(Clustering_Manager, FullPipelineExecution) {
     EXPECT_EQ(centers.size(), 2);
 }
 
-// 2. Hot-Swapping Strategy
+/**
+ * @brief Validates the hot-swapping mechanism between different clustering backends.
+ *
+ * Ensures that changing the configuration dynamically updates the internal
+ * engine instance without requiring a system restart.
+ */
 TEST_F(Clustering_Manager, AlgorithmHotSwapping) {
     ClusteringManager manager;
     auto& config = manager.getConfig();
@@ -59,7 +79,7 @@ TEST_F(Clustering_Manager, AlgorithmHotSwapping) {
     (void)manager.segmentFrame(frame);
     auto* engine1 = manager.getEngine();
 
-    // Switch to Quantum
+    // Switch to Quantum mid-execution
     config.algorithm = kmeans::common::AlgorithmType::KMEANS_QUANTUM;
     (void)manager.segmentFrame(frame);
     auto* engine2 = manager.getEngine();
@@ -67,18 +87,23 @@ TEST_F(Clustering_Manager, AlgorithmHotSwapping) {
     EXPECT_TRUE(engine1 != engine2);
 }
 
-// 3. Temporal Coherence (Center Reuse)
+/**
+ * @brief Verifies the temporal coherence optimization (frame skipping).
+ *
+ * Checks that the manager correctly reuses centroids from previous frames
+ * when the learningInterval is set, reducing computational overhead.
+ */
 TEST_F(Clustering_Manager, CenterPersistenceBetweenFrames) {
     ClusteringManager manager;
     manager.getConfig().k = 3;
-    manager.getConfig().learningInterval = 5; // Only re-cluster every 5 frames
+    manager.getConfig().learningInterval = 5;
 
     cv::Mat frame(16, 16, CV_8UC3, cv::Scalar(100, 100, 100));
 
-    // Frame 0: Clusters
+    // Frame 0: Trigger full computation
     auto centers0 = manager.computeCenters(frame);
 
-    // Frame 1: Should reuse centers0 (learningInterval=5)
+    // Frame 1: Should skip computation and reuse previous results
     auto centers1 = manager.computeCenters(frame);
 
     for (int i = 0; i < 3; ++i) {
@@ -88,7 +113,12 @@ TEST_F(Clustering_Manager, CenterPersistenceBetweenFrames) {
     }
 }
 
-// 4. Initial Center Override
+/**
+ * @brief Validates the ability to force-inject initial centers.
+ *
+ * This is a critical feature for scientific benchmarking, allowing
+ * different engines to be compared starting from identical seeds.
+ */
 TEST_F(Clustering_Manager, SetInitialCentersOverride) {
     ClusteringManager manager;
     manager.getConfig().k = 2;
@@ -100,7 +130,7 @@ TEST_F(Clustering_Manager, SetInitialCentersOverride) {
     manager.setInitialCenters(forced);
 
     cv::Mat frame(16, 16, CV_8UC3, cv::Scalar(128, 128, 128));
-    manager.getConfig().maxIterations = 0; // Don't move them
+    manager.getConfig().maxIterations = 0; // Prevent movement
 
     auto centers = manager.computeCenters(frame);
 

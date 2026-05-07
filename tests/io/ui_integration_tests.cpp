@@ -1,3 +1,8 @@
+/**
+ * @file ui_integration_tests.cpp
+ * @brief Integration tests for the UI and IO orchestration layer.
+ */
+
 #include <atomic>
 #include <mutex>
 
@@ -13,16 +18,23 @@ namespace ThesisTests::IO {
 using namespace kmeans::io;
 using namespace kmeans::common;
 
-// A mock observer to test the UI notification system
+/**
+ * @brief A mock observer used to verify the asynchronous notification system.
+ */
 class MockBenchmarkObserver : public IBenchmarkObserver {
   public:
     bool notified = false;
-    void onBenchmarkComplete(const BenchmarkComparisonResult& result) override { notified = true; }
+    void onBenchmarkComplete(const BenchmarkComparisonResult& /*result*/) override { notified = true; }
 };
 
+/**
+ * @brief Test fixture for UI and IO integration logic.
+ */
 class IO_UIIntegration : public ::testing::Test {};
 
-// 1. Benchmark Runner State Machine
+/**
+ * @brief Verifies that the BenchmarkRunner correctly transitions between states.
+ */
 TEST_F(IO_UIIntegration, BenchmarkStateTransitions) {
     BenchmarkRunner runner;
     EXPECT_EQ(runner.getState(), BenchmarkState::IDLE);
@@ -34,7 +46,9 @@ TEST_F(IO_UIIntegration, BenchmarkStateTransitions) {
     EXPECT_EQ(runner.getState(), BenchmarkState::IDLE);
 }
 
-// 2. UI Notification System (Observer Pattern)
+/**
+ * @brief Validates the Observer pattern implementation for backend-to-UI communication.
+ */
 TEST_F(IO_UIIntegration, ObserverNotification) {
     BenchmarkRunner runner;
     MockBenchmarkObserver observer;
@@ -52,7 +66,9 @@ TEST_F(IO_UIIntegration, ObserverNotification) {
     EXPECT_FALSE(observer.notified);
 }
 
-// 3. UI Data Context Consistency
+/**
+ * @brief Ensures that UI configuration changes propagate safely across thread boundaries.
+ */
 TEST_F(IO_UIIntegration, DataContextPropagatesConfig) {
     cv::Mat dummy;
     SegmentationConfig config;
@@ -72,13 +88,13 @@ TEST_F(IO_UIIntegration, DataContextPropagatesConfig) {
                       .processedFrames = 100,
                       .benchmarkRunner = runner};
 
-    // Simulate UI changing a value
+    // Simulate UI changing a value via the context reference
     {
         std::lock_guard<std::mutex> lock(ctx.configMutex);
         ctx.uiConfig.k = 12;
     }
 
-    // Verify the underlying config changed
+    // Verify the underlying config changed correctly
     EXPECT_EQ(config.k, 12);
 }
 

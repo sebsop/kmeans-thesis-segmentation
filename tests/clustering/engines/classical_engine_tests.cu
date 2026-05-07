@@ -1,3 +1,8 @@
+/**
+ * @file classical_engine_tests.cu
+ * @brief Unit tests for the high-performance Classical (GPU-accelerated) K-Means engine.
+ */
+
 #include <cuda_runtime.h>
 #include <vector>
 
@@ -12,6 +17,9 @@ namespace ThesisTests::Clustering::Engines {
 using namespace kmeans;
 using namespace kmeans::clustering;
 
+/**
+ * @brief Test fixture for verifying the Classical clustering implementation.
+ */
 class Clustering_ClassicalEngine : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
@@ -25,11 +33,15 @@ class Clustering_ClassicalEngine : public ::testing::Test {
     void SetUp() override { cudaDeviceReset(); }
 };
 
-// 1. Core Assignment Logic (Verification of Euclidean Distance on GPU)
+/**
+ * @brief Verifies the accuracy of the GPU-based pixel assignment kernel.
+ *
+ * Uses controlled data points to ensure that the Euclidean distance logic
+ * correctly maps pixels to the mathematically nearest centroid.
+ */
 TEST_F(Clustering_ClassicalEngine, AssignmentCorrectness) {
     ClassicalEngine engine;
 
-    // 3 points
     // P0(0,0,0,0,0) -> Should go to C0
     // P1(1,1,1,1,1) -> Should go to C1
     // P2(0.1, 0.1, 0.1, 0.1, 0.1) -> Should go to C0
@@ -44,16 +56,20 @@ TEST_F(Clustering_ClassicalEngine, AssignmentCorrectness) {
     centers[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     centers[1] = FeatureVector(1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
 
-    // We run for only 1 iteration to test the ASSIGNMENT kernel specifically
     (void)engine.run(samples, centers, 2, 1);
 
-    EXPECT_EQ(engine.getLastIterations(), 2); // 1st iter detects change (-1 -> 0), 2nd iter breaks
+    EXPECT_EQ(engine.getLastIterations(), 2);
 }
 
-// 2. High-K Assignment Stress (Shared Memory limits)
+/**
+ * @brief Stress tests the shared memory allocation for high K-values.
+ *
+ * Ensures that the engine handles the maximum supported cluster count (20)
+ * without exceeding GPU shared memory limits or hardware bounds.
+ */
 TEST_F(Clustering_ClassicalEngine, HighKAssignment) {
     ClassicalEngine engine;
-    const int K = constants::clustering::K_MAX; // 20
+    const int K = constants::clustering::K_MAX;
     const int N = 1000;
 
     cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
@@ -62,16 +78,15 @@ TEST_F(Clustering_ClassicalEngine, HighKAssignment) {
         centers[i] = FeatureVector(i / 20.0f, i / 20.0f, i / 20.0f, 0, 0);
     }
 
-    // Verify it handles the shared memory allocation for 20 centroids
     EXPECT_NO_THROW((void)engine.run(samples, centers, K, 2));
 }
 
-// 3. Mathematical Edge Case: Tied Distances
+/**
+ * @brief Verifies deterministic behavior during mathematical ties.
+ */
 TEST_F(Clustering_ClassicalEngine, TiedDistanceHandling) {
     ClassicalEngine engine;
 
-    // Point at 0.5, Centers at 0.0 and 1.0. Distance is equal.
-    // Algorithm should deterministically pick the first one (cluster 0)
     cv::Mat samples(1, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
     std::vector<FeatureVector> centers(2);
     centers[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -83,14 +98,19 @@ TEST_F(Clustering_ClassicalEngine, TiedDistanceHandling) {
         EXPECT_NEAR(results[0][d], 0.5f, constants::math::EPSILON);
     }
 }
+
+/**
+ * @brief Ensures robustness against "empty clusters" (clusters with zero assigned points).
+ *
+ * Verifies that the centroid update logic handles division-by-zero safely
+ * and does not produce NaNs when a cluster is not chosen by any sample.
+ */
 TEST_F(Clustering_ClassicalEngine, EmptyClusterRobustness) {
     ClassicalEngine engine;
     const int K = 10;
 
-    // Uniform data (all points at same location)
     cv::Mat samples(100, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
 
-    // Centers spread out - most will have 0 members
     std::vector<FeatureVector> initialCenters(K);
     for (int i = 0; i < K; ++i) {
         initialCenters[i] = FeatureVector(static_cast<float>(i), 0, 0, 0, 0);

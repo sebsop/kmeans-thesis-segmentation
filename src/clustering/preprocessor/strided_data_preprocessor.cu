@@ -1,3 +1,8 @@
+/**
+ * @file strided_data_preprocessor.cu
+ * @brief High-performance GPU-accelerated image-to-feature conversion.
+ */
+
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <stdexcept>
@@ -7,6 +12,7 @@
 #include "common/constants.hpp"
 #include "common/utils.hpp"
 
+/** @brief Macro for internal CUDA error handling in the preprocessor. */
 #define CUDA_CHECK_PREP(call)                                                                                          \
     do {                                                                                                               \
         cudaError_t err = call;                                                                                        \
@@ -18,6 +24,25 @@
 
 namespace kmeans::clustering {
 
+/**
+ * @brief CUDA kernel to extract normalized 5D features from raw image pixels.
+ *
+ * This kernel iterates over the output grid and samples the corresponding
+ * pixels from the input image using a 'stride'. It converts BGR values
+ * and spatial coordinates into a normalized [0, 1] range.
+ *
+ * @param frame_data Input raw BGR pixel data.
+ * @param samples [Output] Matrix of 5D feature vectors.
+ * @param cols Input image width.
+ * @param rows Input image height.
+ * @param stride The sampling interval.
+ * @param out_cols Number of sampled columns.
+ * @param out_rows Number of sampled rows.
+ * @param invCols Reciprocal of width (for normalization).
+ * @param invRows Reciprocal of height (for normalization).
+ * @param color_scale Scaling factor for BGR channels.
+ * @param spatial_scale Scaling factor for XY coordinates.
+ */
 __global__ void preprocess_strided_kernel(const uchar3* __restrict__ frame_data, float* __restrict__ samples, int cols,
                                           int rows, int stride, int out_cols, int out_rows, float invCols,
                                           float invRows, float color_scale, float spatial_scale) {
@@ -36,6 +61,7 @@ __global__ void preprocess_strided_kernel(const uchar3* __restrict__ frame_data,
         float x01 = static_cast<float>(x) * invCols;
         float y01 = static_cast<float>(y) * invRows;
 
+        // Store as [R, G, B, X, Y] feature vector
         samples[out_idx * constants::clustering::FEATURE_DIMS + 0] = static_cast<float>(bgr.x) * color_scale;
         samples[out_idx * constants::clustering::FEATURE_DIMS + 1] = static_cast<float>(bgr.y) * color_scale;
         samples[out_idx * constants::clustering::FEATURE_DIMS + 2] = static_cast<float>(bgr.z) * color_scale;
@@ -45,9 +71,16 @@ __global__ void preprocess_strided_kernel(const uchar3* __restrict__ frame_data,
 }
 
 StridedDataPreprocessor::~StridedDataPreprocessor() {
-    reset();
+    try {
+        reset();
+    } catch (...) {
+        // Destructors must not throw.
+    }
 }
 
+/**
+ * @brief Releases allocated GPU buffers.
+ */
 void StridedDataPreprocessor::reset() {
     if (m_d_frame_data) {
         CUDA_CHECK_PREP(cudaFree(m_d_frame_data));
@@ -61,6 +94,12 @@ void StridedDataPreprocessor::reset() {
     m_extracted_points = 0;
 }
 
+/**
+ * @brief Orchestrates the memory upload and kernel execution.
+ *
+ * @param frame The input image from the camera.
+ * @param stride The sampling stride to apply.
+ */
 void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
     CV_Assert(frame.type() == CV_8UC3 && frame.isContinuous());
     CV_Assert(stride >= 1);
@@ -72,12 +111,12 @@ void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
 
     int out_cols = (frame.cols + stride - 1) / stride;
     int out_rows = (frame.rows + stride - 1) / stride;
-    // Allocate memory if frame size changes (e.g. initial setup)
+
+    // Buffer management: only reallocate if resolution changes
     if (n != m_cached_n) {
         reset();
         CUDA_CHECK_PREP(cudaMalloc(&m_d_frame_data, n * sizeof(uchar3)));
-        CUDA_CHECK_PREP(cudaMalloc(&m_d_samples, n * constants::clustering::FEATURE_DIMS *
-                                                     sizeof(float))); // Allocate full N to be safe against stride=1
+        CUDA_CHECK_PREP(cudaMalloc(&m_d_samples, n * constants::clustering::FEATURE_DIMS * sizeof(float)));
         m_cached_n = n;
     }
 
@@ -97,10 +136,16 @@ void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
 }
 
 cv::Mat StridedDataPreprocessor::prepare(const cv::Mat& frame) {
-    uploadAndRun(frame, 1); // Fallback standard CPU prepare uses stride 1
+    uploadAndRun(frame, 1);
     return download();
 }
 
+/**
+ * @brief Prepares data on the GPU and returns a device pointer.
+ *
+ * This is the preferred method for the high-performance pipeline, as it
+ * avoids downloading the features back to the CPU.
+ */
 float* StridedDataPreprocessor::prepareDevice(const cv::Mat& frame, int stride, int& outNumPoints) {
     uploadAndRun(frame, stride);
     outNumPoints = m_extracted_points;

@@ -1,5 +1,13 @@
+# =============================================================================
+# tests/CMakeLists.txt
+# Test suite orchestration for the K-Means Thesis Pipeline.
+#
+# This file consolidates unit and integration tests into a single master 
+# executable, integrates GoogleTest discovery, and provides automation 
+# for code coverage analysis.
+# =============================================================================
+
 add_executable(all_tests 
-    common/utils_tests.cpp
     common/vector_math_tests.cpp
     io/ui_integration_tests.cpp
     backend/cuda_kernels_tests.cu
@@ -14,6 +22,7 @@ add_executable(all_tests
     clustering/initializers/random_initializer_tests.cu
 )
 
+# --- 1. Debugging & Analysis Support ---
 if(MSVC)
     target_link_options(all_tests PRIVATE /DEBUG:FULL)
     target_compile_options(all_tests PRIVATE 
@@ -30,7 +39,8 @@ set_target_properties(all_tests PROPERTIES
     CUDA_ARCHITECTURES "native"
 )
 
-# Disable the "make static" check for tests because GTest methods must be virtual overrides
+# --- 2. Specialized Static Analysis for Tests ---
+# Disable the "convert to static" check because GTest methods are designed to be virtual overrides.
 if(CLANG_TIDY_EXE)
     set_target_properties(all_tests PROPERTIES 
         CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-checks=-readability-convert-member-functions-to-static;--extra-arg=/EHsc"
@@ -39,22 +49,7 @@ endif()
 
 target_link_libraries(all_tests PRIVATE kmeans_core GTest::gtest_main)
 
-# Register the master test with GTest discovery
+# --- 3. GTest Discovery Integration ---
+# Automatically find all TEST() and TEST_F() macros and register them with CTest.
 include(GoogleTest)
 gtest_discover_tests(all_tests)
-
-# Automation for Code Coverage (Windows / OpenCppCoverage)
-find_program(OPENCPP_COVERAGE OpenCppCoverage)
-if(OPENCPP_COVERAGE)
-    add_custom_target(generate_coverage
-        COMMAND ${OPENCPP_COVERAGE} 
-            --sources "${CMAKE_SOURCE_DIR}/src" 
-            --sources "${CMAKE_SOURCE_DIR}/include"
-            --excluded_sources "${CMAKE_SOURCE_DIR}/src/vendor"
-            --export_html "${CMAKE_BINARY_DIR}/CoverageReport"
-            --aggregate_by_file
-            -- ./all_tests.exe
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating Master Code Coverage Report..."
-    )
-endif()

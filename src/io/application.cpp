@@ -1,3 +1,8 @@
+/**
+ * @file application.cpp
+ * @brief Core application lifecycle and thread orchestration.
+ */
+
 #include "io/application.hpp"
 
 #include <chrono>
@@ -23,18 +28,28 @@
 
 namespace kmeans::io {
 
+/**
+ * @brief Initializes the application context, window, and UI systems.
+ */
 Application::Application() : m_uiConfig(m_manager.getConfig()) {
     initWindow();
     initImGui();
     UIManager::applyPremiumTheme();
+    // Connect the UI to benchmark updates
     m_benchmarkRunner.addObserver(&m_uiManager);
 }
 
+/**
+ * @brief Ensures clean shutdown of threads and resources.
+ */
 Application::~Application() noexcept {
     m_benchmarkRunner.removeObserver(&m_uiManager);
     cleanup();
 }
 
+/**
+ * @brief Creates the GLFW window and applies platform-specific styling.
+ */
 void Application::initWindow() {
     if (glfwInit() == 0) {
         throw std::runtime_error("Failed to initialize GLFW");
@@ -52,6 +67,7 @@ void Application::initWindow() {
     }
 
 #if defined(_WIN32)
+    // Windows-specific: Load application icon from assets
     HWND hwnd = glfwGetWin32Window(m_window);
     HINSTANCE hInstance = GetModuleHandle(nullptr);
 
@@ -72,9 +88,12 @@ void Application::initWindow() {
 #endif
 
     glfwMakeContextCurrent(m_window);
-    glfwSwapInterval(0); // VSync disabled to measure uncapped UI frame rate
+    glfwSwapInterval(0); // VSync disabled to measure uncapped performance
 }
 
+/**
+ * @brief Configures the ImGui context for OpenGL3.
+ */
 void Application::initImGui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -86,6 +105,9 @@ void Application::initImGui() {
     ImGui_ImplOpenGL3_Init("#version 330 core");
 }
 
+/**
+ * @brief Stops the worker thread and destroys graphics contexts.
+ */
 void Application::cleanup() noexcept {
     m_running = false;
     if (m_workerThread.joinable()) {
@@ -100,8 +122,16 @@ void Application::cleanup() noexcept {
     glfwTerminate();
 }
 
+/**
+ * @brief Entry point for the dual-threaded execution model.
+ *
+ * 1. Spawns a worker thread for Camera I/O and CUDA processing.
+ * 2. Runs the main UI loop on the primary thread.
+ */
 void Application::run() {
     m_running = true;
+
+    // --- WORKER THREAD (Camera & CUDA) ---
     m_workerThread = std::thread([this]() {
         cv::VideoCapture cap(0, cv::CAP_FFMPEG);
         if (cap.isOpened()) {
@@ -111,14 +141,14 @@ void Application::run() {
         }
 
         if (!cap.isOpened()) {
-            std::cerr << "Failed to open webcam inside worker thread." << std::endl;
+            std::cerr << "Critical: Failed to open webcam." << std::endl;
             return;
         }
 
-        // Background CUDA check to avoid hanging the main UI thread
+        // Verify CUDA availability before starting the heavy pipeline
         int deviceCount = 0;
         if (cudaGetDeviceCount(&deviceCount) != cudaSuccess || deviceCount == 0) {
-            std::cerr << "Error: No CUDA-capable GPU detected inside worker thread.\n";
+            std::cerr << "Critical: No CUDA-capable GPU detected.\n";
             m_running = false;
             return;
         }
@@ -133,6 +163,7 @@ void Application::run() {
                 continue;
             }
 
+            // Handle Asynchronous Benchmark Requests
             auto bState = m_benchmarkRunner.getState();
             if (bState == BenchmarkState::CAPTURING || bState == BenchmarkState::RECOMPUTING) {
                 common::SegmentationConfig benchConfig;
@@ -143,8 +174,7 @@ void Application::run() {
                 m_benchmarkRunner.startComputing(frame, benchConfig);
             }
 
-            // If a benchmark is active, do not run the normal segmentation pipeline in the background.
-            // This prevents race conditions and ensures UI parameter changes only affect the benchmark.
+            // Pause live background processing if a benchmark is active
             bState = m_benchmarkRunner.getState();
             if (bState != BenchmarkState::IDLE) {
                 std::scoped_lock<std::mutex> lock(m_dataMutex);
@@ -152,7 +182,7 @@ void Application::run() {
                 continue;
             }
 
-            [[maybe_unused]] int frameIdx = 0;
+            // Normal Real-Time Pipeline
             cv::Mat processFrame;
             cv::resize(frame, processFrame,
                        cv::Size(constants::video::PROCESS_WIDTH, constants::video::PROCESS_HEIGHT));
@@ -171,12 +201,14 @@ void Application::run() {
             auto end = std::chrono::high_resolution_clock::now();
             float execMs = std::chrono::duration<float, std::milli>(end - start).count();
 
+            // Results preparation
             cv::Mat segmentedFull;
             cv::resize(segmented, segmentedFull, frame.size(), 0, 0, constants::viz::RESIZE_ALGO);
 
             std::vector<FeatureVector> centers;
             if (m_showCentroids) {
                 centers = m_manager.getCenters();
+                // Draw centroids directly on the frame for low-latency visual feedback
                 std::ranges::for_each(centers, [&](const auto& c) {
                     cv::Point pt(
                         static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
@@ -196,6 +228,7 @@ void Application::run() {
             float instFps = (dt > 0.0f) ? (1.0f / dt) : 0.0f;
             m_lastWorkerTime = now;
 
+            // Commit results to shared context
             {
                 std::scoped_lock<std::mutex> lock(m_dataMutex);
                 m_latestOriginal = frame;
@@ -209,9 +242,11 @@ void Application::run() {
         }
     });
 
+    // --- MAIN THREAD (UI & Rendering) ---
     while (glfwWindowShouldClose(m_window) == 0 && m_running) [[likely]] {
         glfwPollEvents();
 
+        // Manage UI configuration persistence during benchmarking
         auto bState = m_benchmarkRunner.getState();
         if (bState != BenchmarkState::IDLE && !m_benchWasActive) {
             std::scoped_lock<std::mutex> lock(m_configMutex);
@@ -223,6 +258,7 @@ void Application::run() {
             m_benchWasActive = false;
         }
 
+        // Show loading screen until the worker thread provides the first frame
         if (!m_initialized) {
             UIManager::renderLoadingScreen(m_window);
             glfwSwapBuffers(m_window);

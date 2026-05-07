@@ -1,3 +1,8 @@
+/**
+ * @file vector_math.hpp
+ * @brief High-performance vector math primitives for CPU and GPU.
+ */
+
 #pragma once
 
 #include <cmath>
@@ -22,9 +27,27 @@
 
 namespace kmeans::common {
 
+/**
+ * @struct VectorMath
+ * @brief Static utility template for dimension-agnostic vector operations.
+ *
+ * This class provides highly optimized mathematical operations that work
+ * seamlessly on both the CPU (Host) and GPU (Device). By using templates
+ * and FORCE_INLINE, it allows the compiler to generate the most efficient
+ * code for the specific dimensions used in clustering (typically 5D).
+ *
+ * @tparam Dims The dimensionality of the vectors.
+ */
 template <int Dims> struct VectorMath {
     /**
-     * @brief Computes squared Euclidean distance between two vectors.
+     * @brief Computes squared Euclidean distance between two raw buffers.
+     *
+     * Uses squared distance to avoid the computationally expensive square
+     * root operation, which is sufficient for comparison in K-Means.
+     *
+     * @param a Pointer to the first vector.
+     * @param b Pointer to the second vector.
+     * @return The squared L2 distance.
      */
     template <typename T1, typename T2>
         requires std::floating_point<T1> && std::floating_point<T2>
@@ -42,6 +65,8 @@ template <int Dims> struct VectorMath {
 
     /**
      * @brief Computes squared Euclidean distance between a pointer and a cv::Vec.
+     *
+     * Overload for interoperability with OpenCV vector types.
      */
     template <typename T1, typename T2>
         requires std::floating_point<T1> && std::floating_point<T2>
@@ -58,7 +83,12 @@ template <int Dims> struct VectorMath {
     }
 
     /**
-     * @brief Accumulates source elements into destination.
+     * @brief Accumulates source elements into a destination buffer.
+     *
+     * Used primarily in the Update step to sum up features for averaging.
+     *
+     * @param dest The buffer to add values to.
+     * @param src The buffer to read values from.
      */
     template <typename T1, typename T2>
         requires std::floating_point<T1> && std::floating_point<T2>

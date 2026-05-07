@@ -1,3 +1,8 @@
+/**
+ * @file ui_manager.cpp
+ * @brief Orchestrator for all ImGui-based user interface components.
+ */
+
 #include "io/ui_manager.hpp"
 
 #include <algorithm>
@@ -21,12 +26,21 @@ constexpr int GL_CLAMP_TO_EDGE = 0x812F;
 
 namespace kmeans::io {
 
+/**
+ * @brief Constructs the UI manager and initializes sub-component views.
+ */
 UIManager::UIManager()
     : m_controlPanel(std::make_unique<ui::ControlPanelUI>()), m_videoFeed(std::make_unique<ui::VideoFeedUI>()),
       m_benchmarkOverlay(std::make_unique<ui::BenchmarkOverlayUI>()) {}
 
 UIManager::~UIManager() = default;
 
+/**
+ * @brief Applies the project's custom "Premium" visual theme.
+ *
+ * Maps the high-level color tokens from constants::ui::theme to the low-level
+ * ImGuiCol enum. This ensures a consistent brand identity across all windows.
+ */
 void UIManager::applyPremiumTheme() {
     ImGuiStyle& style = ImGui::GetStyle();
     ImVec4* colors = style.Colors;
@@ -64,6 +78,15 @@ void UIManager::applyPremiumTheme() {
     style.ItemSpacing = ImVec2(constants::ui::theme::ITEM_SPACING_X, constants::ui::theme::ITEM_SPACING_Y);
 }
 
+/**
+ * @brief Bridge between OpenCV and OpenGL.
+ *
+ * Converts a cv::Mat (BGR) into an OpenGL RGBA texture. Manages the lifecycle
+ * of the GPU texture handle (TextureResource).
+ *
+ * @param mat The source frame from OpenCV.
+ * @param textureRes The target GPU resource.
+ */
 void UIManager::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {
     if (mat.empty()) {
         return;
@@ -86,6 +109,9 @@ void UIManager::matToTexture(const cv::Mat& mat, TextureResource& textureRes) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rgbMat.cols, rgbMat.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgbMat.ptr());
 }
 
+/**
+ * @brief Renders the entire UI state for a single frame.
+ */
 void UIManager::render(UIDataContext& ctx) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -93,6 +119,7 @@ void UIManager::render(UIDataContext& ctx) {
 
     float panelWidth = constants::ui::PANEL_WIDTH;
 
+    // Orchestrate the three primary views
     ui::ControlPanelUI::render(ctx, panelWidth, m_benchTexturesLoaded);
     ui::VideoFeedUI::render(ctx, panelWidth, m_originalTexture, m_segmentedTexture, &UIManager::matToTexture);
     ui::BenchmarkOverlayUI::render(ctx, m_benchOriginalTexture, m_benchClassicalTexture, m_benchQuantumTexture,
@@ -102,10 +129,21 @@ void UIManager::render(UIDataContext& ctx) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+/**
+ * @brief Benchmark observer callback.
+ *
+ * Triggers a texture cache invalidation so the next render pass
+ * re-uploads the fresh benchmark results to the GPU.
+ */
 void UIManager::onBenchmarkComplete(const BenchmarkComparisonResult& /*result*/) {
     m_benchTexturesLoaded = false;
 }
 
+/**
+ * @brief Displays a clean loading sequence during startup.
+ *
+ * @param window Pointer to the GLFW window.
+ */
 void UIManager::renderLoadingScreen(GLFWwindow* window) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -127,6 +165,7 @@ void UIManager::renderLoadingScreen(GLFWwindow* window) {
     const char* loadingText = "INITIALIZING K-MEANS ENGINE";
     ImVec2 textSize = ImGui::CalcTextSize(loadingText);
 
+    // Animated dots for "liveness"
     int dots = static_cast<int>(ImGui::GetTime() * constants::ui::ANIM_DOT_SPEED) % 4;
     std::string dotStr(dots, '.');
     std::string fullText = std::string(loadingText) + dotStr;

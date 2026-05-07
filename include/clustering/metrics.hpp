@@ -1,3 +1,8 @@
+/**
+ * @file metrics.hpp
+ * @brief Evaluation metrics for clustering quality and performance.
+ */
+
 #pragma once
 
 #include <vector>
@@ -8,20 +13,41 @@
 
 namespace kmeans::clustering::metrics {
 
+/**
+ * @struct BenchmarkResults
+ * @brief Data structure holding the results of a clustering performance and quality audit.
+ */
 struct BenchmarkResults {
-    float wcss{0.0f};            // Within-Cluster Sum of Squares (Inertia)
-    float daviesBouldin{0.0f};   // Cluster separation index
-    float silhouetteScore{0.0f}; // Approximated silhouette coefficient [-1, 1]
-    int iterations{0};           // Number of iterations to converge
-    float executionTimeMs{0.0f}; // Total ms taken by the algorithm
+    /** @brief Within-Cluster Sum of Squares (Inertia). Measures how tightly grouped the clusters are. Lower is better.
+     */
+    float wcss{0.0f};
+
+    /** @brief Davies-Bouldin Index. Measures the average "similarity" between clusters. Lower is better. */
+    float daviesBouldin{0.0f};
+
+    /** @brief Silhouette Score (Approximated). Measures how similar a point is to its own cluster vs others. Range [-1,
+     * 1]. Higher is better. */
+    float silhouetteScore{0.0f};
+
+    /** @brief Total iterations performed until convergence. */
+    int iterations{0};
+
+    /** @brief Total wall-clock time in milliseconds for the clustering operation. */
+    float executionTimeMs{0.0f};
 };
 
 /**
  * @brief Computes comprehensive clustering quality metrics for offline benchmarking.
- * @param samples The full dataset of samples (N x 5)
- * @param centers The final cluster centroids
- * @param iterations The number of iterations the algorithm took
- * @param executionTimeMs The total time the algorithm took
+ *
+ * This function calculates mathematical metrics that quantify how well the
+ * algorithm segmented the data. These metrics are essential for the
+ * comparative analysis part of the thesis.
+ *
+ * @param samples The full dataset of samples (N x 5 feature vectors).
+ * @param centers The final optimized cluster centroids.
+ * @param iterations The number of iterations the algorithm performed.
+ * @param executionTimeMs The total time spent in the clustering engine.
+ * @return A BenchmarkResults object containing the calculated scores.
  */
 [[nodiscard]] BenchmarkResults computeAllMetrics(const cv::Mat& samples, const std::vector<FeatureVector>& centers,
                                                  int iterations, float executionTimeMs);

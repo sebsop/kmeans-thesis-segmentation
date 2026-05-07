@@ -1,3 +1,8 @@
+/**
+ * @file cuda_kernels_tests.cu
+ * @brief Unit tests for the high-performance CUDA backend.
+ */
+
 #include <cuda_runtime.h>
 #include <vector>
 
@@ -12,6 +17,11 @@ namespace ThesisTests::Backend {
 using namespace kmeans;
 using namespace kmeans::backend;
 
+/**
+ * @brief Test fixture for CUDA kernel verification.
+ *
+ * Ensures that a CUDA-capable GPU is available before running any hardware-dependent tests.
+ */
 class Backend_CudaKernels : public ::testing::Test {
   protected:
     static void SetUpTestSuite() {
@@ -25,7 +35,9 @@ class Backend_CudaKernels : public ::testing::Test {
     void SetUp() override { cudaDeviceReset(); }
 };
 
-// 1. RAII & Lifecycle (Verification of device memory allocation/deallocation)
+/**
+ * @brief Verifies that device memory is correctly allocated and freed using RAII.
+ */
 TEST_F(Backend_CudaKernels, RAII_Lifecycle) {
     const int W = 640;
     const int H = 480;
@@ -37,11 +49,17 @@ TEST_F(Backend_CudaKernels, RAII_Lifecycle) {
     });
 }
 
-// 2. Simple Assignment Accuracy (2x2 image, 2 clusters)
+/**
+ * @brief Validates assignment accuracy on a minimal 2x2 grid.
+ *
+ * This test uses controlled pixel values to ensure the GPU assigns clusters
+ * to the nearest centroid mathematically.
+ */
 TEST_F(Backend_CudaKernels, Assignment_Accuracy_2x2) {
     const int W = 2;
     const int H = 2;
     const int K = 2;
+
     CudaAssignmentContext ctx(W, H, K);
 
     // Create 2x2 image: [White, White; Black, Black]
@@ -60,12 +78,13 @@ TEST_F(Backend_CudaKernels, Assignment_Accuracy_2x2) {
     ctx.run(input, centers, output);
 
     // Top pixels should be assigned to White (cluster 0), bottom to Black (cluster 1)
-    // Note: Kernel replaces pixel color with centroid color
     EXPECT_EQ(output.at<cv::Vec3b>(0, 0), cv::Vec3b(255, 255, 255));
     EXPECT_EQ(output.at<cv::Vec3b>(1, 1), cv::Vec3b(0, 0, 0));
 }
 
-// 3. Stress Test: Boundary Case (K=20 Max)
+/**
+ * @brief Stress Test: Boundary Case (K=20 Max).
+ */
 TEST_F(Backend_CudaKernels, Boundary_MaxK) {
     CudaAssignmentContext ctx(100, 100, constants::clustering::K_MAX);
     cv::Mat input(100, 100, CV_8UC3, cv::Scalar(128, 128, 128));
@@ -75,38 +94,41 @@ TEST_F(Backend_CudaKernels, Boundary_MaxK) {
     EXPECT_NO_THROW(ctx.run(input, centers, output));
 }
 
-// 4. Robustness: Empty/Invalid Data
+/**
+ * @brief Robustness: Empty/Invalid Data.
+ */
 TEST_F(Backend_CudaKernels, Boundary_EmptyData) {
     CudaAssignmentContext ctx(0, 0, 5);
     cv::Mat empty;
     std::vector<FeatureVector> centers(5);
     cv::Mat output;
 
-    // Should handle gracefully without crashing
     EXPECT_NO_THROW(ctx.run(empty, centers, output));
     EXPECT_TRUE(output.empty());
 }
 
-// 5. Normalization and Clipping (Verifying roundf and saturation)
+/**
+ * @brief Normalization and Clipping (Verifying roundf and saturation).
+ */
 TEST_F(Backend_CudaKernels, Normalization_And_Clipping) {
     CudaAssignmentContext ctx(1, 1, 1);
-    cv::Mat input(1, 1, CV_8UC3, cv::Scalar(127, 127, 127)); // Middle Grey
+    cv::Mat input(1, 1, CV_8UC3, cv::Scalar(127, 127, 127));
 
-    // Centroid at 0.5 (exactly 127.5) -> Should round to 128 or 127 depending on implementation
-    // But we check that it's near
     std::vector<FeatureVector> centers(1);
-    centers[0] = FeatureVector(1.0f, 1.0f, 1.0f, 0.0f, 0.0f); // White (1.0 -> 255)
+    centers[0] = FeatureVector(1.0f, 1.0f, 1.0f, 0.0f, 0.0f); // White
 
     cv::Mat output;
     ctx.run(input, centers, output);
 
     cv::Vec3b pixel = output.at<cv::Vec3b>(0, 0);
-    EXPECT_EQ(pixel[2], 255);      // Red (1.0 * 255)
-    EXPECT_EQ(pixel[1], 255);      // Green (1.0 * 255)
+    EXPECT_EQ(pixel[2], 255);      // Red
+    EXPECT_EQ(pixel[1], 255);      // Green
     EXPECT_NEAR(pixel[0], 255, 1); // Blue
 }
 
-// 6. Non-Standard Resolution (Ensures grid/block logic is robust for messy sizes)
+/**
+ * @brief Non-Standard Resolution (Ensures grid/block logic is robust for prime-sized frames).
+ */
 TEST_F(Backend_CudaKernels, NonStandardResolution) {
     const int W = 317; // Prime number
     const int H = 211; // Prime number
@@ -117,12 +139,13 @@ TEST_F(Backend_CudaKernels, NonStandardResolution) {
     std::vector<FeatureVector> centers(K, FeatureVector(0.5f, 0.5f, 0.5f, 0.0f, 0.0f));
     cv::Mat output;
 
-    // Should complete without illegal memory access or crashes
     EXPECT_NO_THROW(ctx.run(input, centers, output));
     EXPECT_FALSE(output.empty());
 }
 
-// 7. Context Reuse (Verifies persistent memory stability across multiple runs)
+/**
+ * @brief Context Reuse (Verifies persistent memory stability across multiple runs).
+ */
 TEST_F(Backend_CudaKernels, ContextReuse) {
     const int W = 10;
     const int H = 10;
@@ -134,11 +157,9 @@ TEST_F(Backend_CudaKernels, ContextReuse) {
 
     cv::Mat frame(H, W, CV_8UC3, cv::Scalar(255, 255, 255));
 
-    // Run twice with different centroids
     ctx.run(frame, c1, out1);
     ctx.run(frame, c2, out2);
 
-    // out1 should be black, out2 should be white
     EXPECT_EQ(out1.at<cv::Vec3b>(0, 0), cv::Vec3b(0, 0, 0));
     EXPECT_EQ(out2.at<cv::Vec3b>(0, 0), cv::Vec3b(255, 255, 255));
 }

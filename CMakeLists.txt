@@ -1,21 +1,30 @@
+# =============================================================================
+# CMakeLists.txt
+# Build system configuration for the K-Means Thesis Pipeline.
+#
+# This file orchestrates a complex hybrid C++/CUDA project, managing 
+# dependencies (OpenCV, ZMQ, GLFW), enforcing code quality standards, 
+# and applying high-performance compiler optimizations for real-time 
+# computer vision.
+# =============================================================================
+
 cmake_minimum_required(VERSION 3.18)
 project(KMeansThesisSegmentation LANGUAGES CXX CUDA)
  
-# Modern CMake Policies
+# --- 1. Modern CMake Policies ---
 cmake_policy(SET CMP0135 NEW) # FetchContent timestamp behavior
 cmake_policy(SET CMP0146 NEW) # Modern CUDA support
 
-# Dependencies
+# --- 2. External Dependencies ---
 find_package(OpenCV REQUIRED)
 find_package(CUDAToolkit REQUIRED)
-find_package(cppzmq CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
  
-# Google Test Integration
+# --- 3. Google Test Integration (FetchContent) ---
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -37,32 +46,31 @@ endif()
 enable_testing()
 include(CTest)
 
-# Ensure Release build by default
+# --- 4. Build Configurations & Optimizations ---
+# Ensure Release build by default to maintain high FPS
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
   message(STATUS "Setting build type to 'Release' as none was specified.")
 endif()
 
-# Enable LTO/IPO
+# Enable Interprocedural Optimization (LTO)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
 if(ipo_supported)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-# Compiler optimizations (Only applied in Release mode)
+# Platform-specific compiler optimizations
 if(MSVC)
     add_compile_options(
         "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/O2>"
-        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/fp:fast>"
+        "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/fp:fast>" # Prioritize speed over precision for visualization
         "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/arch:AVX2>"
-        # Suppress warnings and code analysis in external headers (C++ only)
+        # Suppress warnings in external headers
         "$<$<COMPILE_LANGUAGE:CXX>:/external:W0>"
         "$<$<COMPILE_LANGUAGE:CXX>:/external:anglebrackets>"
         "$<$<COMPILE_LANGUAGE:CXX>:/analyze:external->"
-        # Ensure exceptions are enabled for clang-tidy (C++ only)
         "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>"
-        # Global suppression of specific analysis false positives in external headers
         "$<$<COMPILE_LANGUAGE:CXX>:/wd6201>"
     )
 else()
@@ -73,15 +81,16 @@ else()
     )
 endif()
 
-# CUDA Optimizations (Only applied in Release mode)
+# Global CUDA optimizations
 set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -O3 -use_fast_math")
 
-# Project include directories
+# --- 5. Include Directories ---
+# Internal Project Headers
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
 )
 
-# External (SYSTEM) include directories to suppress compiler/analysis warnings
+# External Headers (Marked as SYSTEM to disable analysis)
 include_directories(SYSTEM
     ${OpenCV_INCLUDE_DIRS}
     ${CUDAToolkit_INCLUDE_DIRS}
@@ -89,7 +98,8 @@ include_directories(SYSTEM
     ${CMAKE_SOURCE_DIR}/src/vendor/imgui/backends
 )
 
-# Enable Clang-Tidy during build if available
+# --- 6. Quality Assurance Targets ---
+# Clang-Tidy Static Analysis integration
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy" "clang-tidy.exe")
 if(CLANG_TIDY_EXE)
     message(STATUS "clang-tidy found: ${CLANG_TIDY_EXE}")
@@ -99,7 +109,7 @@ else()
     message(WARNING "clang-tidy not found. Code analysis during build is disabled.")
 endif()
 
-# Custom target to format all source files (excluding vendor libraries)
+# Clang-Format Custom Target
 find_program(CLANG_FORMAT_EXE 
     NAMES "clang-format" "clang-format.exe"
     PATHS "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin"
@@ -117,19 +127,19 @@ if(CLANG_FORMAT_EXE)
         "include/*.cpp" "include/*.hpp" "include/*.cu" "include/*.cuh"
         "tests/*.cpp" "tests/*.hpp" "tests/*.cu" "tests/*.cuh"
     )
-    # Remove all files inside src/vendor/ from the list
+    # Exclude vendor libraries from formatting
     list(FILTER ALL_SOURCE_FILES EXCLUDE REGEX ".*/vendor/.*")
     
     add_custom_target(
         format
         COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${ALL_SOURCE_FILES}
-        COMMENT "Formatting all source files (excluding vendor) with clang-format..."
+        COMMENT "Formatting all source/test files (excluding vendor) with clang-format..."
     )
 else()
     message(WARNING "clang-format not found. The 'format' target will not be available.")
 endif()
 
-# Core Logic Library
+# --- 7. Target Definition: Core Logic Library ---
 add_library(kmeans_core
     src/backend/cuda_kernels.cu
     src/clustering/engines/base_kmeans_engine.cu
@@ -141,7 +151,6 @@ add_library(kmeans_core
     src/clustering/metrics.cpp
     src/clustering/initializers/random_initializer.cpp
     src/clustering/initializers/kmeans_plus_plus_initializer.cu
-    src/common/utils.cpp
     src/io/application.cpp
     src/io/benchmark_runner.cpp
     src/io/benchmark_command.cpp
@@ -151,6 +160,7 @@ add_library(kmeans_core
     src/io/ui/benchmark_overlay_ui.cpp
 )
 
+# Explicitly set CUDA language properties
 set_source_files_properties(src/backend/cuda_kernels.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/engines/base_kmeans_engine.cu PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(src/clustering/engines/classical_engine.cu PROPERTIES LANGUAGE CUDA)
@@ -162,17 +172,15 @@ set_target_properties(kmeans_core PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
-    CUDA_SEPARABLE_COMPILATION ON       # Enable separable compilation for CUDA
-    CUDA_STANDARD 20                    # Use C++20 standard for CUDA files
-    CUDA_STANDARD_REQUIRED ON           # Enforce the use of the specified C++ standard
-    CUDA_ARCHITECTURES "native"         # Specify target architecture (native for the current machine)
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_STANDARD 20
+    CUDA_STANDARD_REQUIRED ON
+    CUDA_ARCHITECTURES "native"
 )
 
-target_link_libraries(kmeans_core PUBLIC ${OpenCV_LIBS} glfw cppzmq)
+target_link_libraries(kmeans_core PUBLIC ${OpenCV_LIBS} glfw)
 
-# Forward a minimal set of host MSVC flags into nvcc for the CUDA sources of this target.
-# Each host flag is passed as its own `-Xcompiler` entry to avoid nvcc command-line parsing issues
-# that arise when multiple flags are combined/quoted into a single `-Xcompiler` argument.
+# Forward complex host flags to the CUDA compiler (NVCC)
 if(MSVC)
     target_compile_options(kmeans_core PRIVATE 
         $<$<COMPILE_LANGUAGE:CXX>:/W4 /WX /permissive- /Zc:preprocessor>
@@ -191,7 +199,7 @@ if(MSVC)
     )
 endif()
 
-# ImGui Library
+# --- 8. Target Definition: Vendor (ImGui) ---
 add_library(imgui STATIC
     src/vendor/imgui/imgui.cpp
     src/vendor/imgui/imgui_draw.cpp
@@ -209,19 +217,18 @@ if (WIN32)
     target_link_libraries(imgui PUBLIC opengl32)
 endif()
 
-# Disable Clang-Tidy for third-party libraries
+# Disable code analysis for vendor libraries
 set_target_properties(imgui PROPERTIES CXX_CLANG_TIDY "" CUDA_CLANG_TIDY "")
 
-# Bind ImGui exactly into the core logic library so application.cpp can inherit the headers
+# --- 9. Target Definition: Final Executable ---
 target_link_libraries(kmeans_core PUBLIC imgui)
-
 add_executable(kmeans_thesis_segmentation WIN32 src/main.cpp)
 
 if(MSVC)
+    # Ensure entry point is correct for a GUI application
     target_link_options(kmeans_thesis_segmentation PRIVATE "LINKER:/ENTRY:mainCRTStartup")
 endif()
 
-# Set CUDA properties for the main executable
 set_target_properties(kmeans_thesis_segmentation PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
@@ -233,4 +240,5 @@ set_target_properties(kmeans_thesis_segmentation PROPERTIES
 
 target_link_libraries(kmeans_thesis_segmentation PRIVATE kmeans_core imgui)
  
+# --- 10. Test Orchestration ---
 add_subdirectory(tests)

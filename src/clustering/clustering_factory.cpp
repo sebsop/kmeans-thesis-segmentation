@@ -1,3 +1,8 @@
+/**
+ * @file clustering_factory.cpp
+ * @brief Implementation of the Factory Pattern for clustering strategies.
+ */
+
 #include "clustering/clustering_factory.hpp"
 
 #include <stdexcept>
@@ -9,6 +14,12 @@
 
 namespace kmeans::clustering {
 
+/**
+ * @brief Instantiates the requested centroid initialization strategy.
+ *
+ * @param config The application configuration containing the selection.
+ * @return std::unique_ptr<Initializer> A polymorphic pointer to the new strategy.
+ */
 std::unique_ptr<Initializer> ClusteringFactory::createInitializer(const common::SegmentationConfig& config) {
     if (config.init == common::InitializationType::RANDOM) {
         return std::make_unique<RandomInitializer>();
@@ -17,6 +28,12 @@ std::unique_ptr<Initializer> ClusteringFactory::createInitializer(const common::
     return std::make_unique<KMeansPlusPlusInitializer>();
 }
 
+/**
+ * @brief Instantiates the requested K-Means execution backend.
+ *
+ * @param config The application configuration containing the selection.
+ * @return std::unique_ptr<KMeansEngine> A polymorphic pointer to the new engine.
+ */
 std::unique_ptr<KMeansEngine> ClusteringFactory::createEngine(const common::SegmentationConfig& config) {
     if (config.algorithm == common::AlgorithmType::KMEANS_QUANTUM) {
         return std::make_unique<QuantumEngine>();

@@ -1,52 +1,48 @@
 ---
-# Based on the highly-regarded LLVM standard, but customized for your thesis project
+# =============================================================================
+# .clang-format
+# Project-wide coding style configuration for the K-Means Thesis Pipeline.
+#
+# This file ensures that all C++ and CUDA source files adhere to a consistent 
+# professional standard, facilitating easier code reviews and maintaining 
+# scientific reproducibility.
+# =============================================================================
+
 BasedOnStyle: LLVM
 
-# --- Indentation & Spacing ---
+# --- Visual Density & Layout ---
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 120
+ColumnLimit: 120 # Increased limit for modern wide-screen development environments
 
-# --- Structural Formatting ---
-# Do not add extra indentation inside namespaces (keeps the code flat and readable)
-NamespaceIndentation: None
-
-# Keep opening braces `{` on the same line as the class/function/if block
+# --- Structural Rules ---
+NamespaceIndentation: None # Flattens hierarchy for better vertical space usage
 BreakBeforeBraces: Attach
+PointerAlignment: Left    # Modern C++ style: Type* variable
+FixNamespaceComments: true # Automatically documents closing namespace braces
 
-# Pointers look like `int* ptr` instead of `int *ptr`
-PointerAlignment: Left
-
-# Automatically appends `// namespace kmeans` to closing braces
-FixNamespaceComments: true
-
-# Short one-liners can stay on one line (e.g. simple getters)
+# Allow small utility methods to remain on a single line for brevity
 AllowShortFunctionsOnASingleLine: Inline
 
-# --- Include Sorting & Grouping ---
-# Automatically sort includes and insert blank lines between the categories below
+# --- Include Orchestration ---
+# Automatically regroups includes into prioritized blocks:
+# 1. Main Header
+# 2. Standard Library
+# 3. External Dependencies (OpenCV, GLFW, CUDA)
+# 4. Internal Project Headers
 SortIncludes: true
 IncludeBlocks: Regroup
 
 IncludeCategories:
-  # 1. Main header file (implicitly handled by Clang-Format automatically)
-  
-  # 2. C / C++ Standard Library (e.g. <vector>, <string>) 
-  # Regex matches anything in angle brackets without slashes (standard library)
   - Regex:           '^<[^/]+>$'
     Priority:        2
-    
-  # 3. Third-party Libraries (e.g. <opencv2/core.hpp>, <zmq.hpp>, <GLFW/glfw3.h>)
   - Regex:           '^<.*>'
     Priority:        3
-    
-  # 4. Project-Specific Headers (e.g. "common/config.hpp")
   - Regex:           '^".*"'
     Priority:        4
 
-# --- Misc Cleanups ---
-# Ensures `#include` directives don't get extra spaces
+# --- Syntactic Spacing ---
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeParens: ControlStatements
 ...

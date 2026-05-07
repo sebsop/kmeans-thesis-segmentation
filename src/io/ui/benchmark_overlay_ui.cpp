@@ -1,3 +1,8 @@
+/**
+ * @file benchmark_overlay_ui.cpp
+ * @brief Implementation of the full-screen algorithm comparison dashboard.
+ */
+
 #include "io/ui/benchmark_overlay_ui.hpp"
 
 #include <cmath>
@@ -11,23 +16,46 @@
 
 namespace kmeans::io::ui {
 
+/**
+ * @brief Renders a full-screen comparison table between Classical and Quantum backends.
+ *
+ * This method is the "Thesis Summary" view. It displays:
+ * 1. Side-by-side segmented images with spatial centroids drawn on top.
+ * 2. A mathematical scorecard comparing WCSS, Davies-Bouldin, Silhouette, Iterations, and Latency.
+ * 3. Color-coded results (Green for better, Red for worse) with percentage improvements.
+ * 4. Interactive "Recompute" controls to tweak parameters (k, stride) on the exact same captured frame.
+ *
+ * @param ctx The UI data context.
+ * @param benchOriginalTex GPU resource for the captured raw frame.
+ * @param benchClassicalTex GPU resource for the classical result.
+ * @param benchQuantumTex GPU resource for the quantum result.
+ * @param benchTexturesLoaded [In/Out] Manages GPU upload state.
+ * @param matToTexFunc Callback for texture uploading.
+ */
 void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOriginalTex,
                                 TextureResource& benchClassicalTex, TextureResource& benchQuantumTex,
                                 bool& benchTexturesLoaded, void (*matToTexFunc)(const cv::Mat&, TextureResource&)) {
     auto bState = ctx.benchmarkRunner.getState();
     auto& bResults = ctx.benchmarkRunner.getResults();
 
+    // 1. Only render if we have a valid benchmark state
     if ((bState == BenchmarkState::DONE || bState == BenchmarkState::COMPUTING ||
          bState == BenchmarkState::RECOMPUTING) &&
         bResults) {
+
+        // 2. Texture Preparation
+        // If results just arrived, we draw centroids onto the cv::Mat results and upload to GPU.
         if (!benchTexturesLoaded) {
             auto drawCentroids = [](cv::Mat& img, const std::vector<FeatureVector>& centers) {
                 std::ranges::for_each(centers, [&](const auto& c) {
+                    // Map spatial features (normalized) back to pixel coordinates
                     cv::Point pt(
                         static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.cols)),
                         static_cast<int>((c[4] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.rows)));
                     cv::Scalar color(c[0] / constants::video::COLOR_SCALE, c[1] / constants::video::COLOR_SCALE,
                                      c[2] / constants::video::COLOR_SCALE);
+
+                    // Draw a clean centroid with an outline for contrast
                     cv::circle(img, pt, constants::viz::CENTROID_RADIUS, color, -1);
                     cv::circle(img, pt, constants::viz::OUTLINE_WIDTH, cv::Scalar(255, 255, 255), 2);
                 });
@@ -41,12 +69,15 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             benchTexturesLoaded = true;
         }
 
+        // 3. Window Layout
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
         ImGui::Begin("Side-by-Side Algorithm Comparison", nullptr,
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                          ImGuiWindowFlags_NoScrollbar);
 
+        // 4. Mathematical Comparison Helper
+        // This lambda logic handles the "Who won?" styling for each metric.
         struct MetricStyle {
             ImVec4 c1;
             ImVec4 c2;
@@ -71,18 +102,18 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             s.t2 = b2;
             s.c1 = ImVec4(constants::ui::theme::NEUTRAL_COL.r, constants::ui::theme::NEUTRAL_COL.g,
                           constants::ui::theme::NEUTRAL_COL.b, constants::ui::theme::NEUTRAL_COL.a);
-            s.c2 = ImVec4(constants::ui::theme::NEUTRAL_COL.r, constants::ui::theme::NEUTRAL_COL.g,
-                          constants::ui::theme::NEUTRAL_COL.b, constants::ui::theme::NEUTRAL_COL.a);
+            s.c2 = s.c1;
+
             if (std::abs(v1 - v2) > constants::math::EPSILON) {
                 bool v1Better = lowerIsBetter ? (v1 < v2) : (v1 > v2);
-                s.c1 = v1Better ? ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
-                                         constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a)
-                                : ImVec4(constants::ui::theme::ERROR_COL.r, constants::ui::theme::ERROR_COL.g,
-                                         constants::ui::theme::ERROR_COL.b, constants::ui::theme::ERROR_COL.a);
-                s.c2 = !v1Better ? ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
-                                          constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a)
-                                 : ImVec4(constants::ui::theme::ERROR_COL.r, constants::ui::theme::ERROR_COL.g,
-                                          constants::ui::theme::ERROR_COL.b, constants::ui::theme::ERROR_COL.a);
+                ImVec4 success = ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
+                                        constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a);
+                ImVec4 error = ImVec4(constants::ui::theme::ERROR_COL.r, constants::ui::theme::ERROR_COL.g,
+                                      constants::ui::theme::ERROR_COL.b, constants::ui::theme::ERROR_COL.a);
+
+                s.c1 = v1Better ? success : error;
+                s.c2 = !v1Better ? success : error;
+
                 float worse = v1Better ? v2 : v1;
                 float pct =
                     std::abs(worse) > constants::math::EPSILON ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
@@ -90,7 +121,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                 snprintf(pb, sizeof(pb), " (%.1f%% better)", pct);
                 if (v1Better) {
                     s.t1 += pb;
-                } else {
+                }
+                else {
                     s.t2 += pb;
                 }
             }
@@ -105,6 +137,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         auto s_iter = getStyle(static_cast<float>(cm.iterations), static_cast<float>(qm.iterations), true, true);
         auto s_lat = getStyle(cm.executionTimeMs, qm.executionTimeMs, true);
 
+        // 5. Comparison Table Rendering
         if (ImGui::BeginTable("BenchTable", constants::ui::BENCH_COL_COUNT, ImGuiTableFlags_None)) {
             ImVec2 avail = ImGui::GetContentRegionAvail();
             float tableInnerW = avail.x;
@@ -117,8 +150,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             float imgH = imgW * ratio;
             ImVec2 size(imgW, imgH);
 
+            // Row 1: Visual Results
             ImGui::TableNextRow();
-
             ImGui::TableSetColumnIndex(0);
             {
                 const char* title = "1. Original Frame";
@@ -155,8 +188,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                              ImVec2(0, 1));
             }
 
+            // Row 2: Mathematical Metrics
             ImGui::TableNextRow();
-
             ImGui::TableSetColumnIndex(0);
             ImGui::Separator();
             ImGui::TextColored(ImVec4(constants::ui::theme::BENCH_GUIDE.r, constants::ui::theme::BENCH_GUIDE.g,
@@ -196,6 +229,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         }
         ImGui::Separator();
 
+        // 6. Navigation and Recompute Controls
         float btnWidth = constants::ui::BTN_WIDTH_LG;
         float rerunWidth = constants::ui::BTN_WIDTH_MD;
         float buttonsTotalWidth = btnWidth + constants::ui::BENCH_BTN_PADDING + rerunWidth;
@@ -275,6 +309,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             s_needsRecompute = true;
         }
 
+        // Automatic re-trigger if parameters changed while in benchmark view
         if (s_needsRecompute && ctx.benchmarkRunner.getState() == BenchmarkState::DONE) {
             ctx.benchmarkRunner.requestRecompute();
             s_needsRecompute = false;

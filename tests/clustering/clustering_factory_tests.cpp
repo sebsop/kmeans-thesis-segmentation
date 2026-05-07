@@ -1,3 +1,8 @@
+/**
+ * @file clustering_factory_tests.cpp
+ * @brief Unit tests for the ClusteringFactory and its polymorphic object creation.
+ */
+
 #include <memory>
 #include <typeinfo>
 
@@ -16,9 +21,17 @@ namespace ThesisTests::Clustering {
 using namespace kmeans;
 using namespace kmeans::clustering;
 
+/**
+ * @brief Test fixture for verifying the Factory Pattern implementation.
+ */
 class Clustering_Factory : public ::testing::Test {};
 
-// 1. Engine Creation (Polymorphism Check)
+/**
+ * @brief Verifies that the factory correctly instantiates a ClassicalEngine.
+ *
+ * Uses dynamic_cast to prove the returned interface points to the expected
+ * concrete implementation.
+ */
 TEST_F(Clustering_Factory, CreatesClassicalEngine) {
     common::SegmentationConfig config;
     config.algorithm = common::AlgorithmType::KMEANS_REGULAR;
@@ -26,11 +39,13 @@ TEST_F(Clustering_Factory, CreatesClassicalEngine) {
     auto engine = ClusteringFactory::createEngine(config);
 
     ASSERT_NE(engine, nullptr);
-    // Verify it's actually a ClassicalEngine
     EXPECT_NE(dynamic_cast<ClassicalEngine*>(engine.get()), nullptr);
     EXPECT_EQ(dynamic_cast<QuantumEngine*>(engine.get()), nullptr);
 }
 
+/**
+ * @brief Verifies that the factory correctly instantiates a QuantumEngine.
+ */
 TEST_F(Clustering_Factory, CreatesQuantumEngine) {
     common::SegmentationConfig config;
     config.algorithm = common::AlgorithmType::KMEANS_QUANTUM;
@@ -38,12 +53,13 @@ TEST_F(Clustering_Factory, CreatesQuantumEngine) {
     auto engine = ClusteringFactory::createEngine(config);
 
     ASSERT_NE(engine, nullptr);
-    // Verify it's actually a QuantumEngine
     EXPECT_NE(dynamic_cast<QuantumEngine*>(engine.get()), nullptr);
     EXPECT_EQ(dynamic_cast<ClassicalEngine*>(engine.get()), nullptr);
 }
 
-// 2. Initializer Creation
+/**
+ * @brief Verifies that the factory correctly maps enums to the KMeans++ Initializer.
+ */
 TEST_F(Clustering_Factory, CreatesKMeansPlusPlusInitializer) {
     common::SegmentationConfig config;
     config.init = common::InitializationType::KMEANS_PLUSPLUS;
@@ -54,6 +70,9 @@ TEST_F(Clustering_Factory, CreatesKMeansPlusPlusInitializer) {
     EXPECT_NE(dynamic_cast<KMeansPlusPlusInitializer*>(init.get()), nullptr);
 }
 
+/**
+ * @brief Verifies that the factory correctly maps enums to the Random Initializer.
+ */
 TEST_F(Clustering_Factory, CreatesRandomInitializer) {
     common::SegmentationConfig config;
     config.init = common::InitializationType::RANDOM;
@@ -64,9 +83,11 @@ TEST_F(Clustering_Factory, CreatesRandomInitializer) {
     EXPECT_NE(dynamic_cast<RandomInitializer*>(init.get()), nullptr);
 }
 
-// 3. Robustness check for invalid/default config
+/**
+ * @brief Ensures the factory provides safe defaults when given an uninitialized configuration.
+ */
 TEST_F(Clustering_Factory, HandlesDefaultConfig) {
-    common::SegmentationConfig config; // Default ctor
+    common::SegmentationConfig config; // Default constructor
 
     auto engine = ClusteringFactory::createEngine(config);
     auto init = ClusteringFactory::createInitializer(config);

@@ -1,3 +1,8 @@
+/**
+ * @file random_initializer_tests.cu
+ * @brief Unit tests for the uniform random centroid initialization strategy.
+ */
+
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -11,9 +16,14 @@ namespace ThesisTests::Clustering::Initializers {
 using namespace kmeans;
 using namespace kmeans::clustering;
 
+/**
+ * @brief Test fixture for verifying random initialization logic.
+ */
 class Initializer_Random : public ::testing::Test {};
 
-// 1. Basic Functionality
+/**
+ * @brief Verifies that the initializer returns exactly the requested number of centroids.
+ */
 TEST_F(Initializer_Random, ReturnsKCenters) {
     RandomInitializer init;
     const int K = 5;
@@ -25,7 +35,9 @@ TEST_F(Initializer_Random, ReturnsKCenters) {
     EXPECT_EQ(centers.size(), K);
 }
 
-// 2. Range Validity
+/**
+ * @brief Ensures that initialized centroids remain within the spatial and color boundaries of the input data.
+ */
 TEST_F(Initializer_Random, CentersWithinInputRange) {
     RandomInitializer init;
     const int N = 10;
@@ -48,8 +60,9 @@ TEST_F(Initializer_Random, CentersWithinInputRange) {
     }
 }
 
-// 3. Determinism (Seed check)
-// Random initializer should typically be seeded or use a stable RNG for testing
+/**
+ * @brief Verifies that the internal RNG is active and produces non-constant results.
+ */
 TEST_F(Initializer_Random, IsNotConstant) {
     RandomInitializer init;
     cv::Mat samples(100, constants::clustering::FEATURE_DIMS, CV_32F);
@@ -60,8 +73,7 @@ TEST_F(Initializer_Random, IsNotConstant) {
     auto centers1 = init.initialize(samples, 1);
     auto centers2 = init.initialize(samples, 1);
 
-    // Note: There is a tiny chance they are equal, but with N=100 it's unlikely
-    // This just verifies the RNG is actually "running"
+    // Verifies the RNG state advances between calls
     EXPECT_NE(centers1[0][0], centers2[0][0]);
 }
 

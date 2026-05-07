@@ -1,3 +1,8 @@
+/**
+ * @file kmeans_plus_plus_initializer_tests.cu
+ * @brief Unit tests for the K-Means++ (probabilistic) initialization strategy.
+ */
+
 #include <set>
 #include <vector>
 
@@ -12,14 +17,17 @@ namespace ThesisTests::Clustering::Initializers {
 using namespace kmeans;
 using namespace kmeans::clustering;
 
+/**
+ * @brief Test fixture for verifying K-Means++ initialization logic.
+ */
 class Initializer_KMeansPlusPlus : public ::testing::Test {
   protected:
-    void SetUp() override {
-        // No specific setup needed for CPU-based initializer
-    }
+    void SetUp() override {}
 };
 
-// 1. Basic Functionality: Ensure K distinct centers are returned
+/**
+ * @brief Verifies that the algorithm selects K distinct centers from a structured dataset.
+ */
 TEST_F(Initializer_KMeansPlusPlus, ReturnsKDistinctCenters) {
     KMeansPlusPlusInitializer init;
     const int K = 5;
@@ -36,18 +44,21 @@ TEST_F(Initializer_KMeansPlusPlus, ReturnsKDistinctCenters) {
 
     EXPECT_EQ(centers.size(), K);
 
-    // Check for uniqueness (using a simple set of first dimension for this test)
+    // Check for uniqueness across the first dimension
     std::set<float> uniqueVals;
     for (const auto& c : centers) {
         uniqueVals.insert(c[0]);
     }
 
-    // In this structured dataset, each center should be unique
     EXPECT_EQ(uniqueVals.size(), K);
 }
 
-// 2. Probabilistic Separation (The "Plus Plus" part)
-// With two very far apart points, it MUST pick both as centers if K=2
+/**
+ * @brief Validates the "Plus Plus" probabilistic separation logic.
+ *
+ * In a dataset with two distant points, the algorithm MUST pick both
+ * as centers for K=2 due to the D(x)^2 weighting.
+ */
 TEST_F(Initializer_KMeansPlusPlus, SeparationOnDistantClusters) {
     KMeansPlusPlusInitializer init;
     const int K = 2;
@@ -57,7 +68,7 @@ TEST_F(Initializer_KMeansPlusPlus, SeparationOnDistantClusters) {
     for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
         samples.at<float>(0, d) = 0.0f;
     }
-    // Point B at 100.0 (Far away)
+    // Point B at 100.0 (Mathematically forcing selection)
     for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
         samples.at<float>(1, d) = 100.0f;
     }
@@ -69,12 +80,13 @@ TEST_F(Initializer_KMeansPlusPlus, SeparationOnDistantClusters) {
     float d1 = centers[0][0];
     float d2 = centers[1][0];
 
-    // One must be 0 and other must be 100
     EXPECT_TRUE((std::abs(d1 - 0.0f) < 1e-5 && std::abs(d2 - 100.0f) < 1e-5) ||
                 (std::abs(d1 - 100.0f) < 1e-5 && std::abs(d2 - 0.0f) < 1e-5));
 }
 
-// 3. Edge Case: K = 1
+/**
+ * @brief Verifies stability when K=1.
+ */
 TEST_F(Initializer_KMeansPlusPlus, HandlesKEqualsOne) {
     KMeansPlusPlusInitializer init;
     cv::Mat samples(10, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
@@ -83,7 +95,9 @@ TEST_F(Initializer_KMeansPlusPlus, HandlesKEqualsOne) {
     EXPECT_EQ(centers.size(), 1);
 }
 
-// 4. Edge Case: K > N
+/**
+ * @brief Verifies robustness when the requested K exceeds the available sample count N.
+ */
 TEST_F(Initializer_KMeansPlusPlus, HandlesKLargerThanN) {
     KMeansPlusPlusInitializer init;
     const int N = 3;
@@ -91,12 +105,13 @@ TEST_F(Initializer_KMeansPlusPlus, HandlesKLargerThanN) {
 
     cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.1f));
 
-    // Should gracefully return at most N centers or repeat them safely
     auto centers = init.initialize(samples, K);
     EXPECT_LE(centers.size(), K);
 }
 
-// 5. Stability on Constant Data
+/**
+ * @brief Verifies stability on uniform datasets where all points are identical.
+ */
 TEST_F(Initializer_KMeansPlusPlus, StabilityOnUniformData) {
     KMeansPlusPlusInitializer init;
     cv::Mat samples(50, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.77f));
