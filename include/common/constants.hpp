@@ -31,7 +31,7 @@ constexpr float INF = 1e30f;
  *  @brief Hyper-parameters for the K-Means algorithm.
  */
 namespace clustering {
-constexpr int FEATURE_DIMS = 5; ///< Dimensions per point: R, G, B, X, Y
+constexpr int FEATURE_DIMS = 5; ///< Dimensions per point: B, G, R, X, Y
 constexpr int K_MIN = 2;        ///< Minimum number of clusters allowed
 constexpr int K_MAX = 20;       ///< Maximum number of clusters allowed
 constexpr int LEARN_INTERVAL_MIN = 1;
