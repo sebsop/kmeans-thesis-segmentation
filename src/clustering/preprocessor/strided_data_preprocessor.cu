@@ -130,7 +130,7 @@ void StridedDataPreprocessor::uploadAndRun(const cv::Mat& frame, int stride) {
     preprocess_strided_kernel<<<gridSize, blockSize>>>(
         static_cast<uchar3*>(m_d_frame_data), static_cast<float*>(m_d_samples), frame.cols, frame.rows, stride,
         out_cols, out_rows, invCols, invRows, kmeans::constants::video::COLOR_SCALE,
-        kmeans::constants::video::SPATIAL_SCALE);
+        kmeans::constants::video::SPATIAL_WEIGHT);
 
     CUDA_CHECK_PREP(cudaDeviceSynchronize());
 }

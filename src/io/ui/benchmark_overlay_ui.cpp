@@ -50,8 +50,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                 std::ranges::for_each(centers, [&](const auto& c) {
                     // Map spatial features (normalized) back to pixel coordinates
                     cv::Point pt(
-                        static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.cols)),
-                        static_cast<int>((c[4] / constants::video::SPATIAL_SCALE) * static_cast<float>(img.rows)));
+                        static_cast<int>((c[3] / constants::video::SPATIAL_WEIGHT) * static_cast<float>(img.cols)),
+                        static_cast<int>((c[4] / constants::video::SPATIAL_WEIGHT) * static_cast<float>(img.rows)));
                     cv::Scalar color(c[0] / constants::video::COLOR_SCALE, c[1] / constants::video::COLOR_SCALE,
                                      c[2] / constants::video::COLOR_SCALE);
 

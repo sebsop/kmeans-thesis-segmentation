@@ -52,7 +52,7 @@ constexpr int HEIGHT = 480;                               ///< Native capture he
 constexpr int PROCESS_WIDTH = 320;                        ///< Internal processing width (downscaled)
 constexpr int PROCESS_HEIGHT = 240;                       ///< Internal processing height (downscaled)
 constexpr float COLOR_SCALE = 1.0f / 255.0f;              ///< Normalization for RGB values
-constexpr float SPATIAL_SCALE = 1.0f / (PROCESS_WIDTH * PROCESS_HEIGHT); ///< Normalization for XY values
+constexpr float SPATIAL_WEIGHT = 1e-6f;                   ///< Minimal spatial weight to prioritize color consistency
 
 constexpr int CAMERA_AUTO_EXPOSURE = -6; ///< Specific exposure setting for standard webcams
 constinit inline const int HW_ACCEL = cv::VIDEO_ACCELERATION_ANY;

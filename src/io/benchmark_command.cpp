@@ -87,7 +87,7 @@ void RunBenchmarkCommand::execute() {
             int n = smallFrame.rows * smallFrame.cols;
             cv::Mat samples(n, constants::clustering::FEATURE_DIMS, CV_32F);
             float colorScale = constants::video::COLOR_SCALE;
-            float spatialScale = constants::video::SPATIAL_SCALE;
+            float spatialScale = constants::video::SPATIAL_WEIGHT;
             float invCols = 1.0f / static_cast<float>(smallFrame.cols);
             float invRows = 1.0f / static_cast<float>(smallFrame.rows);
 

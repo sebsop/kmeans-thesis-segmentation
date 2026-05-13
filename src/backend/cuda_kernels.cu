@@ -173,7 +173,7 @@ void CudaAssignmentContext::run(const cv::Mat& frame, const std::vector<FeatureV
 
     assignPixelsKernel<<<blocksPerGrid, threadsPerBlock, sharedSize, m_stream>>>(
         m_d_input, m_d_output, m_width, m_height, m_d_centers, m_k, constants::video::COLOR_SCALE,
-        constants::video::SPATIAL_SCALE);
+        constants::video::SPATIAL_WEIGHT);
     CUDA_CHECK(cudaPeekAtLastError());
 
     // 3. Download: Device VRAM -> Pinned Buffer -> CPU Mat

@@ -211,8 +211,8 @@ void Application::run() {
                 // Draw centroids directly on the frame for low-latency visual feedback
                 std::ranges::for_each(centers, [&](const auto& c) {
                     cv::Point pt(
-                        static_cast<int>((c[3] / constants::video::SPATIAL_SCALE) * static_cast<float>(frame.cols)),
-                        static_cast<int>((c[4] / constants::video::SPATIAL_SCALE) * static_cast<float>(frame.rows)));
+                        static_cast<int>((c[3] / constants::video::SPATIAL_WEIGHT) * static_cast<float>(frame.cols)),
+                        static_cast<int>((c[4] / constants::video::SPATIAL_WEIGHT) * static_cast<float>(frame.rows)));
                     cv::Scalar color(c[0] / constants::video::COLOR_SCALE, c[1] / constants::video::COLOR_SCALE,
                                      c[2] / constants::video::COLOR_SCALE);
                     cv::circle(segmentedFull, pt, constants::viz::CENTROID_RADIUS, color, -1);
