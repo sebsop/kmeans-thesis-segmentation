@@ -57,7 +57,7 @@ std::vector<FeatureVector> KMeansPlusPlusInitializer::initialize(const cv::Mat& 
     centers.reserve(k);
     int numPoints = samples.rows;
 
-    thread_local static std::mt19937 gen(std::random_device{}());
+    thread_local static std::mt19937 gen(constants::clustering::STABLE_RANDOM_SEED);
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
     // 1. Pick first center at random

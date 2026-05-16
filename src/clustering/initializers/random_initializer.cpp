@@ -28,8 +28,8 @@ std::vector<FeatureVector> RandomInitializer::initialize(const cv::Mat& samples,
     std::vector<FeatureVector> centers(k);
     int numPoints = samples.rows;
 
-    // Thread-local RNG to ensure efficiency and safety in the multithreaded app
-    thread_local static std::mt19937 gen(std::random_device{}());
+    // Thread-local RNG initialized with a stable seed for scientific reproducibility
+    thread_local static std::mt19937 gen(constants::clustering::STABLE_RANDOM_SEED);
     std::uniform_int_distribution<> dis(0, numPoints - 1);
 
     // Uniformly sample K points from the image
