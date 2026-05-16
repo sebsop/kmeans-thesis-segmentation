@@ -62,6 +62,38 @@ TEST_F(Clustering_ClassicalEngine, AssignmentCorrectness) {
 }
 
 /**
+ * @brief Validates convergence for the standard Euclidean engine.
+ *
+ * Ensures that centroids correctly settle on the means of distinct clusters.
+ */
+TEST_F(Clustering_ClassicalEngine, ClassicalConvergence) {
+    ClassicalEngine engine;
+
+    cv::Mat samples(10, constants::clustering::FEATURE_DIMS, CV_32F);
+    for (int i = 0; i < 5; ++i) {
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
+            samples.at<float>(i, d) = 0.1f;
+        }
+    }
+    for (int i = 5; i < 10; ++i) {
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
+            samples.at<float>(i, d) = 0.9f;
+        }
+    }
+
+    std::vector<FeatureVector> initialCenters(2);
+    initialCenters[0] = FeatureVector(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    initialCenters[1] = FeatureVector(1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    auto finalCenters = engine.run(samples, initialCenters, 2, 10);
+
+    for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
+        EXPECT_NEAR(finalCenters[0][d], 0.1f, 0.01f);
+        EXPECT_NEAR(finalCenters[1][d], 0.9f, 0.01f);
+    }
+}
+
+/**
  * @brief Stress tests the shared memory allocation for high K-values.
  *
  * Ensures that the engine handles the maximum supported cluster count (20)

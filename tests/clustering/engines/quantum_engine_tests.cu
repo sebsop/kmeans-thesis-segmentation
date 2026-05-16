@@ -130,4 +130,30 @@ TEST_F(Clustering_QuantumEngine, QuantumScaleAliasingPrevention) {
     EXPECT_NEAR(finalCenters[1][0], 1000000.0f, 1.0f);
 }
 
+/**
+ * @brief Ensures the Quantum engine handles empty clusters without numerical instability.
+ */
+TEST_F(Clustering_QuantumEngine, QuantumEmptyClusterRobustness) {
+    QuantumEngine engine;
+    const int K = 5;
+
+    cv::Mat samples(50, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.2f));
+
+    std::vector<FeatureVector> initialCenters(K);
+    // Initialize one center close to the data, others very far away
+    initialCenters[0] = FeatureVector(0.2f, 0.2f, 0.2f, 0.2f, 0.2f);
+    for (int i = 1; i < K; ++i) {
+        initialCenters[i] = FeatureVector(100.0f, 100.0f, 100.0f, 100.0f, 100.0f);
+    }
+
+    auto finalCenters = engine.run(samples, initialCenters, K, 5);
+
+    EXPECT_EQ(finalCenters.size(), K);
+    for (const auto& c : finalCenters) {
+        for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
+            EXPECT_FALSE(std::isnan(c[d]));
+        }
+    }
+}
+
 } // namespace ThesisTests::Clustering::Engines

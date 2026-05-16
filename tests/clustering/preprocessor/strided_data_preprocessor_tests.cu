@@ -100,8 +100,8 @@ TEST_F(Preprocessor_StridedData, SpatialScalingCorrectness) {
     float x_feature = samples.at<float>(idx, 3);
     float y_feature = samples.at<float>(idx, 4);
 
-    float expected_x = (50.0f / W) * constants::video::SPATIAL_SCALE;
-    float expected_y = (50.0f / H) * constants::video::SPATIAL_SCALE;
+    float expected_x = (50.0f / W) * constants::video::SPATIAL_WEIGHT;
+    float expected_y = (50.0f / H) * constants::video::SPATIAL_WEIGHT;
 
     EXPECT_NEAR(x_feature, expected_x, 1e-5);
     EXPECT_NEAR(y_feature, expected_y, 1e-5);
@@ -141,6 +141,27 @@ TEST_F(Preprocessor_StridedData, DevicePointerIsValid) {
     cudaMemcpy(h_first_pixel.data(), d_ptr, 5 * sizeof(float), cudaMemcpyDeviceToHost);
 
     EXPECT_NEAR(h_first_pixel[0], 128.0f / 255.0f, 1e-3);
+}
+
+/**
+ * @brief Verifies that extreme pixel values (0 and 255) are correctly normalized.
+ */
+TEST_F(Preprocessor_StridedData, NormalizationBounds) {
+    StridedDataPreprocessor preproc;
+    cv::Mat frame(1, 2, CV_8UC3);
+    frame.at<cv::Vec3b>(0, 0) = cv::Vec3b(0, 0, 0);       // Pure Black
+    frame.at<cv::Vec3b>(0, 1) = cv::Vec3b(255, 255, 255); // Pure White
+
+    int numPoints = 0;
+    float* d_ptr = preproc.prepareDevice(frame, 1, numPoints);
+
+    std::vector<float> h_data(10); // 2 pixels * 5 features
+    cudaMemcpy(h_data.data(), d_ptr, 10 * sizeof(float), cudaMemcpyDeviceToHost);
+
+    // Check Black pixel (should be 0.0)
+    EXPECT_NEAR(h_data[0], 0.0f, 1e-4);
+    // Check White pixel (should be 1.0)
+    EXPECT_NEAR(h_data[5], 1.0f, 1e-4);
 }
 
 } // namespace ThesisTests::Clustering::Preprocessor

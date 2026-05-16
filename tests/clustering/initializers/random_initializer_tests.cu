@@ -70,11 +70,18 @@ TEST_F(Initializer_Random, IsNotConstant) {
         samples.at<float>(i, 0) = static_cast<float>(i);
     }
 
-    auto centers1 = init.initialize(samples, 1);
-    auto centers2 = init.initialize(samples, 1);
+    auto centers1 = init.initialize(samples, 5);
+    auto centers2 = init.initialize(samples, 5);
 
-    // Verifies the RNG state advances between calls
-    EXPECT_NE(centers1[0][0], centers2[0][0]);
+    bool identical = true;
+    for (int i = 0; i < 5; ++i) {
+        if (centers1[i][0] != centers2[i][0]) {
+            identical = false;
+            break;
+        }
+    }
+
+    EXPECT_FALSE(identical);
 }
 
 } // namespace ThesisTests::Clustering::Initializers
