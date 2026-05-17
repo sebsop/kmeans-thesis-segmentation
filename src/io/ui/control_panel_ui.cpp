@@ -107,7 +107,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
             "Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
     }
 
-    const char* engines[] = {"Classical (CPU)", "Quantum"};
+    const char* engines[] = {"Classical", "Quantum"};
     int currentEngine = (pendingConfig.algorithm == common::AlgorithmType::KMEANS_REGULAR) ? 0 : 1;
     if (ImGui::Combo("Execution Engine", &currentEngine, engines, 2)) {
         pendingConfig.algorithm =
