@@ -12,6 +12,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
 #include <thrust/scan.h>
+#include <thrust/distance.h>
 
 #include "clustering/initializers/kmeans_plus_plus_initializer.hpp"
 #include "common/constants.hpp"

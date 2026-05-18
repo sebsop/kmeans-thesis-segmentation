@@ -3,7 +3,7 @@
 # Build system configuration for the K-Means Thesis Pipeline.
 #
 # This file orchestrates a complex hybrid C++/CUDA project, managing 
-# dependencies (OpenCV, ZMQ, GLFW), enforcing code quality standards, 
+# dependencies (OpenCV, GLFW), enforcing code quality standards, 
 # and applying high-performance compiler optimizations for real-time 
 # computer vision.
 # =============================================================================
@@ -24,7 +24,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
  
-# --- 3. Google Test Integration (FetchContent) ---
+# --- 3. Google Test & Dear ImGui Integration (FetchContent) ---
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -42,6 +42,14 @@ endif()
 if(TARGET gtest_main)
     set_target_properties(gtest_main PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:gtest_main,INTERFACE_INCLUDE_DIRECTORIES>)
 endif()
+
+# Fetch Dear ImGui
+FetchContent_Declare(
+  imgui
+  URL https://github.com/ocornut/imgui/archive/refs/tags/v1.90.4.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(imgui)
  
 enable_testing()
 include(CTest)
@@ -94,8 +102,8 @@ include_directories(
 include_directories(SYSTEM
     ${OpenCV_INCLUDE_DIRS}
     ${CUDAToolkit_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/src/vendor/imgui
-    ${CMAKE_SOURCE_DIR}/src/vendor/imgui/backends
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
 )
 
 # --- 6. Quality Assurance Targets ---
@@ -201,14 +209,14 @@ endif()
 
 # --- 8. Target Definition: Vendor (ImGui) ---
 add_library(imgui STATIC
-    src/vendor/imgui/imgui.cpp
-    src/vendor/imgui/imgui_draw.cpp
-    src/vendor/imgui/imgui_tables.cpp
-    src/vendor/imgui/imgui_widgets.cpp
-    src/vendor/imgui/backends/imgui_impl_glfw.cpp
-    src/vendor/imgui/backends/imgui_impl_opengl3.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
-target_include_directories(imgui PUBLIC src/vendor/imgui src/vendor/imgui/backends)
+target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 if (MSVC)
     target_compile_options(imgui PRIVATE /analyze-)
 endif()

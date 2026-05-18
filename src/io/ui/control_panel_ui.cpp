@@ -41,7 +41,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         const ImGuiStyle& style = ImGui::GetStyle();
         const float textH = ImGui::GetTextLineHeightWithSpacing();
         const float frameH = ImGui::GetFrameHeightWithSpacing();
-        const float sepH = style.SeparatorSize;
+        const float sepH = 1.0f;
         const float plotH = constants::ui::PLOT_HEIGHT;
 
         float contentH = 0.0f;
