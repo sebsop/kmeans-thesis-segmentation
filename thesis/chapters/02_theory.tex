@@ -2,7 +2,7 @@
 {\itshape This chapter reviews the mathematical foundations of classical and quantum clustering. It defines the coordinates of our 5D color-spatial manifold, derives standard video combinatorics constraints, describes the CUDA parallel SIMT execution model, outlines the physics boundaries of physical NISQ processors, and presents the mathematical derivation of the quantum SWAP test phase simulator.}
 
 \section{Classical K-Means Clustering and Spatial Weighting}
-K-Means is a popular clustering algorithm that groups $N$ data points into $K$ uniform clusters. The algorithm works by iteratively minimizing WCSS:
+K-Means is a popular clustering algorithm that groups $N$ data points into $K$ uniform clusters \cite{lloyd1982least}. The algorithm works by iteratively minimizing WCSS \cite{krzanowski1988criterion}:
 \begin{equation}
 \label{eq:wcss}
 J = \sum_{i=1}^{K} \sum_{\mathbf{x} \in S_i} \|\mathbf{x} - \boldsymbol{\mu}_i\|^2
@@ -12,7 +12,7 @@ where $S_i$ is the set of points in the $i$-th cluster, and $\boldsymbol{\mu}_i$
     \item \textbf{Assignment Step:} Every point $\mathbf{x}$ is assigned to its nearest centroid based on Euclidean distance: $S_i^{(t)} = \{ \mathbf{x} : \|\mathbf{x} - \boldsymbol{\mu}_i^{(t)}\|^2 \le \|\mathbf{x} - \boldsymbol{\mu}_j^{(t)}\|^2 \ \forall j \}$.
     \item \textbf{Update Step:} New centroids are calculated by averaging all points in each cluster: $\boldsymbol{\mu}_i^{(t+1)} = \frac{1}{|S_i^{(t)}|} \sum_{\mathbf{x} \in S_i^{(t)}} \mathbf{x}$.
 \end{enumerate}
-These steps repeat until the centroids stop changing or the algorithm reaches a maximum iteration limit ($I_{\text{max}}$).
+These steps repeat until the centroids stop changing or the algorithm reaches a maximum iteration limit ($I_{\text{max}}$) \cite{farivar2008parallel}.
 
 \subsection{The 5D Color-Spatial Manifold}
 Traditional clustering operates solely in 3D color spaces (such as RGB, HSV, or CIELAB). However, grouping pixels only by color causes spatial fragmentation, where pixels of similar color are grouped together regardless of their physical location in the image. To ensure spatial consistency, the feature space is extended to a 5D manifold:
