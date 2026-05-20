@@ -1,0 +1,53 @@
+\documentclass[12pt]{report} 
+\emergencystretch 3em
+
+\usepackage[language=english, type=bachelor]{style}
+\usepackage{float}
+\usepackage{seqsplit}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\lhead{}
+\chead{}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.2pt}
+
+\begin{document}
+
+\specialization{Computer Science}    
+\title{GPU-Accelerated 5D Image Segmentation using Classical and Quantum-Inspired K-Means}                     
+\author{Sebastian Șoptelea}                                            
+\supervisor{Prof. Dr. Anca-Mirela Andreica}                
+                
+\maketitle
+\newpage
+\pagenumbering{roman} 
+
+\cleardoublepage
+\input{chapters/abstract}
+
+\tableofcontents
+\newpage
+
+\begingroup
+\renewcommand{\clearpage}{}
+\renewcommand{\cleardoublepage}{}
+\listoffigures
+\vspace{1.5cm}
+\listoftables
+\newpage
+\endgroup
+\pagenumbering{arabic}
+
+\input{chapters/01_intro}
+\input{chapters/02_theory}
+\input{chapters/03_architecture}
+\input{chapters/04_implementation}
+\input{chapters/05_testing}
+\input{chapters/06_results}
+\input{chapters/07_conclusions}
+
+\nocite{*}
+\bibliography{references}
+
+\end{document}

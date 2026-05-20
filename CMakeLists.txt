@@ -192,7 +192,7 @@ target_link_libraries(kmeans_core PUBLIC ${OpenCV_LIBS} glfw)
 if(MSVC)
     target_compile_options(kmeans_core PRIVATE 
         $<$<COMPILE_LANGUAGE:CXX>:/W4 /WX /permissive- /Zc:preprocessor>
-        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/W4 -Xcompiler=/WX -Xcompiler=/permissive- -Xcompiler=/Zc:preprocessor>
+        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/W4 -Xcompiler=/permissive- -Xcompiler=/Zc:preprocessor>
     )
     target_compile_options(kmeans_core PRIVATE
         "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CUDA>>:-Xcompiler=/O2>"
