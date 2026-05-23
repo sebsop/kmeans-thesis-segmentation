@@ -2,7 +2,7 @@
 {\itshape This chapter details the verification process used to ensure that the classical and quantum-inspired engines are mathematically correct, stable, and performant. The chapter describes the automated unit test suite, explains the parity protocol used to match CPU and GPU calculations, and profiles the frame throughput and sub-millisecond execution times of the pipelines.}
 
 \section{Automated Testing Environment}
-The core algorithms were verified using GoogleTest (GTest) to test C++ code and CUDA kernels without launching the full GUI application. GTest was chosen because it integrates smoothly with CMake and supports CUDA-based test fixtures. These fixtures automatically reset the GPU and clear device memory before each test, ensuring a clean state and preventing memory leaks from affecting subsequent test results.
+The core algorithms were verified using GoogleTest (GTest) \cite{googletest} to test C++ code and CUDA kernels without launching the full GUI application. GTest was chosen because it integrates smoothly with CMake and supports CUDA-based test fixtures. These fixtures automatically reset the GPU and clear device memory before each test, ensuring a clean state and preventing memory leaks from affecting subsequent test results.
 
 The testing suite compiles into a dedicated executable, \texttt{all\_tests}, which mirrors the C++ project structure:
 \begin{itemize}
@@ -19,24 +19,24 @@ To guarantee mathematical correctness and stability under extreme operational co
 \subsection{Mathematical Correctness and Convergence}
 The \texttt{AssignmentCorrectness} and \texttt{QuantumMetricAssignment} tests verify that the engines assign pixels to the correct nearest centroids. This is validated using fixed synthetic datasets with pre-calculated cluster boundaries. 
 
-Iterative stability is also tested through the \texttt{ClassicalConvergence} and \texttt{QuantumConvergence} tests. These use multi-modal data clusters to confirm that both the linear Euclidean and non-linear quantum-inspired engines reach a stable state (where centroids stop moving) within a bounded number of iterations, proving that the phase-based mapping does not cause convergence loops.
+Iterative stability is also tested through the \texttt{ClassicalConvergence} and \texttt{QuantumConvergence} tests. These use multi-modal data clusters to confirm that both the linear Euclidean and non-linear quantum-inspired engines reach a stable state (where centroids stop moving) within a bounded number of iterations \cite{lloyd1982least}, proving that the phase-based mapping does not cause convergence loops.
 
 \subsection{Boundary Condition Resilience}
-A common issue in K-Means is the empty cluster problem, where a centroid is assigned zero pixels during an iteration, causing a divide-by-zero error during centroid updates. The \texttt{EmptyClusterRobustness} and \texttt{QuantumEmptyClusterRobustness} tests verify that the system detects empty clusters and handles them safely. By placing starting centroids far away from any data points, the tests confirm that the kernels remain stable and do not produce NaN (Not a Number) values, which would otherwise crash the GPU visualization pipeline.
+A common issue in K-Means is the empty cluster problem, where a centroid is assigned zero pixels during an iteration \cite{aloise2017strategies}, causing a divide-by-zero error during centroid updates. The \texttt{EmptyClusterRobustness} and \texttt{QuantumEmptyClusterRobustness} tests verify that the system detects empty clusters and handles them safely. By placing starting centroids far away from any data points, the tests confirm that the kernels remain stable and do not produce NaN (Not a Number) values, which would otherwise crash the GPU visualization pipeline.
 
-Additionally, the \texttt{HighKAssignment} and \texttt{QuantumHighK} tests evaluate system behavior at the maximum configuration of $K=20$ clusters. This confirms that the shared memory used by the CUDA kernels does not exceed physical hardware bounds, preventing kernel launch failures.
+Additionally, the \texttt{HighKAssignment} and \texttt{QuantumHighK} tests evaluate system behavior at the maximum configuration of $K=20$ clusters. This confirms that the shared memory used by the CUDA kernels does not exceed physical hardware bounds, preventing kernel launch failures \cite{CudaGuide}.
 
 \section{Cross-Backend Parity and Floating-Point Drift}
 To verify the GPU implementations, a parity protocol is established that compares GPU results against CPU-calculated ground truths using identical data inputs.
 
-During parity testing, small numerical differences (on the order of $10^{-6}$) are expected in the final centroid coordinates due to floating-point drift. This occurs because the CPU and GPU perform float arithmetic differently. The CPU's floating-point unit often calculates intermediate values in 64-bit or 80-bit precision before rounding back to 32-bit (FP32), while the GPU maintains a strict, high-speed 32-bit pipeline. 
+During parity testing, small numerical differences (on the order of $10^{-6}$) are expected in the final centroid coordinates due to floating-point drift. This occurs because the CPU and GPU perform float arithmetic differently \cite{CudaGuide, cook2012cuda}. The CPU's floating-point unit often calculates intermediate values in 64-bit or 80-bit precision before rounding back to 32-bit (FP32), while the GPU maintains a strict, high-speed 32-bit pipeline \cite{CudaGuide}. 
 
-Additionally, compiler optimizations like Fused Multiply-Add (FMA) combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps. To handle this hardware-specific behavior, the GTest suite uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
+Additionally, compiler optimizations like Fused Multiply-Add (FMA) combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps \cite{CudaGuide}. To handle this hardware-specific behavior, the GTest suite \cite{googletest} uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
 
 \section{Performance Benchmarking and Latency Profiling}
-To measure the speed and latency of the framework, the classical engine was profiled under three standard operational configurations on a static VGA frame ($640 \times 480$ pixels, $N = 307,200$). The frame rate (FPS) measurements and sub-millisecond stage latencies were merged into a single telemetry dashboard, summarized in Table~\ref{tab:telemetry}.
+To measure the speed and latency of the framework, the classical engine was profiled under three standard operational configurations on a static QVGA frame ($320 \times 240$ pixels, $N = 76,800$). The frame rate (FPS) measurements and sub-millisecond stage latencies were merged into a single telemetry dashboard, summarized in Table~\ref{tab:telemetry}.
 
-\begin{table}[h!]
+\begin{table}[htbp]
 \centering
 \small
 \caption{System Performance and Latency Telemetry (RTX 3050 GPU)}
@@ -52,12 +52,12 @@ To measure the speed and latency of the framework, the classical engine was prof
 
 The telemetry shows that the pipeline is extremely efficient:
 \begin{itemize}
-    \item \textbf{Throughput:} The frame rate remains well above $150\text{ FPS}$ in all modes, easily exceeding the $120\text{ FPS}$ real-time video requirement ($8.33\text{ ms}$ budget).
-    \item \textbf{Latency scaling:} The preprocessing and pixel assignment stages take under $0.5\text{ ms}$ and scale near-independently of the cluster count $K$. This confirms that the CUDA thread indexing model successfully decouples pixel count from algorithmic complexity.
+    \item \textbf{Throughput:} The frame rate remains well above $150\text{ FPS}$ in all modes, easily exceeding the $120\text{ FPS}$ real-time video requirement ($8.33\text{ ms}$ budget) \cite{jerald2009scene}.
+    \item \textbf{Latency scaling:} The preprocessing and pixel assignment stages take under $0.5\text{ ms}$ and scale near-independently of the cluster count $K$. This confirms that the CUDA thread indexing model successfully decouples pixel count from algorithmic complexity \cite{CudaGuide}.
     \item \textbf{Optimization overhead:} While iterative learning time grows from $0.29\text{ ms}$ ($K=3, S=8$) to $1.09\text{ ms}$ ($K=20, S=1$), the overall latency remains under $1.9\text{ ms}$, leaving significant thermal and processing headroom on the host device.
 \end{itemize}
 
 \section{Scientific Reproducibility}
 To ensure that experimental comparisons between the classical and quantum-inspired engines are fair and reproducible, a fixed-seed protocol is implemented. Because K-Means is a stochastic algorithm, varying initial centroids would introduce random noise into convergence and quality benchmarks.
 
-To eliminate this variance, random number generators are configured to use a fixed, global seed value (\texttt{STABLE\_RANDOM\_SEED = 42}). This seed is used to initialize the Mersenne Twister (\texttt{std::mt19937}) engines in the initializers, and the Monte Carlo sampling logic in the metrics runner. This cross-platform consistency guarantees that the starting centroid configurations and subset selections are identical across multiple runs, ensuring comparative benchmarks are scientific and reliable. With these rigorous reproducibility controls established, the next chapter presents the comparative experimental results and detailed quality evaluations of the classical and quantum-inspired engines.
+To eliminate this variance, random number generators are configured to use a fixed, global seed value (\texttt{STABLE\_RANDOM\_SEED = 42}). This seed is used to initialize the Mersenne Twister (\texttt{std::mt19937}) engines in the initializers \cite{matsumoto1998mersenne, stroustrup2022tour}, and the Monte Carlo sampling logic in the metrics runner \cite{shutaywi2021silhouette}. This cross-platform consistency guarantees that the starting centroid configurations and subset selections are identical across multiple runs, ensuring comparative benchmarks are scientific and reliable. With these rigorous reproducibility controls established, the next chapter presents the comparative experimental results and detailed quality evaluations of the classical and quantum-inspired engines.

@@ -12,77 +12,77 @@ The segmentation framework is designed as a high-throughput, asynchronous pipeli
 \end{figure}
 
 \subsection{Technological Stack}
-The framework is built using C++20 and the NVIDIA CUDA toolkit to handle the intense processing demands of 5D pixel clustering. C++20 features like \texttt{std::span} are used to pass memory-safe views of GPU-mapped buffers without the overhead of deep copies. This high-performance stack allows the system to process hundreds of thousands of pixels in parallel, bypassing the traditional single-threaded CPU bottlenecks.
+The framework is built using C++20 and the NVIDIA CUDA toolkit to handle the intense processing demands of 5D pixel clustering \cite{CudaGuide}. C++20 features like \texttt{std::span} are used to pass memory-safe views of GPU-mapped buffers without the overhead of deep copies \cite{stroustrup2022tour}. This high-performance stack allows the system to process hundreds of thousands of pixels in parallel, bypassing the traditional single-threaded CPU bottlenecks.
 
 \subsection{Thread Partitioning and Asynchronous Pipeline}
 To achieve real-time performance, the application runs on two main threads that communicate asynchronously:
 \begin{itemize}
-    \item \textbf{UI Thread (Main):} Handles the application lifecycle, processes window events, and renders the immediate-mode GUI using Dear ImGui. It retrieves fully processed segmented frames from shared buffers using a mutex-protected synchronization lock.
+    \item \textbf{UI Thread (Main):} Handles the application lifecycle, processes window events, and renders the immediate-mode GUI using Dear ImGui \cite{ImGui}. It retrieves fully processed segmented frames from shared buffers using a mutex-protected synchronization lock.
     \item \textbf{Clustering Worker Thread:} Managed by the core \texttt{Application} class, this thread runs the main clustering loop. It continuously updates hyperparameters from the UI, executes the active CUDA clustering engine, and uploads the resulting segmented frames directly to GPU textures.
 \end{itemize}
 
-The execution follows a clean four-stage data lifecycle. First, a new frame is captured using OpenCV and uploaded to the GPU as a 5D feature set. Second, the \texttt{ClusteringManager} dispatches the active \texttt{KMeansEngine} to run optimized CUDA kernels for pixel assignment. Third, instead of transferring pixel labels back to the CPU, a custom kernel re-colors the pixels directly on the GPU. Finally, the processed buffer is loaded into a shared texture, and the UI thread renders it using page-locked host memory, keeping CPU-GPU synchronization overhead to a minimum.
+The execution follows a clean four-stage data lifecycle. First, a new frame is captured using OpenCV \cite{Bradski2000} and uploaded to the GPU as a 5D feature set. Second, the \texttt{ClusteringManager} dispatches the active \texttt{KMeansEngine} to run optimized CUDA kernels for pixel assignment. Third, instead of transferring pixel labels back to the CPU, a custom kernel re-colors the pixels directly on the GPU. Finally, the processed buffer is loaded into a shared texture, and the UI thread renders it using page-locked host memory, keeping CPU-GPU synchronization overhead to a minimum \cite{CudaGuide}.
 
 \section{Design Patterns and Core Principles}
-Specific software design patterns are used to decouple mathematical engines from the GUI, ensuring the system is modular and easy to maintain.
+Specific software design patterns are used to decouple mathematical engines from the GUI, ensuring the system is modular and easy to maintain \cite{gamma1995design}.
 
 \subsection{Creational and Structural Patterns}
 The creation and interchangeability of the components are decoupled using the following structural principles:
 \begin{itemize}
-    \item \textbf{Factory Method:} The \texttt{ClusteringFactory} encapsulates the instantiation of the computational engines and initialization strategies based on runtime configuration enums. This prevents the high-level application from depending directly on concrete CUDA engine classes.
-    \item \textbf{Strategy Pattern:} The clustering and initialization algorithms are implemented as interchangeable strategies. This allows for swapping the classical Euclidean engine with the quantum-inspired engine at runtime without interrupting the video capture pipeline.
-    \item \textbf{Facade Pattern:} The \texttt{ClusteringManager} serves as a simplified, high-level interface to the complex GPU subsystems (preprocessing, kernel dispatching, and VRAM management).
-    \item \textbf{Bridge Pattern (Pimpl):} The Pointer to Implementation (Pimpl) idiom is used in the manager classes. This serves as a compiler firewall, hiding CUDA-specific types and OpenCV headers from the global project scope, which keeps compile times low.
+    \item \textbf{Factory Method:} The \texttt{ClusteringFactory} encapsulates the instantiation of the computational engines and initialization strategies based on runtime configuration enums \cite{gamma1995design}. This prevents the high-level application from depending directly on concrete CUDA engine classes.
+    \item \textbf{Strategy Pattern:} The clustering and initialization algorithms are implemented as interchangeable strategies \cite{gamma1995design}. This allows for swapping the classical Euclidean engine with the quantum-inspired engine at runtime without interrupting the video capture pipeline.
+    \item \textbf{Facade Pattern:} The \texttt{ClusteringManager} serves as a simplified, high-level interface to the complex GPU subsystems (preprocessing, kernel dispatching, and VRAM management) \cite{gamma1995design}.
+    \item \textbf{Bridge Pattern (Pimpl):} The Pointer to Implementation (Pimpl) idiom is used in the manager classes as a form of the Bridge Pattern \cite{gamma1995design}. This serves as a compiler firewall, hiding CUDA-specific types and OpenCV headers from the global project scope, which keeps compile times low \cite{stroustrup2022tour}.
 \end{itemize}
 
 \subsection{Behavioral and Concurrency Patterns}
 For asynchronous execution and clean resource handling, the system implements:
 \begin{itemize}
-    \item \textbf{Command Pattern:} Benchmark requests are encapsulated into \texttt{BenchmarkCommand} objects. This allows for queuing and executing performance comparisons asynchronously without locking the UI.
-    \item \textbf{Observer Pattern:} The \texttt{BenchmarkRunner} acts as a subject that broadcasts benchmark results to the GUI as they complete, keeping the benchmarking engine decoupled from the UI widgets.
-    \item \textbf{Resource Acquisition Is Initialization (RAII):} The \texttt{CudaAssignmentContext} manages the lifetime of all GPU resources. It handles the automatic allocation and deterministic release of device memory (VRAM) and page-locked host memory, preventing memory leaks in high-frequency loops.
+    \item \textbf{Command Pattern:} Benchmark requests are encapsulated into \texttt{BenchmarkCommand} objects. This allows for queuing and executing performance comparisons asynchronously without locking the UI \cite{gamma1995design}.
+    \item \textbf{Observer Pattern:} The \texttt{BenchmarkRunner} acts as a subject that broadcasts benchmark results to the GUI as they complete, keeping the benchmarking engine decoupled from the UI widgets \cite{gamma1995design}.
+    \item \textbf{Resource Acquisition Is Initialization (RAII):} The \texttt{CudaAssignmentContext} manages the lifetime of all GPU resources. It handles the automatic allocation and deterministic release of device memory (VRAM) and page-locked host memory, preventing memory leaks in high-frequency loops \cite{stroustrup2022tour}.
 \end{itemize}
 
 \section{Feature Space and Data Engineering}
 The success of clustering depends entirely on how the input data is represented. The framework moves beyond simple RGB grouping by constructing a 5D manifold that balances color and space.
 
 \subsection{The Normalized 5D Manifold}
-As derived in Section 2.1.3, each pixel is mapped to a normalized 5D feature vector $\mathbf{x}_n = [B_n, G_n, R_n, \lambda x_n, \lambda y_n]^T$. The data engineering pipeline, implemented in \texttt{StridedDataPreprocessor}, normalizes color values to $[0, 1]$ by multiplying the raw BGR values by $1/255$. Spatial coordinates are similarly mapped to $[0, 1]$ using the reciprocal of the processing dimensions. 
+As derived in Section \ref{subsect:manifold}, each pixel is mapped to a normalized 5D feature vector $\mathbf{x}_n = [B_n, G_n, R_n, \lambda x_n, \lambda y_n]^T$. The data engineering pipeline, implemented in \texttt{StridedDataPreprocessor}, normalizes color values to $[0, 1]$ by multiplying the raw BGR values by $1/255$. Spatial coordinates are similarly mapped to $[0, 1]$ using the reciprocal of the processing dimensions. 
 
-To prevent geometric coordinates from dominating the distance calculations on high-resolution frames, a spatial scaling weight ($\lambda_{\text{spatial}} = 10^{-6}$) is applied. This weight ensures that chromatic similarity drives the segmentation, while spatial information acts as a regularizer to prevent noisy, fragmented pixel regions.
+To prevent geometric coordinates from dominating the distance calculations on high-resolution frames, a spatial scaling weight ($\lambda_{\text{spatial}} = 10^{-6}$) is applied. This weight ensures that chromatic similarity drives the segmentation, while spatial information acts as a regularizer to prevent noisy, fragmented pixel regions \cite{shi2000normalized, achanta2012slic}.
 
 \subsection{Phase Mapping for the Quantum Engine}
-For the quantum-inspired backend, the normalized 5D coordinates are mapped to angular phase states: $\theta_d = (p_d - c_d) \cdot \lambda_{\text{scale}}$, where $\lambda_{\text{scale}} = \pi/4$. As detailed in Section 2.4.3, this maps the classical feature differences into a bounded angular domain. The GPU engine uses this mapping to calculate non-linear similarity overlaps via hardware-accelerated cosine intrinsics, providing sharp, noise-resistant cluster boundaries.
+For the quantum-inspired backend, the normalized 5D coordinates are mapped to angular phase states: $\theta_d = (p_d - c_d) \cdot \lambda_{\text{scale}}$, where $\lambda_{\text{scale}} = \pi/4$. As detailed in Section \ref{subsect:phasespace}, this maps the classical feature differences into a bounded angular domain. The GPU engine uses this mapping to calculate non-linear similarity overlaps via hardware-accelerated cosine intrinsics \cite{CudaGuide}, providing sharp, noise-resistant cluster boundaries.
 
 \subsection{Strided Sampling for Dimensionality Reduction}
-To keep the frame rate stable, the iterative centroid learning phase is decoupled from the final pixel assignment phase. Centroid learning is performed on a subsampled sparse manifold generated by the preprocessor, while final assignment is run on the full target resolution.
+To keep the frame rate stable, the iterative centroid learning phase is decoupled from the final pixel assignment phase. Centroid learning is performed on a subsampled sparse manifold generated by the preprocessor, while final assignment is run on the full target resolution \cite{achanta2012slic}.
 
-The preprocessor samples the frame at regular spatial strides $S \in [1, 16]$. This reduces the total number of points in the learning feature space by a factor of $S^2$ while mathematically preserving the global color and spatial distributions of the image. The resulting sparse manifold is uploaded to the GPU as a contiguous memory block, which is highly optimized for fast, coalesced memory access.
+The preprocessor samples the frame at regular spatial strides $S \in [1, 16]$. This reduces the total number of points in the learning feature space by a factor of $S^2$, substantially reducing computational complexity while providing an efficient approximation of the full feature space \cite{mouton2020stride}. The resulting sparse manifold is uploaded to the GPU as a contiguous memory block, which enables fast, coalesced memory access \cite{CudaGuide}.
 
 \section{Component Specifications}
 This section details the primary software classes that make up the computational backend and the user interface.
 
 \subsection{ClusteringManager (The Orchestrator)}
-The \texttt{ClusteringManager} coordinates the entire segmentation lifecycle. It implements the Pimpl idiom to isolate raw CUDA device pointers from the rest of the application. The manager also handles temporal consistency across frames: it caches the converged centroids from the previous video frame to use as the starting seeds for the current frame. This warm-start strategy significantly reduces the number of iterations needed for convergence in live streams.
+The \texttt{ClusteringManager} coordinates the entire segmentation lifecycle. It implements the Pimpl idiom to isolate raw CUDA device pointers from the rest of the application \cite{stroustrup2022tour, meyers2014effective}. The manager also handles temporal consistency across frames: it caches the converged centroids from the previous video frame to use as the starting seeds for the current frame. This warm-start strategy significantly reduces the number of iterations needed for convergence in live streams.
 
 \subsection{CudaAssignmentContext (The Resource Container)}
-The \texttt{CudaAssignmentContext} is the core RAII resource handler. It manages GPU memory allocations (VRAM) and page-locked host memory buffers. At runtime, the context dynamically calculates the shared memory requirements for the kernels based on the active cluster count $K$. This keeps the shared centroid cache perfectly sized, maximizing GPU occupancy and minimizing VRAM lookup latency.
+The \texttt{CudaAssignmentContext} is the core RAII resource handler \cite{stroustrup2022tour}. It manages GPU memory allocations (VRAM) and page-locked host memory buffers. At runtime, the context dynamically calculates the shared memory requirements for the kernels based on the active cluster count $K$. This keeps the shared centroid cache perfectly sized, maximizing GPU occupancy and minimizing VRAM lookup latency \cite{CudaGuide}.
 
 \subsection{Engine Hierarchy and Factory}
 The computational core is structured around an abstract \texttt{KMeansEngine} base class, which defines a strict execution contract for all backend variants:
 \begin{itemize}
-    \item \textbf{ClassicalEngine:} Implements the parallel Euclidean-based Lloyd iterations. It leverages thread-level parallelism on the GPU to calculate distances for all pixels simultaneously.
-    \item \textbf{QuantumEngine:} Implements the phase-encoded fidelity metric, using single-cycle hardware-accelerated cosine intrinsics to evaluate state-overlaps in simulated Hilbert space.
+    \item \textbf{ClassicalEngine:} Implements the parallel Euclidean-based Lloyd iterations. It leverages thread-level parallelism on the GPU to calculate distances for all pixels simultaneously \cite{farivar2008parallel}.
+    \item \textbf{QuantumEngine:} Implements the phase-encoded fidelity metric, using single-cycle hardware-accelerated cosine intrinsics \cite{CudaGuide} to evaluate state-overlaps in simulated Hilbert space.
 \end{itemize}
 These engines are instantiated dynamically by the \texttt{ClusteringFactory}, allowing the user to swap the active algorithm at runtime without interrupting the pipeline.
 
 \subsection{StridedDataPreprocessor}
-The \texttt{StridedDataPreprocessor} acts as the bridge between OpenCV's CPU buffers and the GPU's feature arrays. It extracts BGR values, applies spatial scaling, and downsamples the data using the strided sampling strategy. 
+The \texttt{StridedDataPreprocessor} acts as the bridge between OpenCV's CPU buffers \cite{Bradski2000} and the GPU's feature arrays. It extracts BGR values, applies spatial scaling, and downsamples the data using the strided sampling strategy. 
 
-The preprocessor organizes the features into an Array of Structures (AoS) format, where the five features ($B, G, R, x, y$) for each pixel are stored contiguously. Because each CUDA thread requires all five features simultaneously for its distance calculation, this AoS layout maximizes $L_1$ cache locality, ensuring the entire 5D vector is pulled in a single memory transaction.
+The preprocessor organizes the features into an Array of Structures (AoS) format, where the five features ($B, G, R, x, y$) for each pixel are stored contiguously. Although this AoS layout introduces a strided access pattern across the warp (as threads access memory with a stride of five elements), it maximizes $L_1$/$L_2$ cache line utilization for individual threads. Because a single thread requires all five features simultaneously for its distance calculation, fetching the first coordinate pulls the remaining contiguous features into the cache line, minimizing subsequent global VRAM transactions and hiding memory latency \cite{CudaGuide}.
 
 \subsection{User Interface and telemetry Layer}
-Our GUI dashboard is implemented using Dear ImGui, providing a lightweight control layer that runs directly inside the GLFW loop. Decoupling is maintained by the \texttt{UIManager} class, which manages two main components shown in Figure \ref{fig:ui_dashboard}:
+Our GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a lightweight control layer that runs directly inside the GLFW \cite{GLFWdocs} loop. Decoupling is maintained by the \texttt{UIManager} class, which manages two main components shown in Figure \ref{fig:ui_dashboard}:
 \begin{itemize}
     \item \textbf{VideoFeedUI:} Renders the real-time segmented GPU textures asynchronously.
     \item \textbf{ControlPanelUI:} Provides widgets to adjust the cluster count ($K$), stride parameter, and spatial weight. It also handles engine switching, displays live telemetry (FPS, engine latency, and render times), and displays the side-by-side benchmark comparison.
@@ -99,14 +99,14 @@ Our GUI dashboard is implemented using Dear ImGui, providing a lightweight contr
 This section describes how data is passed across the CPU-GPU boundary and how the UI thread synchronizes with the worker thread.
 
 \subsection{Host-Device Boundary: Heterogeneous Communication}
-The main bottleneck in heterogeneous computing is the latency of transferring data across the PCIe bus. To minimize this, page-locked (pinned) host memory is used. Pinned memory enables the GPU to use DMA to copy features directly from host memory without CPU intervention. 
+The main bottleneck in heterogeneous computing is the latency of transferring data across the PCIe bus \cite{CudaGuide}. To minimize this, page-locked (pinned) host memory is used \cite{CudaGuide, cook2012cuda}. Pinned memory enables the GPU to use DMA to copy features directly from host memory without CPU intervention \cite{CudaGuide}. 
 
-Non-blocking asynchronous streams are also used via \texttt{cudaMemcpyAsync}. This allows the CPU to continue processing and acquiring the next camera frame while the GPU concurrently runs the active clustering kernel on the current frame.
+Non-blocking asynchronous streams are also used via \texttt{cudaMemcpyAsync} \cite{CudaGuide}. This allows the CPU to continue processing and acquiring the next camera frame while the GPU concurrently runs the active clustering kernel on the current frame \cite{cook2012cuda}.
 
 \subsection{Backend-UI Synchronization}
 To keep the GUI running smoothly, the \texttt{ClusteringManager} executes on a dedicated worker thread, preventing heavy GPU computations from blocking the main GLFW render loop. 
 
-Data transfer across this thread boundary is managed using a mutex-protected state machine (\texttt{std::mutex} and \texttt{std::scoped\_lock}). This thread-safe bridge ensures that the UI thread can pull and render the latest visual results, while the worker thread concurrently clusters the next frame, providing flicker-free rendering. The sequence of this multi-threaded execution is visualized in Figure \ref{fig:thread_sync}. This asynchronous pipeline structure is translated into highly optimized C++/CUDA code in the next chapter, which details the underlying kernel implementations and GPU memory optimization strategies.
+Data transfer across this thread boundary is managed using a mutex-protected state machine (\texttt{std::mutex} and \texttt{std::scoped\_lock}) \cite{williams2019c++}. This thread-safe bridge ensures that the UI thread can pull and render the latest visual results, while the worker thread concurrently clusters the next frame, providing flicker-free rendering. The sequence of this multi-threaded execution is visualized in Figure \ref{fig:thread_sync}. This asynchronous pipeline structure is translated into highly optimized C++/CUDA code in the next chapter, which details the underlying kernel implementations and GPU memory optimization strategies.
 
 \begin{figure}[htbp]
     \centering

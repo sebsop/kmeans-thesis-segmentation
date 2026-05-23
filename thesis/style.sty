@@ -8,13 +8,14 @@
 \usepackage{graphicx}                           % images
 \usepackage{url}                                % links
 \usepackage[nottoc, notlof, notlot]{tocbibind}  % table of contents style
-\usepackage[hidelinks, unicode]{hyperref}                  % references from the table of contents
+\usepackage{float}                              % float placement
 \usepackage{etoolbox,ifthen}                    % logic commands
 \usepackage{kvoptions}                          % options handling
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{amsmath}
 \usepackage{amsfonts}   
+\usepackage[hidelinks, unicode, plainpages=false, pdfpagelabels]{hyperref}                  % references from the table of contents
 
 \lstset{
     basicstyle=\ttfamily\small,
@@ -31,6 +32,7 @@
             right=2.5cm,
             top=2.5cm,
             bottom=2.5cm,
+            headheight=15pt,
 }
 
 % bib style
