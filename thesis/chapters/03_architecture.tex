@@ -12,16 +12,16 @@ The segmentation framework is designed as a high-throughput, asynchronous pipeli
 \end{figure}
 
 \subsection{Technological Stack}
-The framework is built using C++20 and the NVIDIA CUDA toolkit to handle the intense processing demands of 5D pixel clustering \cite{CudaGuide}. C++20 features like \texttt{std::span} are used to pass memory-safe views of GPU-mapped buffers without the overhead of deep copies \cite{stroustrup2022tour}. This high-performance stack allows the system to process hundreds of thousands of pixels in parallel, bypassing the traditional single-threaded CPU bottlenecks.
+The framework is built using C++20 and the NVIDIA CUDA toolkit to handle the intense processing demands of 5D pixel clustering \cite{CudaGuide}. C++20 features like \texttt{std::span} are used to pass memory-safe views of host-resident buffers without the overhead of deep copies \cite{stroustrup2022tour}. This high-performance stack allows the system to process hundreds of thousands of pixels in parallel, bypassing the traditional single-threaded CPU bottlenecks.
 
 \subsection{Thread Partitioning and Asynchronous Pipeline}
 To achieve real-time performance, the application runs on two main threads that communicate asynchronously:
 \begin{itemize}
-    \item \textbf{UI Thread (Main):} Handles the application lifecycle, processes window events, and renders the immediate-mode GUI using Dear ImGui \cite{ImGui}. It retrieves fully processed segmented frames from shared buffers using a mutex-protected synchronization lock.
-    \item \textbf{Clustering Worker Thread:} Managed by the core \texttt{Application} class, this thread runs the main clustering loop. It continuously updates hyperparameters from the UI, executes the active CUDA clustering engine, and uploads the resulting segmented frames directly to GPU textures.
+    \item \textbf{UI Thread (Main):} Handles the application lifecycle, processes window events, and renders the immediate-mode GUI using Dear ImGui \cite{ImGui}. It retrieves fully processed segmented frames from shared buffers using a mutex-protected synchronization lock \cite{williams2019c++}.
+    \item \textbf{Clustering Worker Thread:} Managed by the core \texttt{Application} class, this thread runs the main clustering loop. It continuously updates hyperparameters from the UI, executes the active CUDA clustering engine, and commits the resulting segmented frames to shared buffers for UI rendering.
 \end{itemize}
 
-The execution follows a clean four-stage data lifecycle. First, a new frame is captured using OpenCV \cite{Bradski2000} and uploaded to the GPU as a 5D feature set. Second, the \texttt{ClusteringManager} dispatches the active \texttt{KMeansEngine} to run optimized CUDA kernels for pixel assignment. Third, instead of transferring pixel labels back to the CPU, a custom kernel re-colors the pixels directly on the GPU. Finally, the processed buffer is loaded into a shared texture, and the UI thread renders it using page-locked host memory, keeping CPU-GPU synchronization overhead to a minimum \cite{CudaGuide}.
+The execution follows a clean four-stage data lifecycle. First, a new frame is captured using OpenCV \cite{Bradski2000} and uploaded to the GPU as a 5D feature set. Second, the \texttt{ClusteringManager} dispatches the active \texttt{KMeansEngine} to run optimized CUDA kernels for pixel assignment. Third, instead of transferring pixel labels back to the CPU, a custom kernel re-colors the pixels directly on the GPU. Finally, the processed frame is transferred back to host memory using page-locked (pinned) memory (allocated via \texttt{cudaMallocHost}) to minimize PCIe transfer overhead, and the UI thread uploads it to an OpenGL texture for real-time rendering \cite{CudaGuide}.
 
 \section{Design Patterns and Core Principles}
 Specific software design patterns are used to decouple mathematical engines from the GUI, ensuring the system is modular and easy to maintain \cite{gamma1995design}.
@@ -38,7 +38,7 @@ The creation and interchangeability of the components are decoupled using the fo
 \subsection{Behavioral and Concurrency Patterns}
 For asynchronous execution and clean resource handling, the system implements:
 \begin{itemize}
-    \item \textbf{Command Pattern:} Benchmark requests are encapsulated into \texttt{BenchmarkCommand} objects. This allows for queuing and executing performance comparisons asynchronously without locking the UI \cite{gamma1995design}.
+    \item \textbf{Command Pattern:} Benchmark requests are encapsulated into \texttt{Benchmark\allowbreak Command} objects. This allows for queuing and executing performance comparisons asynchronously without locking the UI \cite{gamma1995design}.
     \item \textbf{Observer Pattern:} The \texttt{BenchmarkRunner} acts as a subject that broadcasts benchmark results to the GUI as they complete, keeping the benchmarking engine decoupled from the UI widgets \cite{gamma1995design}.
     \item \textbf{Resource Acquisition Is Initialization (RAII):} The \texttt{CudaAssignmentContext} manages the lifetime of all GPU resources. It handles the automatic allocation and deterministic release of device memory (VRAM) and page-locked host memory, preventing memory leaks in high-frequency loops \cite{stroustrup2022tour}.
 \end{itemize}
@@ -85,7 +85,7 @@ The preprocessor organizes the features into an Array of Structures (AoS) format
 Our GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a lightweight control layer that runs directly inside the GLFW \cite{GLFWdocs} loop. Decoupling is maintained by the \texttt{UIManager} class, which manages two main components shown in Figure \ref{fig:ui_dashboard}:
 \begin{itemize}
     \item \textbf{VideoFeedUI:} Renders the real-time segmented GPU textures asynchronously.
-    \item \textbf{ControlPanelUI:} Provides widgets to adjust the cluster count ($K$), stride parameter, and spatial weight. It also handles engine switching, displays live telemetry (FPS, engine latency, and render times), and displays the side-by-side benchmark comparison.
+    \item \textbf{ControlPanelUI:} Provides widgets to adjust the cluster count ($K$), stride parameter, and learning interval. It also handles engine switching, displays live telemetry (FPS, engine latency, and render times), and provides the control trigger to initiate the side-by-side benchmark comparison.
 \end{itemize}
 
 \begin{figure}[htbp]
