@@ -14,6 +14,9 @@ project(KMeansThesisSegmentation LANGUAGES CXX CUDA)
 # --- 1. Modern CMake Policies ---
 cmake_policy(SET CMP0135 NEW) # FetchContent timestamp behavior
 cmake_policy(SET CMP0146 NEW) # Modern CUDA support
+if(POLICY CMP0168)
+  cmake_policy(SET CMP0168 NEW) # FetchContent direct download (no subbuild)
+endif()
 
 # --- 2. External Dependencies ---
 find_package(OpenCV REQUIRED)
@@ -26,22 +29,24 @@ set(CMAKE_CXX_EXTENSIONS OFF)
  
 # --- 3. Google Test & Dear ImGui Integration (FetchContent) ---
 include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-# For Windows: prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE NEVER)
 
-# Mark GTest as SYSTEM to suppress warnings from its headers
-if(TARGET gtest)
-    set_target_properties(gtest PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>)
-endif()
-if(TARGET gtest_main)
-    set_target_properties(gtest_main PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:gtest_main,INTERFACE_INCLUDE_DIRECTORIES>)
-endif()
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+  # For Windows: prevent overriding the parent project's compiler/linker settings
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
+
+  # Mark GTest as SYSTEM to suppress warnings from its headers
+  if(TARGET gtest)
+      set_target_properties(gtest PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:gtest,INTERFACE_INCLUDE_DIRECTORIES>)
+  endif()
+  if(TARGET gtest_main)
+      set_target_properties(gtest_main PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:gtest_main,INTERFACE_INCLUDE_DIRECTORIES>)
+  endif()
 
 # Fetch Dear ImGui
 FetchContent_Declare(
@@ -183,7 +188,7 @@ set_target_properties(kmeans_core PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_STANDARD 20
     CUDA_STANDARD_REQUIRED ON
-    CUDA_ARCHITECTURES "native"
+    CUDA_ARCHITECTURES "all-major"
 )
 
 target_link_libraries(kmeans_core PUBLIC ${OpenCV_LIBS} glfw)
@@ -243,10 +248,10 @@ set_target_properties(kmeans_thesis_segmentation PROPERTIES
     CXX_EXTENSIONS OFF
     CUDA_STANDARD 20
     CUDA_STANDARD_REQUIRED ON
-    CUDA_ARCHITECTURES "native"
+    CUDA_ARCHITECTURES "all-major"
 )
 
 target_link_libraries(kmeans_thesis_segmentation PRIVATE kmeans_core imgui)
  
 # --- 10. Test Orchestration ---
-add_subdirectory(tests)
+  add_subdirectory(tests)

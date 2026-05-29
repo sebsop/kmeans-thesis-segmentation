@@ -36,7 +36,7 @@ set_target_properties(all_tests PROPERTIES
     CXX_STANDARD_REQUIRED ON
     CUDA_STANDARD 20
     CUDA_STANDARD_REQUIRED ON
-    CUDA_ARCHITECTURES "native"
+    CUDA_ARCHITECTURES "all-major"
 )
 
 # --- 2. Specialized Static Analysis for Tests ---

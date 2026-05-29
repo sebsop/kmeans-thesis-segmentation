@@ -33,7 +33,7 @@ constexpr float INF = 1e30f;
 namespace clustering {
 constexpr int FEATURE_DIMS = 5; ///< Dimensions per point: B, G, R, X, Y
 constexpr int K_MIN = 2;        ///< Minimum number of clusters allowed
-constexpr int K_MAX = 20;       ///< Maximum number of clusters allowed
+constexpr int K_MAX = 40;       ///< Maximum number of clusters allowed
 constexpr int LEARN_INTERVAL_MIN = 1;
 constexpr int LEARN_INTERVAL_MAX = 60;
 constexpr int DEFAULT_STRIDE = 4;              ///< Default sampling rate for preprocessing
