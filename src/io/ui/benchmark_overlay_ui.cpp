@@ -116,7 +116,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
             if (std::abs(v1 - v2) > constants::math::EPSILON) {
                 bool v1Better = lowerIsBetter ? (v1 < v2) : (v1 > v2);
                 float worse = v1Better ? v2 : v1;
-                float pct = std::abs(worse) > constants::math::EPSILON ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
+                float pct =
+                    std::abs(worse) > constants::math::EPSILON ? (std::abs(v1 - v2) / std::abs(worse)) * 100.0f : 0.0f;
 
                 if (pct >= 1.0f) {
                     ImVec4 success = ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
@@ -131,8 +132,7 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
                     snprintf(pb, sizeof(pb), " (%.1f%% better)", pct);
                     if (v1Better) {
                         s.t1 += pb;
-                    }
-                    else {
+                    } else {
                         s.t2 += pb;
                     }
                 }
@@ -284,7 +284,8 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         float spacingX = ImGui::GetStyle().ItemSpacing.x;
         float innerSpacingX = ImGui::GetStyle().ItemInnerSpacing.x;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x * 1.5f, ImGui::GetStyle().FramePadding.y * 1.5f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                            ImVec2(ImGui::GetStyle().FramePadding.x * 1.5f, ImGui::GetStyle().FramePadding.y * 1.5f));
         ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 25.0f);
 
         float frameH = ImGui::GetFrameHeight();
@@ -295,13 +296,9 @@ void BenchmarkOverlayUI::render(UIDataContext& ctx, TextureResource& benchOrigin
         float radio2W = frameH + ImGui::CalcTextSize("Random").x + innerSpacingX;
         float showCentroidsW = frameH + ImGui::CalcTextSize("Show Centroids").x + innerSpacingX;
 
-        float row2Width = kTextW + spacingX + kSliderWidth 
-                        + constants::ui::BENCH_SLIDER_SPACING 
-                        + strideTextW + spacingX + strideSliderWidth 
-                        + constants::ui::BENCH_SLIDER_SPACING 
-                        + initTextW + spacingX + radio1W + spacingX + radio2W
-                        + constants::ui::BENCH_SLIDER_SPACING
-                        + showCentroidsW;
+        float row2Width = kTextW + spacingX + kSliderWidth + constants::ui::BENCH_SLIDER_SPACING + strideTextW +
+                          spacingX + strideSliderWidth + constants::ui::BENCH_SLIDER_SPACING + initTextW + spacingX +
+                          radio1W + spacingX + radio2W + constants::ui::BENCH_SLIDER_SPACING + showCentroidsW;
 
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - row2Width) * 0.5f);
         ImGui::AlignTextToFramePadding();

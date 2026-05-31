@@ -4,7 +4,7 @@
  */
 
 #include "io/application.hpp"
-#include "clustering/engines/kmeans_engine.hpp"
+#include "io/ui_manager.hpp"
 
 #include <chrono>
 #include <cuda_runtime.h>
@@ -16,6 +16,8 @@
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
+
+#include "clustering/engines/kmeans_engine.hpp"
 
 // Platform specific includes for icon loading
 #if defined(_WIN32)
@@ -32,19 +34,21 @@ namespace kmeans::io {
 /**
  * @brief Initializes the application context, window, and UI systems.
  */
-Application::Application() : m_uiConfig(m_manager.getConfig()) {
+Application::Application() : m_uiConfig(m_manager.getConfig()), m_uiManager(std::make_unique<UIManager>()) {
     initWindow();
     initImGui();
     UIManager::applyPremiumTheme();
     // Connect the UI to benchmark updates
-    m_benchmarkRunner.addObserver(&m_uiManager);
+    m_benchmarkRunner.addObserver(m_uiManager.get());
 }
 
 /**
  * @brief Ensures clean shutdown of threads and resources.
  */
 Application::~Application() noexcept {
-    m_benchmarkRunner.removeObserver(&m_uiManager);
+    if (m_uiManager) {
+        m_benchmarkRunner.removeObserver(m_uiManager.get());
+    }
     cleanup();
 }
 
@@ -272,7 +276,6 @@ void Application::run() {
 
         cv::Mat displayOriginal;
         cv::Mat displaySegmented;
-        bool wasEngineRun = false;
         float displayTotalMs = 0.0f;
         {
             std::scoped_lock<std::mutex> lock(m_dataMutex);
@@ -293,7 +296,7 @@ void Application::run() {
                           .processedFrames = m_processedFrames,
                           .benchmarkRunner = m_benchmarkRunner};
 
-        m_uiManager.render(ctx);
+        m_uiManager->render(ctx);
 
         int display_w = 0;
         int display_h = 0;

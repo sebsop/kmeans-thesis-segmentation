@@ -47,12 +47,12 @@ constexpr int STABLE_RANDOM_SEED = 42;         ///< Fixed seed for reproducible 
  *  @brief Constraints and scaling for the video processing pipeline.
  */
 namespace video {
-constexpr int WIDTH = 1920;                                ///< Native capture width
-constexpr int HEIGHT = 1080;                               ///< Native capture height
-constexpr int PROCESS_WIDTH = 640;                         ///< Internal processing width (downscaled)
-constexpr int PROCESS_HEIGHT = 480;                        ///< Internal processing height (downscaled)
-constexpr float COLOR_SCALE = 1.0f / 255.0f;               ///< Normalization for RGB values
-constexpr float SPATIAL_WEIGHT = 1e-6f;                    ///< Minimal spatial weight to prioritize color consistency
+constexpr int WIDTH = 1920;                  ///< Native capture width
+constexpr int HEIGHT = 1080;                 ///< Native capture height
+constexpr int PROCESS_WIDTH = 640;           ///< Internal processing width (downscaled)
+constexpr int PROCESS_HEIGHT = 480;          ///< Internal processing height (downscaled)
+constexpr float COLOR_SCALE = 1.0f / 255.0f; ///< Normalization for RGB values
+constexpr float SPATIAL_WEIGHT = 1e-6f;      ///< Minimal spatial weight to prioritize color consistency
 
 constexpr int CAMERA_AUTO_EXPOSURE = -6; ///< Specific exposure setting for standard webcams
 constinit inline const int HW_ACCEL = cv::VIDEO_ACCELERATION_ANY;

@@ -85,6 +85,8 @@ if(MSVC)
         "$<$<COMPILE_LANGUAGE:CXX>:/analyze:external->"
         "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>"
         "$<$<COMPILE_LANGUAGE:CXX>:/wd6201>"
+        "$<$<COMPILE_LANGUAGE:CXX>:/wd6294>"
+        "$<$<COMPILE_LANGUAGE:CXX>:/wd26495>"
     )
 else()
     add_compile_options(
@@ -96,6 +98,7 @@ endif()
 
 # Global CUDA optimizations
 set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS_RELEASE} -O3 -use_fast_math")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets -diag-suppress 221")
 
 # --- 5. Include Directories ---
 # Internal Project Headers
@@ -209,6 +212,8 @@ if(MSVC)
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/EHsc>"
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd4505>"
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd6201>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd6294>"
+        "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd26495>"
     )
 endif()
 

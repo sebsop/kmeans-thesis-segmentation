@@ -53,7 +53,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         const ImGuiStyle& style = ImGui::GetStyle();
         const float textH = ImGui::GetTextLineHeightWithSpacing();
         const float frameH = ImGui::GetFrameHeightWithSpacing();
-        const float frameH_padded = ImGui::GetFontSize() + style.FramePadding.y * 1.5f * 2.0f + style.ItemSpacing.y;
+        const float frameH_padded = ImGui::GetFontSize() + (style.FramePadding.y * 3.0f) + style.ItemSpacing.y;
         const float sepH = 2.0f + style.ItemSpacing.y;
         const float plotH = constants::ui::PLOT_HEIGHT + style.ItemSpacing.y;
         const float btnH = (constants::ui::BTN_HEIGHT * 0.5f) + style.ItemSpacing.y;
@@ -106,36 +106,41 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     }
 
     ImGui::Text("Core Hyperparameters");
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
     configChanged |=
         ImGui::SliderInt("Clusters (k)", &pendingConfig.k, constants::clustering::K_MIN, constants::clustering::K_MAX);
     showHelpMarker("Number of centroids to calculate (number of distinct colors in the final segmented image).");
     configChanged |=
         ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
                          constants::clustering::LEARN_INTERVAL_MIN, constants::clustering::LEARN_INTERVAL_MAX);
-    showHelpMarker("How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
+    showHelpMarker(
+        "How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
     ImGui::PopStyleVar();
 
     ImGui::Separator();
 
     ImGui::Text("Architecture Strategy");
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
     configChanged |= ImGui::SliderInt("Stride", &pendingConfig.stride, 1, 16);
     showHelpMarker("Downsample input data. Stride 1 = 100% data, Stride 2 = 25% data, Stride 4 = 6.25% data.");
     ImGui::PopStyleVar();
 
     const char* engines[] = {"Classical", "Quantum"};
     int currentEngine = (pendingConfig.algorithm == common::AlgorithmType::KMEANS_REGULAR) ? 0 : 1;
-    
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
     if (ImGui::Combo("Execution Engine", &currentEngine, engines, 2)) {
         pendingConfig.algorithm =
             (currentEngine == 0) ? common::AlgorithmType::KMEANS_REGULAR : common::AlgorithmType::KMEANS_QUANTUM;
         configChanged = true;
     }
     ImGui::PopStyleVar();
-    showHelpMarker("Select the processing backend: Classical CUDA K-Means or Quantum-inspired Hilbert space projected K-Means.");
+    showHelpMarker(
+        "Select the processing backend: Classical CUDA K-Means or Quantum-inspired Hilbert space projected K-Means.");
 
     if (configChanged) {
         std::scoped_lock<std::mutex> lock(ctx.configMutex);
@@ -198,21 +203,26 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         }
 
         ImGui::Text("Core K-Means Latency: %.2f ms", displayMs);
-        showHelpMarker("Time spent executing the selected clustering engine (Classical Lloyd's loop or Quantum-inspired phase-mapping) on the GPU (updates only on active learning frames).");
+        showHelpMarker("Time spent executing the selected clustering engine (Classical Lloyd's loop or "
+                       "Quantum-inspired phase-mapping) on the GPU (updates only on active learning frames).");
 
         ImGui::Text("Total Frame Latency: %.2f ms", displayTotalMs);
-        showHelpMarker("Total time spent on GPU/CPU preprocessing, K-Means calculation (if active), and pixel assignment for the current frame.");
+        showHelpMarker("Total time spent on GPU/CPU preprocessing, K-Means calculation (if active), and pixel "
+                       "assignment for the current frame.");
 
         ImGui::Text("Raw Engine Speed: %.1f FPS", displayTheoretical);
-        showHelpMarker("The maximum throughput of the core clustering engine alone if it executed on every single frame without temporal caching.");
+        showHelpMarker("The maximum throughput of the core clustering engine alone if it executed on every single "
+                       "frame without temporal caching.");
 
         ImGui::Text("Actual Frame Rate: %.1f FPS", displayFps);
-        showHelpMarker("The active processing frame rate of the worker thread, capped by the camera's hardware capture rate.");
+        showHelpMarker(
+            "The active processing frame rate of the worker thread, capped by the camera's hardware capture rate.");
 
         ImGui::TextColored(ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
                                   constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a),
                            "Overall Throughput: %.1f FPS", displayAvg);
-        showHelpMarker("Rolling average of the actual overall system processing throughput (1000ms / Total Frame Latency) across both cached and active frames.");
+        showHelpMarker("Rolling average of the actual overall system processing throughput (1000ms / Total Frame "
+                       "Latency) across both cached and active frames.");
 
         // Render moving average history plot
         int window = constants::ui::FPS_PLOT_WINDOW;
@@ -231,15 +241,15 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         float plotWidth = ImGui::GetContentRegionAvail().x - 140.0f; // Leave space for Y axis labels
 
         ImGui::BeginGroup();
-        ImGui::PlotLines("##Theoretical Throughput History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0, nullptr, 0.0f,
-                         yMaxLimit, ImVec2(plotWidth, constants::ui::PLOT_HEIGHT));
+        ImGui::PlotLines("##Theoretical Throughput History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0,
+                         nullptr, 0.0f, yMaxLimit, ImVec2(plotWidth, constants::ui::PLOT_HEIGHT));
         ImGui::EndGroup();
 
         ImGui::SameLine();
 
         ImGui::BeginGroup();
         ImGui::Text("%.0f FPS", yMaxLimit);
-        ImGui::Dummy(ImVec2(0.0f, constants::ui::PLOT_HEIGHT - ImGui::GetTextLineHeightWithSpacing() * 2.0f));
+        ImGui::Dummy(ImVec2(0.0f, constants::ui::PLOT_HEIGHT - (ImGui::GetTextLineHeightWithSpacing() * 2.0f)));
         ImGui::Text("0 FPS");
         ImGui::EndGroup();
     }

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -16,9 +17,10 @@
 
 #include "clustering/clustering_manager.hpp"
 #include "io/benchmark_runner.hpp"
-#include "io/ui_manager.hpp"
 
 namespace kmeans::io {
+
+class UIManager;
 
 /**
  * @class Application
@@ -37,7 +39,7 @@ class Application {
   private:
     GLFWwindow* m_window = nullptr;          ///< The main OS window handle
     clustering::ClusteringManager m_manager; ///< The clustering pipeline Facade
-    UIManager m_uiManager;                   ///< The UI component coordinator
+    std::unique_ptr<UIManager> m_uiManager;  ///< The UI component coordinator
     BenchmarkRunner m_benchmarkRunner;       ///< The background benchmark system
 
     // Multithreading Synchronization

@@ -57,7 +57,8 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
 
         float totalWidth = displaySize.x + ImGui::GetStyle().ItemSpacing.x + displaySize.x;
         float offsetX = (ImGui::GetWindowWidth() - totalWidth) * 0.5f;
-        float offsetY = (ImGui::GetWindowHeight() - displaySize.y - ImGui::GetTextLineHeightWithSpacing() * 2.0f) * 0.5f;
+        float offsetY =
+            (ImGui::GetWindowHeight() - displaySize.y - ImGui::GetTextLineHeightWithSpacing() * 2.0f) * 0.5f;
 
         if (offsetX > 0) {
             ImGui::SetCursorPosX(offsetX);
@@ -82,7 +83,7 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
         // 5. Draw the actual images
         ImGui::BeginGroup();
         float textWOriginal = ImGui::CalcTextSize("Original Frame").x;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (displaySize.x - textWOriginal) * 0.5f);
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((displaySize.x - textWOriginal) * 0.5f));
         ImGui::Text("Original Frame");
         ImGui::SetCursorPosX(ImGui::GetCursorPosX());
         ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(originalTex.id)), displaySize, ImVec2(1, 0),
@@ -93,7 +94,7 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
 
         ImGui::BeginGroup();
         float textWClustered = ImGui::CalcTextSize("Clustered Frame").x;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (displaySize.x - textWClustered) * 0.5f);
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((displaySize.x - textWClustered) * 0.5f));
         ImGui::Text("Clustered Frame");
         ImGui::SetCursorPosX(ImGui::GetCursorPosX());
         ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(segmentedTex.id)), displaySize, ImVec2(1, 0),
