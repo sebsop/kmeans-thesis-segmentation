@@ -42,10 +42,22 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
         ImVec2 imgSize(static_cast<float>(ctx.latestOriginal.cols), static_cast<float>(ctx.latestOriginal.rows));
         ImVec2 segSize(static_cast<float>(ctx.latestSegmented.cols), static_cast<float>(ctx.latestSegmented.rows));
 
-        // 3. Math for centering the feeds
-        float totalWidth = imgSize.x + ImGui::GetStyle().ItemSpacing.x + segSize.x;
+        // 3. Math for scaling the feeds dynamically to fit the window
+        float availW = ImGui::GetContentRegionAvail().x;
+        float availH = ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeightWithSpacing() - 60.0f;
+
+        float maxW = (availW - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+        float maxH = availH;
+
+        float scaleW = maxW / imgSize.x;
+        float scaleH = maxH / imgSize.y;
+        float scale = std::min(scaleW, scaleH);
+
+        ImVec2 displaySize(imgSize.x * scale, imgSize.y * scale);
+
+        float totalWidth = displaySize.x + ImGui::GetStyle().ItemSpacing.x + displaySize.x;
         float offsetX = (ImGui::GetWindowWidth() - totalWidth) * 0.5f;
-        float offsetY = (ImGui::GetWindowHeight() - imgSize.y - ImGui::GetTextLineHeightWithSpacing()) * 0.5f;
+        float offsetY = (ImGui::GetWindowHeight() - displaySize.y - ImGui::GetTextLineHeightWithSpacing() * 2.0f) * 0.5f;
 
         if (offsetX > 0) {
             ImGui::SetCursorPosX(offsetX);
@@ -62,23 +74,29 @@ void VideoFeedUI::render(UIDataContext& ctx, float panelWidth, TextureResource& 
                                             ImVec2(startPos.x + totalWidth, startPos.y - 10.0f), accentColor,
                                             constants::ui::BORDER_THICKNESS);
 
-        float contentHeight = ImGui::GetTextLineHeightWithSpacing() + imgSize.y;
+        float contentHeight = ImGui::GetTextLineHeightWithSpacing() + displaySize.y;
         ImGui::GetWindowDrawList()->AddLine(ImVec2(startPos.x, startPos.y + contentHeight + 10.0f),
                                             ImVec2(startPos.x + totalWidth, startPos.y + contentHeight + 10.0f),
                                             accentColor, constants::ui::BORDER_THICKNESS);
 
         // 5. Draw the actual images
         ImGui::BeginGroup();
+        float textWOriginal = ImGui::CalcTextSize("Original Frame").x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (displaySize.x - textWOriginal) * 0.5f);
         ImGui::Text("Original Frame");
-        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(originalTex.id)), imgSize, ImVec2(1, 0),
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX());
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(originalTex.id)), displaySize, ImVec2(1, 0),
                      ImVec2(0, 1));
         ImGui::EndGroup();
 
         ImGui::SameLine();
 
         ImGui::BeginGroup();
+        float textWClustered = ImGui::CalcTextSize("Clustered Frame").x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (displaySize.x - textWClustered) * 0.5f);
         ImGui::Text("Clustered Frame");
-        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(segmentedTex.id)), segSize, ImVec2(1, 0),
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX());
+        ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(segmentedTex.id)), displaySize, ImVec2(1, 0),
                      ImVec2(0, 1));
         ImGui::EndGroup();
     } else {

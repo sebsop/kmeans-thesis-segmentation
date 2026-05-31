@@ -49,10 +49,10 @@ constexpr int STABLE_RANDOM_SEED = 42;         ///< Fixed seed for reproducible 
 namespace video {
 constexpr int WIDTH = 1920;                                ///< Native capture width
 constexpr int HEIGHT = 1080;                               ///< Native capture height
-constexpr int PROCESS_WIDTH = 1920;                        ///< Internal processing width (downscaled)
-constexpr int PROCESS_HEIGHT = 1080;                       ///< Internal processing height (downscaled)
-constexpr float COLOR_SCALE = 1.0f / 255.0f;              ///< Normalization for RGB values
-constexpr float SPATIAL_WEIGHT = 1e-6f;                   ///< Minimal spatial weight to prioritize color consistency
+constexpr int PROCESS_WIDTH = 640;                         ///< Internal processing width (downscaled)
+constexpr int PROCESS_HEIGHT = 480;                        ///< Internal processing height (downscaled)
+constexpr float COLOR_SCALE = 1.0f / 255.0f;               ///< Normalization for RGB values
+constexpr float SPATIAL_WEIGHT = 1e-6f;                    ///< Minimal spatial weight to prioritize color consistency
 
 constexpr int CAMERA_AUTO_EXPOSURE = -6; ///< Specific exposure setting for standard webcams
 constinit inline const int HW_ACCEL = cv::VIDEO_ACCELERATION_ANY;
@@ -79,29 +79,30 @@ constexpr int BLOCK_2D_Y = 16;         ///< 2D block height for image kernels
  *  @brief UI layout, theme, and timing constants for the ImGui interface.
  */
 namespace ui {
-constexpr int WINDOW_WIDTH = 1750;
-constexpr int WINDOW_HEIGHT = 700;
-constexpr float PANEL_WIDTH = 400.0f;
-constexpr float PLOT_HEIGHT = 60.0f;
+constexpr int WINDOW_WIDTH = 2200;
+constexpr int WINDOW_HEIGHT = 950;
+constexpr float PANEL_WIDTH = 700.0f;
+constexpr float PLOT_HEIGHT = 100.0f;
 constexpr float WINDOW_PADDING = 10.0f;
+constexpr float FONT_GLOBAL_SCALE = 1.4f;
 
 constexpr int FPS_PLOT_WINDOW = 15;
 constexpr int BENCH_COL_COUNT = 3;
 constexpr float BENCH_BTN_PADDING = 20.0f;
 constexpr float BENCH_SLIDER_SPACING = 30.0f;
 
-constexpr float K_SLIDER_WIDTH = 120.0f;
-constexpr float STRIDE_SLIDER_WIDTH = 100.0f;
-constexpr float RADIO_WIDTH = 260.0f;
+constexpr float K_SLIDER_WIDTH = 350.0f;
+constexpr float STRIDE_SLIDER_WIDTH = 300.0f;
+constexpr float RADIO_WIDTH = 350.0f;
 
-constexpr float BTN_WIDTH_LG = 250.0f;
-constexpr float BTN_WIDTH_MD = 150.0f;
-constexpr float BTN_HEIGHT = 40.0f;
+constexpr float BTN_WIDTH_LG = 350.0f;
+constexpr float BTN_WIDTH_MD = 300.0f;
+constexpr float BTN_HEIGHT = 80.0f;
 constexpr float BORDER_THICKNESS = 5.0f;
 constexpr int LAYOUT_GAPS = 12;
 constexpr int REFRESH_FAST = 500;
 constexpr int REFRESH_SLOW = 1000;
-constexpr float BENCH_IMG_SCALE = 0.825f;
+constexpr float BENCH_IMG_SCALE = 0.9f;
 constexpr double ANIM_DOT_SPEED = 4.0;
 constexpr int FPS_HISTORY_WINDOW = 90;
 
@@ -138,7 +139,7 @@ constexpr ColorRGBA ERROR_COL = {.r = 0.80f, .g = 0.10f, .b = 0.10f, .a = 1.00f}
 constexpr ColorRGBA WARNING_COL = {.r = 0.60f, .g = 0.50f, .b = 0.00f, .a = 1.00f};
 constexpr ColorRGBA NEUTRAL_COL = {.r = 0.12f, .g = 0.12f, .b = 0.12f, .a = 1.00f};
 
-constexpr ColorRGBA BENCH_TITLE_CLASSICAL = {.r = 0.10f, .g = 0.50f, .b = 0.10f, .a = 1.00f};
+constexpr ColorRGBA BENCH_TITLE_CLASSICAL = {.r = 0.15f, .g = 0.45f, .b = 0.85f, .a = 1.00f};
 constexpr ColorRGBA BENCH_TITLE_QUANTUM = {.r = 0.50f, .g = 0.20f, .b = 0.70f, .a = 1.00f};
 constexpr ColorRGBA BENCH_GUIDE = {.r = 0.40f, .g = 0.40f, .b = 0.40f, .a = 1.00f};
 

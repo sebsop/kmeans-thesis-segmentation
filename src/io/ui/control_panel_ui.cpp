@@ -14,6 +14,18 @@
 
 namespace kmeans::io::ui {
 
+static void showHelpMarker(const char* desc) {
+    ImGui::SameLine();
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered()) {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
 /**
  * @brief Renders the side control panel with real-time parameter tuning and metrics.
  *
@@ -41,30 +53,38 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         const ImGuiStyle& style = ImGui::GetStyle();
         const float textH = ImGui::GetTextLineHeightWithSpacing();
         const float frameH = ImGui::GetFrameHeightWithSpacing();
-        const float sepH = 1.0f;
-        const float plotH = constants::ui::PLOT_HEIGHT;
+        const float frameH_padded = ImGui::GetFontSize() + style.FramePadding.y * 1.5f * 2.0f + style.ItemSpacing.y;
+        const float sepH = 2.0f + style.ItemSpacing.y;
+        const float plotH = constants::ui::PLOT_HEIGHT + style.ItemSpacing.y;
+        const float btnH = (constants::ui::BTN_HEIGHT * 0.5f) + style.ItemSpacing.y;
 
         float contentH = 0.0f;
+        // 1. Core Hyperparameters
         contentH += textH;
-        contentH += frameH * 2.0f;
-        contentH += sepH; // Hyperparams
+        contentH += frameH_padded * 2.0f;
+        // 2. Separator
+        contentH += sepH;
+        // 3. Architecture Strategy
+        contentH += textH;
+        contentH += frameH_padded * 2.0f;
+        // 4. Separator
+        contentH += sepH;
+        // 5. Visualization Overlays
         contentH += textH;
         contentH += frameH;
-        contentH += frameH;
-        contentH += sepH; // Strategy
+        contentH += btnH;
+        // 6. Separator
+        contentH += sepH;
+        // 7. Performance Dashboard
         contentH += textH;
-        contentH += frameH;
-        contentH += frameH;
-        contentH += sepH * 2.0f; // Overlays
-        contentH += textH;
-        contentH += textH;
+        contentH += textH * 4.0f; // 4 lines of metrics text
         contentH += plotH;
-        contentH += sepH; // Dashboard
+        // 8. Separator
+        contentH += sepH;
+        // 9. Static Benchmarking
         contentH += textH;
-        contentH += frameH; // Benchmarking
+        contentH += btnH;
 
-        const int gaps = constants::ui::LAYOUT_GAPS;
-        contentH += gaps * style.ItemSpacing.y;
         contentH += style.WindowPadding.y * 2.0f;
 
         float availH = ImGui::GetContentRegionAvail().y;
@@ -86,62 +106,53 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     }
 
     ImGui::Text("Core Hyperparameters");
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
     configChanged |=
         ImGui::SliderInt("Clusters (k)", &pendingConfig.k, constants::clustering::K_MIN, constants::clustering::K_MAX);
+    showHelpMarker("Number of centroids to calculate (number of distinct colors in the final segmented image).");
     configChanged |=
         ImGui::SliderInt("Learning Interval", &pendingConfig.learningInterval,
                          constants::clustering::LEARN_INTERVAL_MIN, constants::clustering::LEARN_INTERVAL_MAX);
-
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip(
-            "How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
-    }
+    showHelpMarker("How many frames to cache clusters before re-running K-Means. Set to 1 to force calculation every frame.");
+    ImGui::PopStyleVar();
 
     ImGui::Separator();
 
     ImGui::Text("Architecture Strategy");
 
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
     configChanged |= ImGui::SliderInt("Stride", &pendingConfig.stride, 1, 16);
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip(
-            "Downsample input data. Stride 1 = 100%% data, Stride 2 = 25%% data, Stride 4 = 6.25%% data.");
-    }
+    showHelpMarker("Downsample input data. Stride 1 = 100% data, Stride 2 = 25% data, Stride 4 = 6.25% data.");
+    ImGui::PopStyleVar();
 
     const char* engines[] = {"Classical", "Quantum"};
     int currentEngine = (pendingConfig.algorithm == common::AlgorithmType::KMEANS_REGULAR) ? 0 : 1;
+    
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y * 1.5f));
     if (ImGui::Combo("Execution Engine", &currentEngine, engines, 2)) {
         pendingConfig.algorithm =
             (currentEngine == 0) ? common::AlgorithmType::KMEANS_REGULAR : common::AlgorithmType::KMEANS_QUANTUM;
         configChanged = true;
     }
+    ImGui::PopStyleVar();
+    showHelpMarker("Select the processing backend: Classical CUDA K-Means or Quantum-inspired Hilbert space projected K-Means.");
 
     if (configChanged) {
         std::scoped_lock<std::mutex> lock(ctx.configMutex);
         ctx.uiConfig = pendingConfig;
+        ctx.forceReset = true; // Force immediate recompute of K-Means
     }
 
     ImGui::Separator();
     ImGui::Text("Visualization Overlays");
     ImGui::Checkbox("Show Spatial Centroids", &ctx.showCentroids);
-    if (ImGui::Button("Reset Centroids (Flush Memory)")) {
+    showHelpMarker("Draw the computed 2D centroids directly onto the segmented frames.");
+    if (ImGui::Button("Reset Centroids (Flush Memory)", ImVec2(-1, constants::ui::BTN_HEIGHT * 0.5f))) {
         ctx.forceReset = true;
     }
 
     ImGui::Separator();
     ImGui::Text("Performance Dashboard");
-
-    // 4. UI Frame Rate Monitoring
-    static float displayUIRenderFPS = 0.0f;
-    static auto lastUIUpdateTime = std::chrono::high_resolution_clock::now();
-    auto uiNow = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(uiNow - lastUIUpdateTime).count() >
-        constants::ui::REFRESH_SLOW) {
-        displayUIRenderFPS = ImGui::GetIO().Framerate;
-        lastUIUpdateTime = uiNow;
-    }
-    ImGui::TextColored(ImVec4(constants::ui::theme::TEXT_DIM.r, constants::ui::theme::TEXT_DIM.g,
-                              constants::ui::theme::TEXT_DIM.b, constants::ui::theme::TEXT_DIM.a),
-                       "UI Render Speed: %.1f FPS", displayUIRenderFPS);
 
     // 5. Algorithm Pipeline Metrics
     static uint32_t lastProcessedFrames = 0;
@@ -149,40 +160,59 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
     float workerFps = ctx.currentWorkerFps;
     float algoTimeMs = ctx.currentAlgoTimeMs;
+    float totalPipelineTimeMs = ctx.totalPipelineTimeMs;
     uint32_t currentFrames = ctx.processedFrames;
+
+    float theoreticalFps = (algoTimeMs > 0.001f) ? (1000.0f / algoTimeMs) : 0.0f;
+    float overallFps = (totalPipelineTimeMs > 0.001f) ? (1000.0f / totalPipelineTimeMs) : 0.0f;
 
     if (currentFrames != lastProcessedFrames) {
         if (algoFpsHistory.size() >= constants::ui::FPS_HISTORY_WINDOW) {
             algoFpsHistory.pop_front();
         }
-        algoFpsHistory.push_back(workerFps);
+        algoFpsHistory.push_back(overallFps);
         lastProcessedFrames = currentFrames;
     }
 
     if (!algoFpsHistory.empty()) {
         auto [min_it, max_it] = std::ranges::minmax_element(algoFpsHistory);
-        [[maybe_unused]] float maxFps = *max_it;
+        float maxFps = *max_it;
         float sumFps = std::accumulate(algoFpsHistory.begin(), algoFpsHistory.end(), 0.0f);
         float avgFps = sumFps / static_cast<float>(algoFpsHistory.size());
 
         static float displayFps = 0.0f;
         static float displayMs = 0.0f;
+        static float displayTotalMs = 0.0f;
         static float displayAvg = 0.0f;
+        static float displayTheoretical = 0.0f;
         static auto lastUpdateTime = std::chrono::high_resolution_clock::now();
         auto now = std::chrono::high_resolution_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdateTime).count() >
             constants::ui::REFRESH_FAST) {
             displayFps = workerFps;
+            displayTotalMs = totalPipelineTimeMs;
             displayMs = algoTimeMs;
+            displayTheoretical = theoreticalFps;
             displayAvg = avgFps;
             lastUpdateTime = now;
         }
 
-        ImGui::Text("Algorithm Execution: %.2f ms", displayMs);
-        ImGui::Text("Camera Pipeline: %.1f FPS", displayFps);
+        ImGui::Text("Core K-Means Latency: %.2f ms", displayMs);
+        showHelpMarker("Time spent executing the selected clustering engine (Classical Lloyd's loop or Quantum-inspired phase-mapping) on the GPU (updates only on active learning frames).");
+
+        ImGui::Text("Total Frame Latency: %.2f ms", displayTotalMs);
+        showHelpMarker("Total time spent on GPU/CPU preprocessing, K-Means calculation (if active), and pixel assignment for the current frame.");
+
+        ImGui::Text("Raw Engine Speed: %.1f FPS", displayTheoretical);
+        showHelpMarker("The maximum throughput of the core clustering engine alone if it executed on every single frame without temporal caching.");
+
+        ImGui::Text("Actual Frame Rate: %.1f FPS", displayFps);
+        showHelpMarker("The active processing frame rate of the worker thread, capped by the camera's hardware capture rate.");
+
         ImGui::TextColored(ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
                                   constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a),
-                           "Avg FPS: %.1f", displayAvg);
+                           "Overall Throughput: %.1f FPS", displayAvg);
+        showHelpMarker("Rolling average of the actual overall system processing throughput (1000ms / Total Frame Latency) across both cached and active frames.");
 
         // Render moving average history plot
         int window = constants::ui::FPS_PLOT_WINDOW;
@@ -197,8 +227,21 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
             return sum / static_cast<float>(end - start + 1);
         });
 
-        ImGui::PlotLines("##Pipeline History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0, nullptr, 0.0f,
-                         (maxFps * 1.5f) + 5.0f, ImVec2(0, 60));
+        float yMaxLimit = (maxFps * 1.2f) + 10.0f;
+        float plotWidth = ImGui::GetContentRegionAvail().x - 140.0f; // Leave space for Y axis labels
+
+        ImGui::BeginGroup();
+        ImGui::PlotLines("##Theoretical Throughput History", fpsPlotBuf.data(), static_cast<int>(fpsPlotBuf.size()), 0, nullptr, 0.0f,
+                         yMaxLimit, ImVec2(plotWidth, constants::ui::PLOT_HEIGHT));
+        ImGui::EndGroup();
+
+        ImGui::SameLine();
+
+        ImGui::BeginGroup();
+        ImGui::Text("%.0f FPS", yMaxLimit);
+        ImGui::Dummy(ImVec2(0.0f, constants::ui::PLOT_HEIGHT - ImGui::GetTextLineHeightWithSpacing() * 2.0f));
+        ImGui::Text("0 FPS");
+        ImGui::EndGroup();
     }
 
     ImGui::Separator();
@@ -207,7 +250,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     // 6. Benchmark Runner State Machine Integration
     auto bState = ctx.benchmarkRunner.getState();
     if (bState == BenchmarkState::IDLE) {
-        if (ImGui::Button("Capture & Run Comparison", ImVec2(-1, 30))) {
+        if (ImGui::Button("Capture & Run Comparison", ImVec2(-1, constants::ui::BTN_HEIGHT * 0.5f))) {
             ctx.benchmarkRunner.requestCapture();
         }
     } else if (bState == BenchmarkState::CAPTURING || bState == BenchmarkState::RECOMPUTING) {

@@ -55,6 +55,7 @@ struct UIDataContext {
     std::atomic<bool>& forceReset;        ///< Signal to worker to reset centers
     float currentWorkerFps;               ///< Processing speed (FPS)
     float currentAlgoTimeMs;              ///< Time taken per clustering iteration (ms)
+    float totalPipelineTimeMs;            ///< Total GPU/CPU pipeline execution time (ms)
     uint32_t processedFrames;             ///< Cumulative frame count
     BenchmarkRunner& benchmarkRunner;     ///< Handle to the background benchmarking system
 };

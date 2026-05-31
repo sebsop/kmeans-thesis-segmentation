@@ -102,6 +102,7 @@ void Application::initImGui() {
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.FontGlobalScale = constants::ui::FONT_GLOBAL_SCALE; // Scale up fonts for larger displays
 
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
@@ -198,7 +199,10 @@ void Application::run() {
                 }
             }
 
+            auto startPipeline = std::chrono::high_resolution_clock::now();
             cv::Mat segmented = m_manager.segmentFrame(processFrame);
+            auto endPipeline = std::chrono::high_resolution_clock::now();
+            float totalMs = std::chrono::duration<float, std::milli>(endPipeline - startPipeline).count();
             float execMs = m_manager.getEngine() ? m_manager.getEngine()->getLastExecutionTimeMs() : 0.0f;
 
             // Results preparation
@@ -236,6 +240,7 @@ void Application::run() {
                 m_latestCenters = centers;
                 m_currentWorkerFps = instFps;
                 m_currentAlgoTimeMs = execMs;
+                m_totalPipelineTimeMs = totalMs;
                 m_processedFrames++;
                 m_initialized = true;
             }
@@ -267,10 +272,13 @@ void Application::run() {
 
         cv::Mat displayOriginal;
         cv::Mat displaySegmented;
+        bool wasEngineRun = false;
+        float displayTotalMs = 0.0f;
         {
             std::scoped_lock<std::mutex> lock(m_dataMutex);
             displayOriginal = m_latestOriginal;
             displaySegmented = m_latestSegmented;
+            displayTotalMs = m_totalPipelineTimeMs;
         }
 
         UIDataContext ctx{.latestOriginal = displayOriginal,
@@ -281,6 +289,7 @@ void Application::run() {
                           .forceReset = m_forceReset,
                           .currentWorkerFps = m_currentWorkerFps,
                           .currentAlgoTimeMs = m_currentAlgoTimeMs,
+                          .totalPipelineTimeMs = displayTotalMs,
                           .processedFrames = m_processedFrames,
                           .benchmarkRunner = m_benchmarkRunner};
 

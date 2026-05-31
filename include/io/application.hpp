@@ -54,6 +54,7 @@ class Application {
     std::chrono::high_resolution_clock::time_point m_lastWorkerTime;
     float m_currentWorkerFps = 0.0f;
     float m_currentAlgoTimeMs = 0.0f;
+    float m_totalPipelineTimeMs = 0.0f;
     uint32_t m_processedFrames = 0;
 
     // State flags
