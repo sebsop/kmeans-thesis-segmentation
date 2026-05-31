@@ -24,7 +24,7 @@ Iterative stability is also tested through the \texttt{ClassicalConvergence} and
 \subsection{Boundary Condition Resilience}
 A common issue in K-Means is the empty cluster problem, where a centroid is assigned zero pixels during an iteration \cite{aloise2017strategies}, causing a divide-by-zero error during centroid updates. The \texttt{EmptyClusterRobustness} and \texttt{QuantumEmptyClusterRobustness} tests verify that the system detects empty clusters and handles them safely. By placing starting centroids far away from any data points, the tests confirm that the kernels remain stable and do not produce NaN (Not a Number) values, which would otherwise crash the GPU visualization pipeline.
 
-Additionally, the \texttt{HighKAssignment} and \texttt{QuantumHighK} tests evaluate system behavior at the maximum configuration of $K=20$ clusters. This confirms that the shared memory used by the CUDA kernels does not exceed physical hardware bounds, preventing kernel launch failures \cite{CudaGuide}.
+Additionally, the \texttt{HighKAssignment} and \texttt{QuantumHighK} tests evaluate system behavior at the maximum configuration of $K=40$ clusters. This confirms that the shared memory used by the CUDA kernels does not exceed physical hardware bounds, preventing kernel launch failures \cite{CudaGuide}.
 
 \section{Cross-Backend Parity and Floating-Point Drift}
 To verify the GPU implementations, a parity protocol is established that compares GPU results against CPU-calculated ground truths using identical data inputs.

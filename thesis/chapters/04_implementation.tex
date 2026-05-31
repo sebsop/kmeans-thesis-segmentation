@@ -152,7 +152,7 @@ All mathematical boundaries and hardware constraints are controlled via a centra
     \hline
         \textbf{Category} & \textbf{Parameter} & \textbf{Value} & \textbf{Functional Rationale} \\ \hline
         Clustering & \texttt{FEATURE\_DIMS} & 5 & Defines the manifold as $[B, G, R, x, y]$. \\ \hline
-         & \texttt{K\_MIN - K\_MAX} & 2 - 20 & Constrains model complexity for real-time stability. \\ \hline
+         & \texttt{K\_MIN - K\_MAX} & 2 - 40 & Constrains model complexity for real-time stability. \\ \hline
          & \texttt{LEARN\_INTERVAL} & 15 & Performs "Lazy Learning" to reduce GPU thermal load. \\ \hline
         Normalization & \texttt{COLOR\_SCALE} & $1/255$ & Maps 8-bit integers to the $[0, 1]$ floating-point range. \\ \hline
          & \texttt{SPATIAL\_WEIGHT} & $10^{-6}$ & Regularizes $X/Y$ to prioritize color consistency. \\ \hline

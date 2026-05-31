@@ -83,7 +83,7 @@ TEST_F(Backend_CudaKernels, Assignment_Accuracy_2x2) {
 }
 
 /**
- * @brief Stress Test: Boundary Case (K=20 Max).
+ * @brief Stress Test: Boundary Case (K=40 Max).
  */
 TEST_F(Backend_CudaKernels, Boundary_MaxK) {
     CudaAssignmentContext ctx(100, 100, constants::clustering::K_MAX);

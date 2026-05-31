@@ -96,7 +96,7 @@ TEST_F(Clustering_ClassicalEngine, ClassicalConvergence) {
 /**
  * @brief Stress tests the shared memory allocation for high K-values.
  *
- * Ensures that the engine handles the maximum supported cluster count (20)
+ * Ensures that the engine handles the maximum supported cluster count (40)
  * without exceeding GPU shared memory limits or hardware bounds.
  */
 TEST_F(Clustering_ClassicalEngine, HighKAssignment) {
@@ -107,7 +107,8 @@ TEST_F(Clustering_ClassicalEngine, HighKAssignment) {
     cv::Mat samples(N, constants::clustering::FEATURE_DIMS, CV_32F, cv::Scalar(0.5f));
     std::vector<FeatureVector> centers(K);
     for (int i = 0; i < K; ++i) {
-        centers[i] = FeatureVector(i / 20.0f, i / 20.0f, i / 20.0f, 0, 0);
+        float f = static_cast<float>(i) / static_cast<float>(K);
+        centers[i] = FeatureVector(f, f, f, 0, 0);
     }
 
     EXPECT_NO_THROW((void)engine.run(samples, centers, K, 2));
