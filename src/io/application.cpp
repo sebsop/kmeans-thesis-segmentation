@@ -4,6 +4,7 @@
  */
 
 #include "io/application.hpp"
+#include "clustering/engines/kmeans_engine.hpp"
 
 #include <chrono>
 #include <cuda_runtime.h>
@@ -197,10 +198,8 @@ void Application::run() {
                 }
             }
 
-            auto start = std::chrono::high_resolution_clock::now();
             cv::Mat segmented = m_manager.segmentFrame(processFrame);
-            auto end = std::chrono::high_resolution_clock::now();
-            float execMs = std::chrono::duration<float, std::milli>(end - start).count();
+            float execMs = m_manager.getEngine() ? m_manager.getEngine()->getLastExecutionTimeMs() : 0.0f;
 
             // Results preparation
             cv::Mat segmentedFull;

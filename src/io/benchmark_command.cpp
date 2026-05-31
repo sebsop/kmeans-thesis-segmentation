@@ -72,10 +72,8 @@ void RunBenchmarkCommand::execute() {
             mgr.getConfig() = cfg;
             mgr.setInitialCenters(sharedCenters); // Seed with shared centers
 
-            auto start = std::chrono::high_resolution_clock::now();
             cv::Mat segmented = mgr.segmentFrame(smallFrame);
-            auto end = std::chrono::high_resolution_clock::now();
-            float execMs = std::chrono::duration<float, std::milli>(end - start).count();
+            float execMs = mgr.getEngine() ? mgr.getEngine()->getLastExecutionTimeMs() : 0.0f;
 
             outCenters = mgr.getCenters();
             int iterations = mgr.getEngine() ? mgr.getEngine()->getLastIterations() : 0;

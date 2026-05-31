@@ -27,6 +27,7 @@ namespace kmeans::clustering {
 class KMeansEngine {
   protected:
     int m_lastIterations = 0; ///< Number of iterations performed in the last execution
+    float m_lastExecutionTimeMs = 0.0f; ///< Core optimization time in milliseconds
 
   public:
     virtual ~KMeansEngine() = default;
@@ -36,6 +37,12 @@ class KMeansEngine {
      * @return Integer count of iterations.
      */
     [[nodiscard]] int getLastIterations() const noexcept { return m_lastIterations; }
+
+    /**
+     * @brief Gets the core execution time of the clustering logic (in ms).
+     * @return Floating-point time in milliseconds.
+     */
+    [[nodiscard]] float getLastExecutionTimeMs() const noexcept { return m_lastExecutionTimeMs; }
 
     /**
      * @brief Executes clustering on CPU-resident data.

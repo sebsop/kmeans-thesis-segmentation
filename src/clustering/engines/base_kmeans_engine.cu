@@ -3,6 +3,7 @@
  * @brief Base implementation and shared kernels for the K-Means pipeline.
  */
 
+#include <chrono>
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -257,6 +258,7 @@ std::vector<FeatureVector> BaseKMeansEngine<Derived>::runInternal(float* d_sampl
     std::vector<int> h_counts(k);
 
     int iter = 0;
+    auto start = std::chrono::high_resolution_clock::now();
     for (; iter < maxIterations; ++iter) {
         int h_changed = 0;
         CUDA_CHECK(cudaMemcpy(m_d_changed, &h_changed, sizeof(int), cudaMemcpyHostToDevice));
@@ -303,6 +305,8 @@ std::vector<FeatureVector> BaseKMeansEngine<Derived>::runInternal(float* d_sampl
         });
         CUDA_CHECK(cudaMemcpy(m_d_centers, h_centers.data(), centersSize, cudaMemcpyHostToDevice));
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    this->m_lastExecutionTimeMs = std::chrono::duration<float, std::milli>(end - start).count();
 
     m_lastIterations = iter + 1;
 
