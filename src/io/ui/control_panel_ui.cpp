@@ -128,7 +128,6 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     }
 
     ImGui::Separator();
-    ImGui::Separator();
     ImGui::Text("Performance Dashboard");
 
     // 4. UI Frame Rate Monitoring

@@ -121,7 +121,7 @@ constexpr ColorRGBA FRAME_BG = {.r = 0.90f, .g = 0.90f, .b = 0.92f, .a = 1.00f};
 constexpr ColorRGBA FRAME_BG_HOVERED = {.r = 0.85f, .g = 0.85f, .b = 0.88f, .a = 1.00f};
 constexpr ColorRGBA FRAME_BG_ACTIVE = {.r = 0.80f, .g = 0.80f, .b = 0.84f, .a = 1.00f};
 constexpr ColorRGBA TITLE_BG = {.r = 0.94f, .g = 0.94f, .b = 0.95f, .a = 1.00f};
-constexpr ColorRGBA TITLE_BG_ACTIVE = {.r = 0.90f, .g = 0.90f, .b = 0.92f, .a = 1.00f};
+constexpr ColorRGBA TITLE_BG_ACTIVE = {.r = 0.94, .g = 0.94, .b = 0.94, .a = 1.00f};
 constexpr ColorRGBA BUTTON = {.r = 0.88f, .g = 0.88f, .b = 0.90f, .a = 1.00f};
 constexpr ColorRGBA BUTTON_HOVERED = {.r = 0.82f, .g = 0.82f, .b = 0.85f, .a = 1.00f};
 constexpr ColorRGBA BUTTON_ACTIVE = {.r = 0.75f, .g = 0.75f, .b = 0.80f, .a = 1.00f};
