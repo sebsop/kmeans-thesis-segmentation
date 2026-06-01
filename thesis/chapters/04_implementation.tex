@@ -1,11 +1,11 @@
 \chapter{Implementation and Optimization}\label{chap:4}
-{\itshape While the previous chapter described the architecture of the segmentation pipeline, this chapter focuses on the concrete C++ and CUDA implementation details. To achieve a real-time frame rate of over $170\text{ FPS}$, the system must look past high-level logic and optimize for low-level GPU hardware. The chapter describes how GPU thread grids are managed, fast on-chip shared memory is utilized, hardware-accelerated math intrinsics are implemented, and CPU-GPU transfers are orchestrated using asynchronous streams.}
+{\itshape While the previous chapter described the architecture of the segmentation pipeline, this chapter focuses on the concrete C++ and CUDA implementation details. To achieve a real-time frame rate of over $120\text{ FPS}$, the system must look past high-level logic and optimize for low-level GPU hardware. The chapter describes how GPU thread grids are managed, fast on-chip shared memory is utilized, hardware-accelerated math intrinsics are implemented, and CPU-GPU transfers are orchestrated using asynchronous streams.}
 
 \section{Hardware Environment and System Tuning}
-To evaluate the pipeline fairly, all benchmarks were run on a standardized local hardware environment. The test system consists of an Intel Core i5-13500 CPU, 16 GB of system RAM, and an NVIDIA GeForce RTX 3050 Laptop GPU with 4 GB of VRAM (Ampere architecture). 
+To evaluate the pipeline fairly, all benchmarks were run on a standardized local hardware environment. The test system consists of an Intel Core Ultra 9 275HX CPU, 32 GB of system RAM, and an NVIDIA GeForce RTX 5070 Ti GPU with 12 GB of VRAM. Video input is acquired via a standard Chicony USB2.0 web camera capped at a hardware frame rate of 30 frames per second (FPS), corresponding to an inter-frame capture latency of $33.3\text{ ms}$.
 
 \subsection{System Tuning and Thermal Management}
-To ensure deterministic latency and prevent frame-time variance, the hardware and operating system were tuned for sustained throughput. On the software side, the Windows scheduler was optimized via the registry (\texttt{Win32PrioritySeparation} set to \texttt{0x26}) to enable short, variable clock quantums, prioritizing foreground CPU slices for the camera input/output (I/O) and event loops \cite{microsoft_priority_separation_official, intel_thermal_13th_gen}. On the hardware side, rather than using max-frequency profiles that induce thermal throttling, a balanced performance profile was adopted to manage the thermal design power (TDP) between the CPU and GPU \cite{intel_thermal_13th_gen}, providing the stable thermal headroom necessary for continuous high-speed execution.
+To ensure deterministic latency and prevent frame-time variance, the hardware and operating system were tuned for sustained throughput. On the software side, the Windows scheduler was optimized via the registry (\texttt{Win32PrioritySeparation} set to \texttt{0x26}) to enable short, variable clock quantums, prioritizing foreground CPU slices for the camera input/output (I/O) and event loops \cite{microsoft_priority_separation_official, intel_thermal_13th_gen}. On the hardware side, rather than using max-frequency profiles that induce thermal throttling, a high performance profile was adopted to manage the thermal design power (TDP) between the CPU and GPU \cite{intel_thermal_13th_gen}, providing the stable thermal headroom necessary for continuous high-speed execution.
 
 \subsection{Tooling and Code Quality}
 The codebase is managed using the CMake build system \cite{cmake_official}, which handles the integration of C++20, OpenCV, and the CUDA compiler (NVCC). To maintain clean and consistent code, \texttt{clang-format} is used for automated formatting and \texttt{clang-tidy} for static analysis \cite{clang_tools}. This setup helps prevent memory leaks and common C++ errors, ensuring benchmark results reflect the actual efficiency of the algorithms rather than implementation bugs.
@@ -37,7 +37,7 @@ if (out_x < out_cols && out_y < out_rows) {
 \end{lstlisting}
 
 \subsection{Grid Heuristics for SM Occupancy}
-A thread block size of $16 \times 16$ ($256$ threads per block) is selected. In the NVIDIA Ampere architecture, this block size maximizes Streaming Multiprocessor (SM) occupancy \cite{CudaGuide}. It provides a balanced distribution of registers per thread, allowing the hardware scheduler to hide memory latency by keeping warps highly active without running out of registers \cite{CudaGuide, cook2012cuda}.
+A thread block size of $16 \times 16$ ($256$ threads per block) is selected. In the NVIDIA Blackwell architecture, this block size maximizes Streaming Multiprocessor (SM) occupancy \cite{CudaGuide}. It provides a balanced distribution of registers per thread, allowing the hardware scheduler to hide memory latency by keeping warps highly active without running out of registers \cite{CudaGuide, cook2012cuda}.
 
 \section{Implementation of Initialization Strategies}
 The system supports two initialization strategies: Random and K-Means++.
@@ -127,7 +127,7 @@ Because the assignment kernels always access all five features of a pixel togeth
 To maintain a high-speed video feed, the visualization pipeline decouples GPU calculations from CPU rendering.
 
 \subsection{Pinned Memory and DMA Transfers}
-Host-side buffers are allocated using page-locked (pinned) memory via \texttt{cudaMallocHost}. This prevents the operating system from swapping these buffers to disk, allowing the GPU to use DMA to copy processed frames directly to system RAM without involving the CPU \cite{CudaGuide}. 
+Host-side buffers are allocated using page-locked (pinned) memory via \texttt{cuda\allowbreak MallocHost}. This prevents the operating system from swapping these buffers to disk, allowing the GPU to use DMA to copy processed frames directly to system RAM without involving the CPU \cite{CudaGuide}. 
 
 By combining pinned memory with non-blocking asynchronous streams (\texttt{cudaMemcpyAsync}), the visual segmented frame is transferred to the host while the CPU concurrently handles user interaction, camera I/O, and UI updates for the next frame. The stream is synchronized (\texttt{cudaStreamSynchronize}) only when the UI is ready to swap OpenGL textures, eliminating latency \cite{CudaGuide, cook2012cuda}.
 
@@ -158,15 +158,13 @@ All mathematical boundaries and hardware constraints are controlled via a centra
          & \texttt{SPATIAL\_WEIGHT} & $10^{-6}$ & Regularizes $X/Y$ to prioritize color consistency. \\ \hline
         Quantum & \texttt{PHASE\_OFFSET} & 0.5 & Centers feature differences in the cosine phase space. \\ \hline
          & \texttt{SCALE\_FACTOR} & $\pi/2$ & Maps normalized distances to the $[0, \pi/2]$ phase range. \\ \hline
-        Execution & \texttt{PROCESS\_WIDTH} & 320 px & Internal resolution to maximize kernel throughput. \\ \hline
-         & \texttt{THREADS\_PER\_BLOCK} & 256 & Optimized block size for Ampere SM occupancy. \\ \hline
+        Execution & \texttt{PROCESS\_WIDTH} & 640 px & Internal resolution to maximize kernel throughput. \\ \hline
+          & \texttt{THREADS\_PER\_BLOCK} & 256 & Optimized block size for Blackwell SM occupancy. \\ \hline
         Metrics & \texttt{SUBSET\_SIZE} & 2,000 & Samples for Monte Carlo Silhouette estimation. \\ \hline
     \end{tabular}
 \end{table}
 
 \section{Performance-Aware Quality Metrics}
-To evaluate the segmentation quality, the system runs three quality metrics in the background: WCSS \cite{lloyd1982least,krzanowski1988criterion}, the Davies-Bouldin Index \cite{davies1979cluster,xiao2017davies}, and the Silhouette Coefficient \cite{rousseeuw1987silhouettes, shutaywi2021silhouette}. 
+To evaluate segmentation quality, the system offloads three metrics (WCSS \cite{krzanowski1988criterion}, Davies-Bouldin \cite{davies1979cluster, xiao2017davies}, and Silhouette Coefficient \cite{rousseeuw1987silhouettes, shutaywi2021silhouette}) to a dedicated background thread using the \texttt{BenchmarkRunner} class \cite{williams2019c++}. The optimized calculations are executed in \texttt{src/clustering/metrics.cpp} to process the telemetry data without blocking the real-time visualization pipeline.
 
-To prevent these calculations from blocking the real-time pipeline, all three metrics are implemented within the \texttt{BenchmarkRunner} class and executed on a dedicated background thread \cite{williams2019c++}. The optimized CPU class functions in \texttt{src/clustering/metrics.cpp} are used to process the telemetry data. 
-
-For the Silhouette Coefficient, calculating the score exactly is computationally impractical. As derived in Section \ref{subsect:silhouette_complexity}, a downscaled frame of $320 \times 240$ pixels requires approximately $2.95$ billion distance calculations, which would briefly freeze the UI loop. A Monte Carlo approximation is implemented directly within the background metrics thread, sampling a representative subset of $M=2,000$ points \cite{shutaywi2021silhouette}. This allows for calculating and displaying the statistical Davies-Bouldin index and Silhouette score on the dashboard in under a millisecond, providing real-time feedback without lagging the video stream.
+Because calculating the exact Silhouette score for a $640 \times 480$ frame requires approximately $47.19$ billion calculations (Section \ref{subsect:silhouette_complexity}), a Monte Carlo approximation using a random subset of $M=2,000$ pixels is implemented instead \cite{shutaywi2021silhouette}. This reduces processing time to under a millisecond, enabling real-time dashboard updates without user interface lag. These performance-aware quality metrics complete the implementation of the active clustering pipeline. To ensure that these GPU-accelerated algorithms and asynchronous threads are mathematically correct and computationally stable, a comprehensive testing strategy is established, as detailed in the next chapter.

@@ -31,30 +31,30 @@ To verify the GPU implementations, a parity protocol is established that compare
 
 During parity testing, small numerical differences (on the order of $10^{-6}$) are expected in the final centroid coordinates due to floating-point drift. This occurs because the CPU and GPU perform float arithmetic differently \cite{CudaGuide, cook2012cuda}. The CPU's floating-point unit often calculates intermediate values in 64-bit or 80-bit precision before rounding back to 32-bit (FP32), while the GPU maintains a strict, high-speed 32-bit pipeline \cite{CudaGuide}. 
 
-Moreover, compiler optimizations like Fused Multiply-Add (FMA) combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps \cite{CudaGuide}. To handle this hardware-specific behavior, the GTest suite \cite{googletest} uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
+Moreover, compiler optimizations like FMA combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps \cite{CudaGuide}. To handle this hardware-specific behavior, the GTest suite \cite{googletest} uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
 
 \section{Performance Benchmarking and Latency Profiling}
-To measure the speed and latency of the framework, the classical engine was profiled under three standard operational configurations on a static QVGA frame ($320 \times 240$ pixels, $N = 76,800$). The frame rate (FPS) measurements and sub-millisecond stage latencies were merged into a single telemetry dashboard, summarized in Table~\ref{tab:telemetry}.
+To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($640 \times 480$ pixels, $N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates (FPS) are summarized in Table~\ref{tab:telemetry}.
 
 \begin{table}[htbp]
 \centering
 \small
-\caption{System Performance and Latency Telemetry (RTX 3050 GPU)}
+\caption{System Performance and Latency Telemetry (RTX 5070 Ti GPU)}
 \label{tab:telemetry}
-    \begin{tabular}{|l|c|c|c|c|c|c|}
-    \hline
-        \textbf{Mode} & \textbf{Configuration} & \textbf{FPS} & \textbf{Preprocess} & \textbf{Optimize} & \textbf{Assign} & \textbf{Total Latency} \\ \hline
-        Performance & $K=3, S=8$ & 170 & 0.34 ms & 0.29 ms & 0.36 ms & \textbf{0.99 ms} \\ \hline
-        Balanced & $K=8, S=4$ & 170 & 0.34 ms & 0.58 ms & 0.39 ms & \textbf{1.31 ms} \\ \hline
-        High Quality & $K=20, S=1$ & 160 & 0.37 ms & 1.09 ms & 0.42 ms & \textbf{1.88 ms} \\ \hline
-    \end{tabular}
+\begin{tabular}{ccccccc}
+\hline
+\textbf{Mode} & \textbf{K} & \textbf{Stride (S)} & \textbf{Preprocess} & \textbf{Optimize} & \textbf{Assign} & \textbf{Total Latency} \\ \hline
+Performance  & 3  & 8 & 0.28 ms & 0.47 ms & 0.59 ms & \textbf{1.33 ms} \\
+Balanced     & 8  & 4 & 0.29 ms & 0.74 ms & 0.59 ms & \textbf{1.62 ms} \\
+High Quality & 40 & 1 & 0.30 ms & 2.93 ms & 0.62 ms & \textbf{3.86 ms} \\ \hline
+\end{tabular}
 \end{table}
 
 The telemetry shows that the pipeline is extremely efficient:
 \begin{itemize}
-    \item \textbf{Throughput:} The frame rate remains well above $150\text{ FPS}$ in all modes, easily exceeding the $120\text{ FPS}$ real-time video requirement ($8.33\text{ ms}$ budget) \cite{jerald2009scene}.
-    \item \textbf{Latency scaling:} The preprocessing and pixel assignment stages take under $0.5\text{ ms}$ and scale near-independently of the cluster count $K$. This confirms that the CUDA thread indexing model successfully decouples pixel count from algorithmic complexity \cite{CudaGuide}.
-    \item \textbf{Optimization overhead:} While iterative learning time grows from $0.29\text{ ms}$ ($K=3, S=8$) to $1.09\text{ ms}$ ($K=20, S=1$), the overall latency remains under $1.9\text{ ms}$, leaving significant thermal and processing headroom on the host device.
+    \item \textbf{Throughput:} Across all three modes (Performance, Balanced, and High Quality), the maximum theoretical throughput is well above the $120\text{ FPS}$ real-time video requirement ($8.33\text{ ms}$ budget) \cite{jerald2009scene}, reaching up to $750\text{ FPS}$, $618\text{ FPS}$, and $259\text{ FPS}$ respectively. This high throughput is directly enabled by the warm-start temporal consistency mechanism, which limits optimization convergence to just a few iterations per frame on consecutive inputs.
+    \item \textbf{Latency scaling:} The preprocessing stage remains highly constant at approximately $0.28\text{ ms}$ to $0.30\text{ ms}$ regardless of the cluster count $K$ and stride $S$, validating the efficiency of the CUDA preprocessor. The optimization (centroid learning) stage scales with the active pixel count (controlled by stride $S$) and cluster count $K$, while the pixel assignment stage scales minimally, from $0.59\text{ ms}$ to $0.62\text{ ms}$, due to CUDA thread block execution efficiency on the GPU.
+    \item \textbf{High-density feasibility:} In the heaviest configuration ($K=40, S=1$), which processes all $307,200$ pixels without downsampling, the total execution latency is only $3.86\text{ ms}$ (yielding $259\text{ FPS}$). This confirms that even under maximum computational load on a live video stream, the system operates with substantial processing headroom, leaving the GPU idle for a large portion of the camera's physical frame delivery window of $33.3\text{ ms}$ ($30\text{ FPS}$).
 \end{itemize}
 
 \section{Scientific Reproducibility}
