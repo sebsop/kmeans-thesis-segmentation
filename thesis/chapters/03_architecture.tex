@@ -7,7 +7,7 @@ The segmentation framework is designed as a high-throughput, asynchronous pipeli
 \begin{figure}[htbp]
     \centering
     % \includegraphics[width=0.7\textwidth]{figures/system_architecture.png}
-    \caption{High-level architectural partitioning between the GUI thread and the CUDA worker thread.}
+    \caption[High-Level GUI and CUDA Worker Thread Partitioning]{High-level architectural partitioning between the GUI thread and the CUDA worker thread.}
     \label{fig:sys_arch}
 \end{figure}
 
@@ -91,7 +91,7 @@ Our GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a ligh
 \begin{figure}[htbp]
     \centering
     % \includegraphics[width=0.85\textwidth]{figures/dashboard_full.png}
-    \caption{Interactive Dear ImGui dashboard displaying real-time 5D visual segmentation and live telemetry.}
+    \caption[Interactive Dear ImGui Dashboard and Visual Telemetry Overlay]{Interactive Dear ImGui dashboard displaying real-time 5D visual segmentation and live telemetry.}
     \label{fig:ui_dashboard}
 \end{figure}
 
@@ -111,6 +111,6 @@ Data transfer across this thread boundary is managed using a mutex-protected sta
 \begin{figure}[htbp]
     \centering
     % \includegraphics[width=0.75\textwidth]{figures/thread_synchronization_sequence.png}
-    \caption{Sequence diagram illustrating asynchronous synchronization between the main GUI thread and the clustering worker.}
+    \caption[Asynchronous Synchronization Sequence between GUI and Worker Threads]{Sequence diagram illustrating asynchronous synchronization between the main GUI thread and the clustering worker.}
     \label{fig:thread_sync}
 \end{figure}

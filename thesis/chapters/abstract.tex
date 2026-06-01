@@ -3,3 +3,12 @@
 \vspace{0.5cm}
 \hrule
 \vspace{0.5cm}
+
+Real-time image and video segmentation is a critical preprocessing task for edge-based computer vision, but executing multi-dimensional clustering under strict real-time budgets ($120+\text{ FPS}$) is computationally challenging on traditional CPU architectures.
+
+To address these challenges, this thesis presents a high-performance, GPU-accelerated C++/CUDA framework for 5D image segmentation on a joint color-spatial manifold, comparing a classical Euclidean distance solver with a quantum-inspired engine that emulates the quantum SWAP test. Execution bottlenecks are resolved by optimizing thread layouts and memory access patterns within the CUDA kernels. To enable real-time comparative analysis of the two backends without introducing interface delay, an asynchronous Dear ImGui diagnostic overlay is implemented to compute performance and mathematical quality metrics on a background thread.
+
+Evaluated on an NVIDIA GeForce RTX 5070 Ti, the pipeline achieves a theoretical throughput of up to $750\text{ FPS}$ ($259\text{ FPS}$ under the heaviest configuration of $40$ clusters and no downsampling). The quantum-inspired backend achieves complete visual and mathematical functional equivalence to classical K-Means, producing identical boundaries and quality metrics across highly contrasting illumination conditions. This equivalence is driven by the monotonic nature of the phase-space mapping, which preserves relative feature ordering. Furthermore, hardware-level profiling shows that compiling the trigonometric calculations into GPU-accelerated mathematical intrinsics maintains execution speed parity with the classical Euclidean backend.
+
+\vspace{1.5cm}
+\noindent \textbf{Keywords:} GPU Acceleration, CUDA, 5D K-Means, Quantum-Inspired Computing, SWAP Test, Real-Time Video Segmentation.

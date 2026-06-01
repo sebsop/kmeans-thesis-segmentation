@@ -9,7 +9,7 @@ To benchmark how the algorithms scale under heavy workloads, tests were conducte
 
 \begin{table}[H]
 \centering
-\caption{Performance comparison of Classical vs. Quantum K-Means under different configurations.}
+\caption[Execution Latency and Iteration Counts across Configurations]{Performance comparison of Classical vs. Quantum K-Means under different configurations.}
 \label{tab:latency_benchmarks}
 \begin{tabular}{ccccccc}
 \hline
@@ -83,13 +83,13 @@ Figure~\ref{fig:scenes} displays the reference photos of both environments. To g
   {\small Scene B (Low-Light)}
   \label{fig:scene_b}
 \end{minipage}
-\caption{Camera reference photos for Scenes A and B.}
+\caption[Camera Reference Photos for Scene A (Studio) and Scene B (Low-Light)]{Camera reference photos for Scenes A and B.}
 \label{fig:scenes}
 \end{figure}
 
 \begin{table}[H]
 \centering
-\caption{Segmentation quality and execution telemetry comparison under varying lighting environments ($K=8$, $S=4$, 21-run average).}
+\caption[Segmentation Quality and Telemetry Comparison under Varying Lighting]{Segmentation quality and execution telemetry comparison under varying lighting environments ($K=8$, $S=4$, 21-run average).}
 \label{tab:quality_metrics}
 \begin{tabular}{lcccccc}
 \hline
@@ -156,7 +156,7 @@ To qualitatively evaluate the segmentation performance, Case Study I compares th
   \vspace{0.25em}
   {\small Scene B: Quantum}
 \end{minipage}
-\caption{Visual comparison of full-frame segmentations (Original vs. Classical vs. Quantum-Inspired) for Scene A (Studio) and Scene B (Low-Light) under configuration $K=8$, $S=4$.}
+\caption[Visual Full-Frame Segmentations under Studio and Low-Light Scenes]{Visual comparison of full-frame segmentations (Original vs. Classical vs. Quantum-Inspired) for Scene A (Studio) and Scene B (Low-Light) under configuration $K=8$, $S=4$.}
 \label{fig:case_study_1}
 \end{figure}
 
@@ -210,7 +210,7 @@ Although the visual segmentations of a single static frame appear identical, run
   \vspace{0.25em}
   {\small Quantum: Frame $t+2$}
 \end{minipage}
-\caption{Zoomed-in temporal boundary comparison across three consecutive frames ($t$, $t+1$, and $t+2$) under low-light conditions, showing identical background halo transitions and detail loss on the foreground cup in Frame $t+1$.}
+\caption[Zoomed-in Temporal Boundary Comparison showing Centroid Jitter]{Zoomed-in temporal boundary comparison across three consecutive frames ($t$, $t+1$, and $t+2$) under low-light conditions, showing identical background halo transitions and detail loss on the foreground cup in Frame $t+1$.}
 \label{fig:jitter_sequence}
 \end{figure}
 
@@ -225,7 +225,7 @@ To summarize the performance profiles of the classical Euclidean and quantum-ins
 
 \begin{table}[H]
 \centering
-\caption{System trade-off matrix between Classical Euclidean and Quantum-Inspired K-Means.}
+\caption[System Trade-Off Matrix: Classical Euclidean vs. Quantum-Inspired]{System trade-off matrix between Classical Euclidean and Quantum-Inspired K-Means.}
 \label{tab:tradeoff_matrix}
 \begin{tabular}{p{2.8cm}p{6.0cm}p{6.0cm}}
 \hline
@@ -238,8 +238,6 @@ To summarize the performance profiles of the classical Euclidean and quantum-ins
 \end{table}
 
 \subsection{Concluding Engineering Verdict}
-Based on the overall trade-off matrix, both engines are highly suited for real-time edge applications, achieving frame rates exceeding $250\text{ FPS}$ on a modern GPU. 
+Because the quantum-inspired engine achieves absolute functional equivalence without incurring latency overhead, it serves as a mathematically validated baseline for future hybrid quantum hardware integration. By verifying the stability of the phase-space similarity formulation on GPU simulators today, developers can ensure predictable performance when porting the core solver to physical NISQ co-processors.
 
-Because the quantum-inspired engine achieves absolute functional equivalence without incurring latency overhead, it serves as a mathematically validated substitute for classical distance metrics. This validation is critical for projects aiming to transition to hybrid quantum-classical hardware. By verifying the mathematical stability of the phase-space similarity formulation on GPU simulators today, developers can guarantee predictable segmentation quality and convergence rates when porting the core algorithm to future NISQ co-processors.
-
-For real-world deployment, the primary engineering recommendation is that developers should focus on the initialization phase rather than distance metrics to improve temporal boundary consistency. Since both engines are equally vulnerable to frame-by-frame centroid allocation shifts (such as the background halo and detail loss observed in Figure~\ref{fig:jitter_sequence}), future systems should incorporate inter-frame temporal tracking. Rather than running independent K-Means++ initializations on every frame, maintaining warm-started centroids and adding tracking constraints (e.g., matching centroids across frames via Hungarian association or optical flow regularizers) is the key to preventing visual flickering and ensuring stable real-time video segmentations.
+For real-world edge deployment, the primary engineering recommendation is to focus on the initialization phase to improve temporal consistency. Since both engines are vulnerable to frame-by-frame centroid shifts (such as the halo and detail loss in Figure~\ref{fig:jitter_sequence}), future systems should incorporate inter-frame tracking (e.g., via Hungarian association or optical flow constraints) rather than running independent K-Means++ updates, preventing visual label switching and ensuring stable video segmentations. These guidelines establish the foundation for the final conclusions and future research presented next.
