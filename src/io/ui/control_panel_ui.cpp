@@ -182,8 +182,12 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
     if (!algoFpsHistory.empty()) {
         auto [min_it, max_it] = std::ranges::minmax_element(algoFpsHistory);
         float maxFps = *max_it;
-        float sumFps = std::accumulate(algoFpsHistory.begin(), algoFpsHistory.end(), 0.0f);
-        float avgFps = sumFps / static_cast<float>(algoFpsHistory.size());
+        
+        // Calculate average FPS via average latency (harmonic mean) to avoid mathematical rate-averaging bias
+        float sumMs = std::accumulate(algoFpsHistory.begin(), algoFpsHistory.end(), 0.0f,
+                                      [](float accum, float fps) { return accum + (fps > 0.0f ? (1000.0f / fps) : 0.0f); });
+        float avgMs = sumMs / static_cast<float>(algoFpsHistory.size());
+        float avgFps = (avgMs > 0.001f) ? (1000.0f / avgMs) : 0.0f;
 
         static float displayFps = 0.0f;
         static float displayMs = 0.0f;
@@ -221,8 +225,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         ImGui::TextColored(ImVec4(constants::ui::theme::SUCCESS_COL.r, constants::ui::theme::SUCCESS_COL.g,
                                   constants::ui::theme::SUCCESS_COL.b, constants::ui::theme::SUCCESS_COL.a),
                            "Overall Throughput: %.1f FPS", displayAvg);
-        showHelpMarker("Rolling average of the actual overall system processing throughput (1000ms / Total Frame "
-                       "Latency) across both cached and active frames.");
+        showHelpMarker("Rolling average of the actual overall system processing throughput (1000ms / Average Frame Latency) computed over a window of active and cached frames.");
 
         // Render moving average history plot
         int window = constants::ui::FPS_PLOT_WINDOW;
