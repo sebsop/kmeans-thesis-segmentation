@@ -34,7 +34,7 @@ During parity testing, small numerical differences (on the order of $10^{-6}$) a
 Moreover, compiler optimizations like FMA combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps \cite{CudaGuide}. To handle this hardware-specific behavior, the GTest suite \cite{googletest} uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
 
 \section{Performance Benchmarking and Latency Profiling}
-To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($640 \times 480$ pixels, $N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates (FPS) are summarized in Table~\ref{tab:telemetry}.
+To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($640 \times 480$ pixels, $N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates (FPS), calculated as the mathematical average of 21 recorded telemetry runs for each configuration, are summarized in Table~\ref{tab:telemetry}.
 
 \begin{table}[htbp]
 \centering

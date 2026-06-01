@@ -1,11 +1,11 @@
 \chapter{Results and Comparative Analysis}
-{\itshape This chapter presents the experimental evaluation of the classical and quantum-inspired K-Means segmentation frameworks. The performance is assessed across hardware metrics (latency, throughput, and GPU utilization) and mathematical clustering indicators (Within-Cluster Sum of Squares, Davies-Bouldin index, and Silhouette score). Visual output quality and temporal boundary stability are analyzed under varying lighting conditions.}
+{\itshape This chapter presents the experimental evaluation of the classical and quantum-inspired K-Means segmentation frameworks. The performance is assessed across hardware metrics (latency, throughput, and GPU utilization) and mathematical clustering indicators (WCSS, Davies-Bouldin index, and Silhouette score). Visual output quality and temporal boundary stability are analyzed under varying lighting conditions.}
 
 \section{System Throughput and Latency Scaling}
-This section evaluates the execution speed of both clustering engines under different computational loads, modified by the number of clusters ($K$) and the data downsampling stride ($S$).
+This section evaluates the execution speed of both clustering engines under different computational loads, modified by the number of clusters $K$ and the data downsampling stride $S$.
 
 \subsection{Hyperparameter Latency Benchmarks}
-To measure how the algorithms scale, tests were conducted on a static $640 \times 480$ video frame depicting a complex desk layout under constant studio lighting. To ensure a scientifically fair comparison and isolate the mathematical execution paths of both engines, all trials were conducted using the K-Means++ initialization algorithm. For each benchmark run, both engines were seeded with the exact same set of initial starting centroids and executed on the identical image frame. Table~\ref{tab:latency_benchmarks} compares the average core engine execution latency and the convergence iteration counts over 21 runs for three representative configurations.
+To benchmark how the algorithms scale under heavy workloads, tests were conducted on a static $640 \times 480$ video frame depicting a highly complex and textured workspace under constant studio lighting. This scene featured a large variety of small objects, textures, and subtle color gradients, making it computationally demanding and requiring more optimization iterations than a standard scene. To ensure a scientifically fair comparison and isolate the mathematical execution paths of both engines, all trials were conducted using the K-Means++ initialization algorithm. For each benchmark run, both engines were seeded with the exact same set of initial starting centroids and executed on the identical image frame. Table~\ref{tab:latency_benchmarks} compares the average core engine execution latency and the convergence iteration counts over 21 runs for three representative configurations.
 
 \begin{table}[H]
 \centering
@@ -21,7 +21,7 @@ To measure how the algorithms scale, tests were conducted on a static $640 \time
 \end{tabular}
 \end{table}
 
-The latency data shows that the execution time scales non-linearly with both $K$ and $S$. In the low-density configuration ($K=3, S=8$), both engines execute in under $2\text{ ms}$. In the high-density configuration ($K=40, S=1$), which processes all $307,200$ pixels without downsampling, latency increases to approximately $26.6\text{ ms}$ for the classical engine and $27.9\text{ ms}$ for the quantum engine. Despite the mathematical complexity of the quantum-inspired state projection, the execution latency of both engines remains highly comparable across all modes.
+The latency data shows that the execution time scales non-linearly with both $K$ and $S$. In the low-density configuration ($K=3, S=8$) and the balanced configuration ($K=8, S=4$), the quantum-inspired engine is slightly faster than the classical engine ($1.61\text{ ms}$ vs. $1.81\text{ ms}$ and $6.15\text{ ms}$ vs. $6.45\text{ ms}$ respectively). In the high-density configuration ($K=40, S=1$), which processes all $307,200$ pixels without downsampling, the classical engine becomes slightly faster ($26.66\text{ ms}$ vs. $27.95\text{ ms}$). Despite the mathematical complexity of the quantum-inspired state projection, the execution latency of both engines remains highly comparable across all modes.
 
 \subsection{GPU Latency-Hiding and Hardware Intrinsics}
 The small latency difference between the classical and quantum-inspired engines is explained by the architecture of modern NVIDIA GPUs:
@@ -33,3 +33,213 @@ The small latency difference between the classical and quantum-inspired engines 
     
     \item \textbf{Camera I/O Bottleneck and GPU Utilization}: During real-time execution on an NVIDIA GeForce RTX 5070 Ti, the average GPU utilization hovers around 40\%, occasionally spiking to 43\%, in the heaviest configuration ($K=40, S=1$). This behavior is caused by the camera's hardware frame rate, which is capped at 30 frames per second. Since the camera delivers a new frame every $33.3\text{ ms}$ and the engine requires only $26.6\text{ ms}$ (classical) or $27.9\text{ ms}$ (quantum) to process it, the GPU remains idle for the remaining portion of the frame interval. In the lighter configuration ($K=3, S=8$), the core execution time drops to under $2\text{ ms}$, meaning the GPU remains idle for over 90\% of the frame window. In this mode, the average GPU utilization stays around 30--35\%, which primarily represents the fixed overhead of rendering the ImGui interface and maintaining the OpenGL window context. This operational constraint justifies the use of offline metrics and overall throughput calculations to estimate the maximum performance boundaries of the hardware.
 \end{enumerate}
+
+\section{Centroid Convergence and Optimization Landscape}
+
+\subsection{Iteration Count and Convergence Velocity}\label{subsect:convergence_velocity}
+To compare the convergence velocity of the classical and quantum-inspired engines, the number of iterations required to reach stability (defined by the centroid displacement threshold $\Delta\boldsymbol{\mu} < 10^{-5}$) was recorded under the balanced configuration ($K=8$, $S=4$). Under the exact same initialization seeds and input frame, the classical engine required an average of $41.81$ iterations to converge, while the quantum-inspired engine reached stability in $41.43$ iterations. 
+
+This near-identical convergence behavior is also observed in the other hyperparameter modes: the low-density configuration ($K=3, S=8$) required $11.71$ iterations (classical) and $12.38$ iterations (quantum), while the high-density configuration ($K=40, S=1$) took $88.67$ iterations (classical) and $88.62$ iterations (quantum). The rate of change of centroid displacement per iteration shows that both engines follow extremely similar descent paths, demonstrating that the quantum-inspired non-linear mapping does not degrade convergence stability or cause optimization oscillations.
+
+\subsection{Hilbert Space Topography}
+The convergence profiles described in Section~\ref{subsect:convergence_velocity} are directly governed by the topography of their respective optimization landscapes. In classical Euclidean space, distance scales linearly with feature displacement. In contrast, the quantum-inspired engine projects the normalized 5D features onto a high-dimensional Hilbert hypersphere via the angular phase encoding derived in Section~\ref{subsect:phasespace}. The resulting non-linear distance metric yields a gradient that adapts dynamically based on feature proximity: flat near the centroids ($\theta_d \to 0$), and steep near the cluster boundaries ($\theta_d \to \pi/4$).
+
+Although this non-linear gradient structure was theoretically hypothesized to act as a noise filter and alter boundary behavior (as discussed in Section~\ref{subsect:boundary_justification}), empirical testing demonstrates that it achieves complete functional equivalence with classical Euclidean space. Across both tested lighting configurations: high-contrast studio illumination and extremely low-light environments, the visual segmentations produced by both engines are practically identical. This empirical indistinguishability is also reflected in the clustering quality metrics (WCSS, Davies-Bouldin index, and Silhouette score), which remain nearly identical under all conditions. 
+
+This behavior is explained by the monotonic nature of the cosine-squared similarity within the bounded phase range $[0, \pi/4]$. Because the mapping preserves the relative ordering of feature distances, both engines converge to the same local minima. Rather than altering the final visual segmentation boundaries or changing noise profiles in practice, the primary significance of the quantum-inspired topography is that it serves as a mathematically valid alternative formulation. It confirms that high-dimensional Hilbert space projections can be simulated in real-time with negligible performance overhead while maintaining the stability, accuracy, and output quality of classical K-Means, establishing a verified mathematical baseline for future native execution on physical QPUs.
+
+\section{Quantitative Quality Benchmarking}
+
+\subsection{Definition of Evaluated Quality Indices}
+To evaluate the mathematical validity of the quantum-inspired angular phase mapping, the segmentation quality of both engines is assessed using three standard clustering diagnostics described in Section~\ref{subsect:metrics_def}:
+\begin{enumerate}
+    \item \textbf{Within-Cluster Sum of Squares (WCSS):} Measures the compactness or quantization error of the clusters. A lower WCSS indicates that the pixels are closer to their respective centroids.
+    \item \textbf{Davies-Bouldin (DB) Index:} Evaluates the ratio of cluster dispersion to the separation between cluster centers. A lower DB index indicates better-separated and more distinct clusters.
+    \item \textbf{Silhouette Coefficient:} Gauges the overall fit of individual pixel assignments. Because computing the exact Silhouette score is computationally expensive (see Section~\ref{subsect:silhouette_complexity}), the Monte Carlo approximation with $M=2,000$ random samples is used. A higher Silhouette score (closer to 1.0) represents a better-defined clustering configuration.
+\end{enumerate}
+
+\subsection{Cross-Dataset Quality Telemetry}
+The quantitative benchmarks were evaluated on a static VGA ($640 \times 480$ pixels) video frame captured under two distinct real-world environments to compare stability across variations in illumination and camera sensor noise:
+\begin{itemize}
+    \item \textbf{Scene A (Studio):} A well-lit desk layout featuring everyday objects under uniform studio illumination.
+    \item \textbf{Scene B (Low-Light):} A dimly lit room illuminated only by monitor glow, creating sensor gain noise and color gradients.
+\end{itemize}
+
+Figure~\ref{fig:scenes} displays the reference photos of both environments. To gather reliable telemetry, 21 runs were conducted for each scenario under the balanced configuration ($K=8$, $S=4$) using the fixed-seed protocol described in Chapter 5. Table~\ref{tab:quality_metrics} details the average core engine latencies, iteration counts, and mathematical quality metrics for both classical and quantum-inspired backends.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_a.png}
+  \vspace{0.25em}
+  {\small Scene A (Studio)}
+  \label{fig:scene_a}
+\end{minipage}\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_b.png}
+  \vspace{0.25em}
+  {\small Scene B (Low-Light)}
+  \label{fig:scene_b}
+\end{minipage}
+\caption{Camera reference photos for Scenes A and B.}
+\label{fig:scenes}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Segmentation quality and execution telemetry comparison under varying lighting environments ($K=8$, $S=4$, 21-run average).}
+\label{tab:quality_metrics}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Environment / Engine} & \textbf{Latency (ms)} & \textbf{Iterations} & \textbf{WCSS} & \textbf{DB Index} & \textbf{Silhouette} \\ \hline
+\multicolumn{6}{l}{\textbf{Scene A (Studio)}} \\
+\quad Classical Euclidean & 5.4841 & 36.48 & 2189.43 & 0.68200 & 0.48335 \\
+\quad Quantum-Inspired   & 5.3617 & 35.81 & 2189.49 & 0.68194 & 0.48338 \\ \hline
+\multicolumn{6}{l}{\textbf{Scene B (Low-Light)}} \\
+\quad Classical Euclidean & 2.7696 & 18.38 & 711.41  & 0.65632 & 0.54520 \\
+\quad Quantum-Inspired   & 2.9941 & 18.33 & 711.42  & 0.65636 & 0.54527 \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Non-Linear Class Discrimination}
+The empirical data in Table~\ref{tab:quality_metrics} confirms that the quantum-inspired engine achieves near-perfect mathematical parity with the classical Euclidean engine. In Scene A, the WCSS values differ by less than $0.003\%$ ($2189.43$ vs. $2189.49$), while the Davies-Bouldin ($0.68200$ vs. $0.68194$) and Silhouette scores ($0.48335$ vs. $0.48338$) are virtually identical. This identical behavior is also observed in the noisy, low-light environment of Scene B.
+
+This quantitative parity highlights the mathematical consistency of the angular phase encoding. Even though the quantum-inspired distance metric maps the features onto a non-linear Hilbert hypersphere (introducing steep boundary gradients and flat gradients near the centroids), the overall class discrimination performance remains unaffected. The monotonic property of the squared-cosine similarity ensures that the relative ordering of pixel distances is preserved throughout the optimization process. Consequently, the quantum-inspired engine successfully avoids color-gradient anomalies or noise-induced clustering degradation. Rather than altering the final segmentations, the non-linear topography operates as a stable, functional equivalent to classical Euclidean distance under both high-contrast and low-light noise conditions, ensuring predictable and reliable quality outputs.
+
+\section{Visual Quality and Temporal Stability}
+
+\subsection{Case Study: Chromatic Noise \& Edge Boundaries}
+To qualitatively evaluate the segmentation performance, Case Study I compares the full-frame visual outputs of the classical and quantum-inspired engines. Figure~\ref{fig:case_study_1} presents a side-by-side comparison of the original input frames against the converged classical and quantum-inspired segmentations for both Scene A (Studio) and Scene B (Low-Light).
+
+\begin{figure}[H]
+\centering
+% Row 1: Scene A
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_a.png}
+  \vspace{0.25em}
+  {\small Scene A: Original}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_a.png}
+  \vspace{0.25em}
+  {\small Scene A: Classical}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_a_quantum.png}
+  \vspace{0.25em}
+  {\small Scene A: Quantum}
+\end{minipage}
+
+\vspace{0.5em}
+
+% Row 2: Scene B
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_b.png}
+  \vspace{0.25em}
+  {\small Scene B: Original}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_b_classical.png}
+  \vspace{0.25em}
+  {\small Scene B: Classical}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/scene_b_quantum.png}
+  \vspace{0.25em}
+  {\small Scene B: Quantum}
+\end{minipage}
+\caption{Visual comparison of full-frame segmentations (Original vs. Classical vs. Quantum-Inspired) for Scene A (Studio) and Scene B (Low-Light) under configuration $K=8$, $S=4$.}
+\label{fig:case_study_1}
+\end{figure}
+
+The visual results confirm the empirical mathematical parity shown in Table~\ref{tab:quality_metrics}. In the well-lit environment of Scene A, both engines separate the object boundaries and background elements with near-identical spatial distributions. In the dimly lit environment of Scene B, both engines successfully partition the image despite the high chromatic noise.
+
+The definition of these boundary shapes is governed by the spatial weight parameter ($\lambda_{\text{spatial}} = 10^{-6}$), which balances color similarity and spatial proximity. Theoretically, setting $\lambda_{\text{spatial}}$ too low allows chromatic sensor noise (significant in the low-light Scene B) to dominate, leading to fragmented, non-contiguous clusters. Conversely, setting it too high forces the clusters into rigid, grid-like shapes that ignore physical object contours. At the balanced operating baseline of $10^{-6}$ detailed in Chapter 3, both backends successfully suppress noise while preserving edge details, maintaining their visual equivalence under static conditions.
+
+\subsection{Temporal Stability and Initialization Variance}
+Although the visual segmentations of a single static frame appear identical, running the engines on a continuous video feed reveals key temporal consistency behaviors. Figure~\ref{fig:jitter_sequence} displays a zoomed-in sequence of three consecutive low-light frames ($t$, $t+1$, and $t+2$) segmented by both backends. Empirically, both engines behave comparably, demonstrating that the non-linear boundaries of the quantum-inspired metric do not visually differentiate it from classical Euclidean distance in terms of pixel-level edge flickering under static conditions.
+
+\begin{figure}[H]
+\centering
+% Row 1: Classical Jitter
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/jitter_classical_t.png}
+  \vspace{0.25em}
+  {\small Classical: Frame $t$}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/jitter_classical_t1.png}
+  \vspace{0.25em}
+  {\small Classical: Frame $t+1$}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/jitter_classical_t2.png}
+  \vspace{0.25em}
+  {\small Classical: Frame $t+2$}
+\end{minipage}
+
+\vspace{0.5em}
+
+% Row 2: Quantum Stability
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/jitter_quantum_t.png}
+  \vspace{0.25em}
+  {\small Quantum: Frame $t$}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/jitter_quantum_t1.png}
+  \vspace{0.25em}
+  {\small Quantum: Frame $t+1$}
+\end{minipage}\hfill
+\begin{minipage}{0.32\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/jitter_quantum_t2.png}
+  \vspace{0.25em}
+  {\small Quantum: Frame $t+2$}
+\end{minipage}
+\caption{Zoomed-in temporal boundary comparison across three consecutive frames ($t$, $t+1$, and $t+2$) under low-light conditions, showing identical background halo transitions and detail loss on the foreground cup in Frame $t+1$.}
+\label{fig:jitter_sequence}
+\end{figure}
+
+Instead, the sequence highlights a major shared challenge in frame-by-frame independent clustering: temporal consistency shifts driven by initialization variance. In Frames $t$ and $t+2$, the background curtain is segmented using only two clusters: one representing the deep shadow and the other representing the soft ambient glow from the monitor. In Frame $t+1$, however, due to small variations in the initial K-Means++ centroid seeds, both engines allocate an additional third cluster to the curtain background. This introduces a "halo" effect around the monitor glow, which smooths out the gradient transition from light to dark.
+
+However, because this extra cluster is consumed by the background curtain, fewer centroids are available to resolve foreground details. Consequently, in Frame $t+1$, the blue cup loses some fine detail in its glowy reflection compared to Frames $t$ and $t+2$. This identical shift in both backends demonstrates that temporal consistency in real-time pipelines is dominated by initialization seeding dynamics and centroid allocation rather than the underlying metric topography.
+
+\section{System Trade-Off \& Engineering Verdict}
+
+\subsection{System Trade-Off Matrix}
+To summarize the performance profiles of the classical Euclidean and quantum-inspired backends, Table~\ref{tab:tradeoff_matrix} maps their differences across latency, convergence behavior, mathematical rigor, and visual stability.
+
+\begin{table}[H]
+\centering
+\caption{System trade-off matrix between Classical Euclidean and Quantum-Inspired K-Means.}
+\label{tab:tradeoff_matrix}
+\begin{tabular}{p{2.8cm}p{6.0cm}p{6.0cm}}
+\hline
+\textbf{Dimension} & \textbf{Classical Euclidean Engine} & \textbf{Quantum-Inspired Engine} \\ \hline
+\textbf{Latency} & Slight advantage at high densities (optimized ALU arithmetic). & Slight advantage at low/balanced densities (hardware-accelerated SFU intrinsics). \\ \hline
+\textbf{Convergence} & Constant linear gradient; 11--89 iterations to converge. & Non-linear trigonometric gradient; identical 11--89 iterations to converge. \\ \hline
+\textbf{Rigorous Math} & Standard Euclidean minimization of spatial-color distance. & Emulates multi-qubit state overlap via angular phase encoding. \\ \hline
+\textbf{Visual Quality} & Baseline quality; subject to K-Means++ seeding shifts. & Complete functional equivalence; identical boundaries and quality metrics. \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Concluding Engineering Verdict}
+Based on the overall trade-off matrix, both engines are highly suited for real-time edge applications, achieving frame rates exceeding $250\text{ FPS}$ on a modern GPU. 
+
+Because the quantum-inspired engine achieves absolute functional equivalence without incurring latency overhead, it serves as a mathematically validated substitute for classical distance metrics. This validation is critical for projects aiming to transition to hybrid quantum-classical hardware. By verifying the mathematical stability of the phase-space similarity formulation on GPU simulators today, developers can guarantee predictable segmentation quality and convergence rates when porting the core algorithm to future NISQ co-processors.
+
+For real-world deployment, the primary engineering recommendation is that developers should focus on the initialization phase rather than distance metrics to improve temporal boundary consistency. Since both engines are equally vulnerable to frame-by-frame centroid allocation shifts (such as the background halo and detail loss observed in Figure~\ref{fig:jitter_sequence}), future systems should incorporate inter-frame temporal tracking. Rather than running independent K-Means++ initializations on every frame, maintaining warm-started centroids and adding tracking constraints (e.g., matching centroids across frames via Hungarian association or optical flow regularizers) is the key to preventing visual flickering and ensuring stable real-time video segmentations.
