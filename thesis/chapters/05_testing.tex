@@ -1,8 +1,8 @@
 \chapter{Verification and Testing}
-{\itshape This chapter details the verification process used to ensure that the classical and quantum-inspired engines are mathematically correct, stable, and performant. The chapter describes the automated unit test suite, explains the parity protocol used to match CPU and GPU calculations, and profiles the frame throughput and sub-millisecond execution times of the pipelines.}
+{\itshape To ensure the classical and quantum-inspired engines are mathematically correct, stable, and performant, we establish a rigorous verification pipeline. Next, we describe the automated unit-testing suite, explain the parity protocol matching CPU and GPU calculations, and profile the frame throughput alongside sub-millisecond execution latencies.}
 
 \section{Automated Testing Environment}
-The core algorithms were verified using GoogleTest (GTest) \cite{googletest} to test C++ code and CUDA kernels without launching the full GUI application. GTest was chosen because it integrates smoothly with CMake and supports CUDA-based test fixtures. These fixtures automatically reset the GPU and clear device memory before each test, ensuring a clean state and preventing memory leaks from affecting subsequent test results.
+The core algorithms were verified using GTest \cite{googletest} to test C++ code and CUDA kernels without launching the full GUI application. GTest was chosen because it integrates smoothly with CMake and supports CUDA-based test fixtures. These fixtures automatically reset the GPU and clear device memory before each test, ensuring a clean state and preventing memory leaks from affecting subsequent test results.
 
 The testing suite compiles into a dedicated executable, \texttt{all\_tests}, which mirrors the C++ project structure:
 \begin{itemize}
@@ -34,7 +34,7 @@ During parity testing, small numerical differences (on the order of $10^{-6}$) a
 Moreover, compiler optimizations like FMA combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps \cite{CudaGuide}. To handle this hardware-specific behavior, the GTest suite \cite{googletest} uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
 
 \section{Performance Benchmarking and Latency Profiling}
-To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($640 \times 480$ pixels, $N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates (FPS), calculated as the mathematical average of 21 recorded telemetry runs for each configuration, are summarized in Table~\ref{tab:telemetry}.
+To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($640 \times 480$ pixels, $N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates, calculated as the mathematical average of 21 recorded telemetry runs for each configuration, are summarized in Table~\ref{tab:telemetry}.
 
 \begin{table}[htbp]
 \centering
@@ -43,7 +43,7 @@ To measure the pipeline speed and stage latency under real-world conditions, the
 \label{tab:telemetry}
 \begin{tabular}{ccccccc}
 \hline
-\textbf{Mode} & \textbf{K} & \textbf{Stride (S)} & \textbf{Preprocess} & \textbf{Optimize} & \textbf{Assign} & \textbf{Total Latency} \\ \hline
+\textbf{Mode} & \textbf{K} & \textbf{S} & \textbf{Preprocess} & \textbf{Optimize} & \textbf{Assign} & \textbf{Total Latency} \\ \hline
 Performance  & 3  & 8 & 0.28 ms & 0.47 ms & 0.59 ms & \textbf{1.33 ms} \\
 Balanced     & 8  & 4 & 0.29 ms & 0.74 ms & 0.59 ms & \textbf{1.62 ms} \\
 High Quality & 40 & 1 & 0.30 ms & 2.93 ms & 0.62 ms & \textbf{3.86 ms} \\ \hline

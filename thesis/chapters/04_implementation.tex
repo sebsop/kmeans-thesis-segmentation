@@ -1,8 +1,8 @@
 \chapter{Implementation and Optimization}\label{chap:4}
-{\itshape While the previous chapter described the architecture of the segmentation pipeline, this chapter focuses on the concrete C++ and CUDA implementation details. To achieve a real-time frame rate of over $120\text{ FPS}$, the system must look past high-level logic and optimize for low-level GPU hardware. The chapter describes how GPU thread grids are managed, fast on-chip shared memory is utilized, hardware-accelerated math intrinsics are implemented, and CPU-GPU transfers are orchestrated using asynchronous streams.}
+{\itshape Implementing a real-time segmentation pipeline capable of processing over $120\text{ FPS}$ requires optimization tailored to low-level GPU hardware. We present the concrete C++ and CUDA implementation details, focusing on how thread grids are configured, on-chip shared memory is utilized, and hardware-accelerated math intrinsics are applied. Additionally, we describe the orchestration of CPU-GPU memory transfers through asynchronous streams to maximize pipeline throughput.}
 
 \section{Hardware Environment and System Tuning}
-To evaluate the pipeline fairly, all benchmarks were run on a standardized local hardware environment. The test system consists of an Intel Core Ultra 9 275HX CPU, 32 GB of system RAM, and an NVIDIA GeForce RTX 5070 Ti GPU with 12 GB of VRAM. Video input is acquired via a standard Chicony USB2.0 web camera capped at a hardware frame rate of 30 frames per second (FPS), corresponding to an inter-frame capture latency of $33.3\text{ ms}$.
+To evaluate the pipeline fairly, all benchmarks were run on a standardized local hardware environment. The test system consists of an Intel Core Ultra 9 275HX CPU, 32 GB of system RAM, and an NVIDIA GeForce RTX 5070 Ti GPU with 12 GB of VRAM. Video input is acquired via a standard Chicony USB2.0 web camera capped at a hardware frame rate of 30 FPS, corresponding to an inter-frame capture latency of $33.3\text{ ms}$.
 
 \subsection{System Tuning and Thermal Management}
 To ensure deterministic latency and prevent frame-time variance, the hardware and operating system were tuned for sustained throughput. On the software side, the Windows scheduler was optimized via the registry (\texttt{Win32PrioritySeparation} set to \texttt{0x26}) to enable short, variable clock quantums, prioritizing foreground CPU slices for the camera input/output (I/O) and event loops \cite{microsoft_priority_separation_official, intel_thermal_13th_gen}. On the hardware side, rather than using max-frequency profiles that induce thermal throttling, a high performance profile was adopted to manage the thermal design power (TDP) between the CPU and GPU \cite{intel_thermal_13th_gen}, providing the stable thermal headroom necessary for continuous high-speed execution.
@@ -37,7 +37,7 @@ if (out_x < out_cols && out_y < out_rows) {
 \end{lstlisting}
 
 \subsection{Grid Heuristics for SM Occupancy}
-A thread block size of $16 \times 16$ ($256$ threads per block) is selected. In the NVIDIA Blackwell architecture, this block size maximizes Streaming Multiprocessor (SM) occupancy \cite{CudaGuide}. It provides a balanced distribution of registers per thread, allowing the hardware scheduler to hide memory latency by keeping warps highly active without running out of registers \cite{CudaGuide, cook2012cuda}.
+A thread block size of $16 \times 16$ ($256$ threads per block) is selected. In the NVIDIA Blackwell architecture, this block size maximizes SM occupancy \cite{CudaGuide}. It provides a balanced distribution of registers per thread, allowing the hardware scheduler to hide memory latency by keeping warps highly active without running out of registers \cite{CudaGuide, cook2012cuda}.
 
 \section{Implementation of Initialization Strategies}
 The system supports two initialization strategies: Random and K-Means++.
@@ -56,7 +56,7 @@ The performance-critical path of the pipeline lies in the pixel-to-centroid assi
 \subsection{Templed Loop Unrolling}
 To avoid code duplication between host and device, distance calculations utilize a templated math utility (\texttt{VectorMath<Dims>}). By passing the dimension count (5D) as a template parameter, the compiler is forced to perform complete loop unrolling (\texttt{\#pragma unroll}) \cite{CudaGuide}. The compiler expands the 5D feature loops into five sequential assembly operations, completely eliminating loop branch prediction overhead and instruction counters at runtime \cite{stroustrup2022tour, cook2012cuda}.
 
-\subsection{Hardware-Accelerated Intrinsics}
+\subsection{Hardware-Accelerated Intrinsics}\label{subsect:intrinsics}
 To achieve maximum frame rate, the active kernels use specialized GPU hardware features:
 \begin{itemize}
     \item \textbf{Special Function Units (SFU):} In the \texttt{QuantumEngine}, features are mapped to cosine phase states. Instead of using the standard, high-precision C++ \texttt{cos()} function \cite{cppreference_cos}, the device intrinsic \texttt{\_\_cosf()} is utilized \cite{CudaGuide}. This compiles to direct hardware instructions on the GPU's SFUs, executing in a single clock cycle with negligible loss in precision \cite{CudaGuide}.
@@ -119,7 +119,7 @@ if (threadIdx.x < k) {
 \end{lstlisting}
 
 \subsection{Cache Locality via Array of Structures (AoS)}
-The 5D features are stored in an Array of Structures (AoS) memory layout: $[B_0, G_0, R_0, x_0, y_0, B_1, G_1, R_1, x_1, y_1...]$. While CUDA often favors a Structure of Arrays (SoA) for coalesced access \cite{CudaGuide, cook2012cuda}, the AoS layout was chosen to prioritize thread-level cache line utilization. 
+The 5D features are stored in an AoS memory layout: $[B_0, G_0, R_0, x_0, y_0, B_1, G_1, R_1, x_1, y_1...]$. While CUDA often favors a Structure of Arrays (SoA) for coalesced access \cite{CudaGuide, cook2012cuda}, the AoS layout was chosen to prioritize thread-level cache line utilization. 
 
 Because the assignment kernels always access all five features of a pixel together, pulling a single feature channel automatically loads the adjacent color and spatial values into the same $L_1$/$L_2$ cache line. This layout guarantees a high cache hit rate for the remaining features and minimizes slow, independent global memory transactions, mitigating the latency of the strided global memory access \cite{CudaGuide}. Meaning that, for each pixel, only the first feature access potentially misses in cache; the remaining four features are served from the already-loaded cache line.
 

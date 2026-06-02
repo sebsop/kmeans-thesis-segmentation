@@ -58,15 +58,15 @@ __global__ void preprocess_strided_kernel(const uchar3* __restrict__ frame_data,
 
         uchar3 bgr = frame_data[in_idx];
 
-        float x01 = static_cast<float>(x) * invCols;
-        float y01 = static_cast<float>(y) * invRows;
+        float x_norm = static_cast<float>(x) * invCols;
+        float y_norm = static_cast<float>(y) * invRows;
 
         // Store as [B, G, R, X, Y] feature vector
         samples[out_idx * constants::clustering::FEATURE_DIMS + 0] = static_cast<float>(bgr.x) * color_scale;
         samples[out_idx * constants::clustering::FEATURE_DIMS + 1] = static_cast<float>(bgr.y) * color_scale;
         samples[out_idx * constants::clustering::FEATURE_DIMS + 2] = static_cast<float>(bgr.z) * color_scale;
-        samples[out_idx * constants::clustering::FEATURE_DIMS + 3] = x01 * spatial_scale;
-        samples[out_idx * constants::clustering::FEATURE_DIMS + 4] = y01 * spatial_scale;
+        samples[out_idx * constants::clustering::FEATURE_DIMS + 3] = x_norm * spatial_scale;
+        samples[out_idx * constants::clustering::FEATURE_DIMS + 4] = y_norm * spatial_scale;
     }
 }
 
