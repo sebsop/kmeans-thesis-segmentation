@@ -1,5 +1,5 @@
 \chapter{Verification and Testing}
-{\itshape To ensure the classical and quantum-inspired engines are mathematically correct, stable, and performant, we establish a rigorous verification pipeline. Next, we describe the automated unit-testing suite, explain the parity protocol matching CPU and GPU calculations, and profile the frame throughput alongside sub-millisecond execution latencies.}
+{\itshape To ensure the classical and quantum-inspired engines are mathematically correct, stable, and performant, a rigorous verification pipeline is established. The automated unit-testing suite is described next, followed by an explanation of the parity protocol matching CPU and GPU calculations, and profiling of the frame throughput alongside sub-millisecond execution latencies.}
 
 \section{Automated Testing Environment}
 The core algorithms were verified using GTest \cite{googletest} to test C++ code and CUDA kernels without launching the full GUI application. GTest was chosen because it integrates smoothly with CMake and supports CUDA-based test fixtures. These fixtures automatically reset the GPU and clear device memory before each test, ensuring a clean state and preventing memory leaks from affecting subsequent test results.
