@@ -46,7 +46,7 @@ For asynchronous execution and clean resource handling, the system implements:
 \section{Feature Space and Data Engineering}
 The success of clustering depends entirely on how the input data is represented. The framework moves beyond simple RGB grouping by constructing a 5D manifold that balances color and space.
 
-\subsection{The Normalized 5D Manifold}
+\subsection{The Normalized 5D Manifold}\label{subsect:normalized_manifold}
 As derived in Section \ref{subsect:manifold}, each pixel is mapped to a normalized 5D feature vector $\mathbf{x}_n = [B_n, G_n, R_n, \lambda x_n, \lambda y_n]^T$. The data engineering pipeline, implemented in \texttt{StridedDataPreprocessor}, normalizes color values to $[0, 1]$ by multiplying the raw BGR values by $1/255$. Spatial coordinates are similarly mapped to $[0, 1]$ using the reciprocal of the processing dimensions. 
 
 To prevent geometric coordinates from dominating the distance calculations on high-resolution frames, a spatial scaling weight ($\lambda_{\text{spatial}} = 10^{-6}$) is applied. This weight ensures that chromatic similarity drives the segmentation, while spatial information acts as a regularizer to prevent noisy, fragmented pixel regions \cite{shi2000normalized, achanta2012slic}.
@@ -60,7 +60,7 @@ To keep the frame rate stable, the iterative centroid learning phase is decouple
 The preprocessor samples the frame at regular spatial strides $S \in [1, 16]$. This reduces the total number of points in the learning feature space by a factor of $S^2$, substantially reducing computational complexity. Statistically, by the Law of Large Numbers, this uniform subsampling of thousands of pixels remains highly representative of the image's overall color-spatial distribution, ensuring that the estimated centroids approximate the true global cluster centers with high fidelity \cite{mouton2020stride}. The resulting sparse manifold is uploaded to the GPU as a contiguous memory block, which enables fast, coalesced memory access \cite{CudaGuide}.
 
 \section{Component Specifications}
-This section details the primary software classes that make up the computational backend and the user interface.
+The C++/CUDA implementation is organized into modular classes that separate the parallel mathematical solvers from the dashboard user interface.
 
 \subsection{ClusteringManager (The Orchestrator)}
 The \texttt{ClusteringManager} coordinates the entire segmentation lifecycle. It implements the Pimpl idiom to isolate raw CUDA device pointers from the rest of the application \cite{stroustrup2022tour, meyers2014effective}. The manager also handles temporal consistency across frames: it caches the converged centroids from the previous video frame to use as the starting seeds for the current frame. This warm-start strategy significantly reduces the number of iterations needed for convergence in live streams.
@@ -99,7 +99,7 @@ The GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a ligh
 \end{figure}
 
 \section{System Interoperability and Communications}
-This section describes how data is passed across the CPU-GPU boundary and how the UI thread synchronizes with the worker thread.
+Achieving low latency requires optimizing both the physical transfers across the PCIe bus and the thread synchronization within the application layer.
 
 \subsection{Host-Device Boundary: Heterogeneous Communication}
 The main bottleneck in heterogeneous computing is the latency of transferring data across the PCIe bus \cite{CudaGuide}. To minimize this, page-locked (pinned) host memory is used \cite{CudaGuide, cook2012cuda}. Pinned memory enables the GPU to use DMA to copy features directly from host memory without CPU intervention \cite{CudaGuide}. 

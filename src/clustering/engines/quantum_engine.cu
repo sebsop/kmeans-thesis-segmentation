@@ -38,7 +38,7 @@ namespace kmeans::clustering {
  */
 __global__ static void quantumAssignKernel(const float* __restrict__ samples, int numPoints,
                                            const float* __restrict__ centers, int k, int* __restrict__ labels,
-                                           int* __restrict__ changed, float scale_factor) {
+                                           int* __restrict__ changed) {
     extern __shared__ float s_mem[];
     float* s_centers = s_mem;
 
@@ -69,8 +69,8 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
 #pragma unroll
         for (int d = 0; d < constants::clustering::FEATURE_DIMS; ++d) {
             // Map feature difference to a phase shift
-            float diff = (p[d] - s_centers[j * constants::clustering::FEATURE_DIMS + d]) * scale_factor *
-                         constants::quantum::PHASE_OFFSET;
+            float diff = (p[d] - s_centers[j * constants::clustering::FEATURE_DIMS + d]) *
+                         constants::quantum::SCALE_FACTOR * constants::quantum::PHASE_OFFSET;
 
             // Use fast hardware intrinsics for cosine
             float cos_val = __cosf(diff);
@@ -95,7 +95,7 @@ __global__ static void quantumAssignKernel(const float* __restrict__ samples, in
 void QuantumEngine::launchAssignKernelImpl(float* d_samples, int numPoints, float* d_centers, int k, int* d_labels,
                                            int* d_changed, int threadsPerBlock, int blocksPerGrid, size_t sharedSize) {
     quantumAssignKernel<<<blocksPerGrid, threadsPerBlock, sharedSize>>>(d_samples, numPoints, d_centers, k, d_labels,
-                                                                        d_changed, constants::quantum::SCALE_FACTOR);
+                                                                        d_changed);
 }
 
 } // namespace kmeans::clustering

@@ -1,5 +1,5 @@
 \chapter{Verification and Testing}
-{\itshape To ensure the classical and quantum-inspired engines are mathematically correct, stable, and performant, a rigorous verification pipeline is established. The automated unit-testing suite is described next, followed by an explanation of the parity protocol matching CPU and GPU calculations, and profiling of the frame throughput alongside sub-millisecond execution latencies.}
+{\itshape A verification pipeline is established to confirm that the classical and quantum-inspired engines are mathematically correct and stable. The automated unit-testing suite is detailed next, followed by the CPU-GPU parity protocol and latency profiling.}
 
 \section{Automated Testing Environment}
 The core algorithms were verified using GTest \cite{googletest} to test C++ code and CUDA kernels without launching the full GUI application. GTest was chosen because it integrates smoothly with CMake and supports CUDA-based test fixtures. These fixtures automatically reset the GPU and clear device memory before each test, ensuring a clean state and preventing memory leaks from affecting subsequent test results.
@@ -34,7 +34,7 @@ During parity testing, small numerical differences (on the order of $10^{-6}$) a
 Moreover, compiler optimizations like FMA combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps \cite{CudaGuide}. To handle this hardware-specific behavior, the GTest suite \cite{googletest} uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
 
 \section{Performance Benchmarking and Latency Profiling}
-To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($640 \times 480$ pixels, $N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates, calculated as the mathematical average of 21 recorded telemetry runs for each configuration, are summarized in Table~\ref{tab:telemetry}.
+To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates, calculated as the mathematical average of 21 recorded telemetry runs for each configuration, are summarized in Table~\ref{tab:telemetry}.
 
 \begin{table}[htbp]
 \centering
@@ -43,7 +43,7 @@ To measure the pipeline speed and stage latency under real-world conditions, the
 \label{tab:telemetry}
 \begin{tabular}{ccccccc}
 \hline
-\textbf{Mode} & \textbf{K} & \textbf{S} & \textbf{Preprocess} & \textbf{Optimize} & \textbf{Assign} & \textbf{Total Latency} \\ \hline
+\textbf{Mode} & \textbf{$K$} & \textbf{$S$} & \textbf{Preprocess} & \textbf{Optimize} & \textbf{Assign} & \textbf{Total Latency} \\ \hline
 Performance  & 3  & 8 & 0.28 ms & 0.47 ms & 0.59 ms & \textbf{1.33 ms} \\
 Balanced     & 8  & 4 & 0.29 ms & 0.74 ms & 0.59 ms & \textbf{1.62 ms} \\
 High Quality & 40 & 1 & 0.30 ms & 2.93 ms & 0.62 ms & \textbf{3.86 ms} \\ \hline
@@ -52,12 +52,12 @@ High Quality & 40 & 1 & 0.30 ms & 2.93 ms & 0.62 ms & \textbf{3.86 ms} \\ \hline
 
 The telemetry shows that the pipeline is extremely efficient:
 \begin{itemize}
-    \item \textbf{Throughput:} Across all three modes (Performance, Balanced, and High Quality), the maximum theoretical throughput is well above the $120\text{ FPS}$ real-time video requirement ($8.33\text{ ms}$ budget) \cite{jerald2009scene}, reaching up to $750\text{ FPS}$, $618\text{ FPS}$, and $259\text{ FPS}$ respectively. This high throughput is directly enabled by the warm-start temporal consistency mechanism, which limits optimization convergence to just a few iterations per frame on consecutive inputs.
+    \item \textbf{Throughput:} Across all three modes (Performance, Balanced, and High Quality), the maximum theoretical throughput is well above the $120\text{ FPS}$ real-time video requirement ($8.33\text{ ms}$ budget) \cite{jerald2009scene}, reaching up to $750\text{ FPS}$, $618\text{ FPS}$, and $259\text{ FPS}$ respectively. This high throughput is directly enabled by the warm-start temporal consistency mechanism, which reduces the required iteration count for convergence to just a few steps per frame on consecutive inputs.
     \item \textbf{Latency scaling:} The preprocessing stage remains highly constant at approximately $0.28\text{ ms}$ to $0.30\text{ ms}$ regardless of the cluster count $K$ and stride $S$, validating the efficiency of the CUDA preprocessor. The optimization (centroid learning) stage scales with the active pixel count (controlled by stride $S$) and cluster count $K$, while the pixel assignment stage scales minimally, from $0.59\text{ ms}$ to $0.62\text{ ms}$, due to CUDA thread block execution efficiency on the GPU.
     \item \textbf{High-density feasibility:} In the heaviest configuration ($K=40, S=1$), which processes all $307,200$ pixels without downsampling, the total execution latency is only $3.86\text{ ms}$ (yielding $259\text{ FPS}$). This confirms that even under maximum computational load on a live video stream, the system operates with substantial processing headroom, leaving the GPU idle for a large portion of the camera's physical frame delivery window of $33.3\text{ ms}$ ($30\text{ FPS}$).
 \end{itemize}
 
-\section{Scientific Reproducibility}
+\section{Scientific Reproducibility}\label{sect:scientific_reproducibility}
 To ensure that experimental comparisons between the classical and quantum-inspired engines are fair and reproducible, a fixed-seed protocol is implemented. Because K-Means is a stochastic algorithm, varying initial centroids would introduce random noise into convergence and quality benchmarks.
 
 To eliminate this variance, random number generators are configured to use a fixed, global seed value (\texttt{STABLE\_RANDOM\_SEED = 42}). This seed is used to initialize the Mersenne Twister (\texttt{std::mt19937}) engines in the initializers \cite{matsumoto1998mersenne, stroustrup2022tour}, and the Monte Carlo sampling logic in the metrics runner \cite{shutaywi2021silhouette}. This cross-platform consistency guarantees that the starting centroid configurations and subset selections are identical across multiple runs, ensuring comparative benchmarks are scientific and reliable. With these rigorous reproducibility controls established, the next chapter presents the comparative experimental results and detailed quality evaluations of the classical and quantum-inspired engines.
