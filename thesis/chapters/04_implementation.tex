@@ -1,5 +1,5 @@
 \chapter{Implementation and Optimization}\label{chap:4}
-{\itshape Implementing a real-time segmentation pipeline capable of processing over $120\text{ FPS}$ requires optimization tailored to low-level GPU hardware. The concrete C++ and CUDA implementation details are presented, focusing on how thread grids are configured, on-chip shared memory is utilized, and hardware-accelerated math intrinsics are applied. Additionally, the orchestration of CPU-GPU memory transfers through asynchronous streams is described to maximize pipeline throughput.}
+{\itshape Implementing a real-time segmentation pipeline capable of processing over $120\text{ FPS}$ requires optimization tailored to low-level GPU hardware. The concrete C++ and CUDA implementation details are presented, detailing thread grid configurations, on-chip shared memory utilization, and hardware-accelerated math intrinsics. Additionally, CPU-GPU memory transfers are orchestrated through asynchronous streams to maximize pipeline throughput.}
 
 \section{Hardware Environment and System Tuning}
 To evaluate the pipeline fairly, all benchmarks were run on a standardized local hardware environment. The test system consists of an Intel Core Ultra 9 275HX CPU, 32 GB of system RAM, and an NVIDIA GeForce RTX 5070 Ti GPU with 12 GB of VRAM. Video input is acquired via a standard Chicony USB2.0 web camera capped at a hardware frame rate of 30 FPS, corresponding to an inter-frame capture latency of $33.3\text{ ms}$.
@@ -8,15 +8,15 @@ To evaluate the pipeline fairly, all benchmarks were run on a standardized local
 To ensure deterministic latency and prevent frame-time variance, the hardware and operating system were tuned for sustained throughput. On the software side, the Windows scheduler was optimized via the registry (\texttt{Win32PrioritySeparation} set to \texttt{0x26}) to enable short, variable clock quantums, prioritizing foreground CPU slices for the camera input/output (I/O) and event loops \cite{microsoft_priority_separation_official, intel_thermal_13th_gen}. On the hardware side, rather than using max-frequency profiles that induce thermal throttling, a high performance profile was adopted to manage the thermal design power (TDP) between the CPU and GPU \cite{intel_thermal_13th_gen}, providing the stable thermal headroom necessary for continuous high-speed execution.
 
 \subsection{Tooling and Code Quality}
-The codebase is managed using the CMake build system \cite{cmake_official}, which handles the integration of C++20, OpenCV, and the CUDA compiler (NVCC). To maintain clean and consistent code, \texttt{clang-format} is used for automated formatting and \texttt{clang-tidy} for static analysis \cite{clang_tools}. This setup helps prevent memory leaks and common C++ errors, ensuring benchmark results reflect the actual efficiency of the algorithms rather than implementation bugs.
+The codebase is managed using the CMake build system \cite{cmake_official}, which handles the integration of C++20, OpenCV, GLFW, and the CUDA compiler (NVCC). To maintain clean and consistent code, \texttt{clang-format} is used for automated formatting and \texttt{clang-tidy} for static analysis \cite{clang_tools}. This setup helps prevent memory leaks and common C++ errors, ensuring benchmark results reflect the actual efficiency of the algorithms rather than implementation bugs.
 
 \section{Threading Model and GPU Grid Configurations}
 To execute 5D clustering in parallel on the GPU, the 2D image coordinates must be mapped to CUDA's thread and block grids \cite{CudaGuide}.
 
 \subsection{2D Index Mapping}
-For preprocessing, the \texttt{StridedDataPreprocessor} launches a 2D grid of thread blocks \cite{CudaGuide}. Each thread is mapped directly to an output pixel in the downsampled image \cite{cook2012cuda}. This bypasses the overhead of manual coordinate conversion and lets the hardware handle spatial locality automatically, as shown in Listing~\ref{fig:thread_idx_code} \cite{CudaGuide}.
+For preprocessing, the \texttt{StridedDataPreprocessor} launches a 2D grid of thread blocks \cite{CudaGuide}. Each thread is mapped directly to an output pixel in the downsampled image \cite{cook2012cuda}. This bypasses the overhead of manual coordinate conversion and lets the hardware handle spatial locality automatically, as shown in Code Snippet~\ref{fig:thread_idx_code} \cite{CudaGuide}.
 
-\begin{lstlisting}[caption={2D thread indexing and boundary check in \texttt{strided\_data\_preprocessor.cu}.}, label={fig:thread_idx_code}]
+\begin{lstlisting}[caption={2D thread indexing and boundary check in \texttt{strided\_data\_\allowbreak preprocessor.cu}.}, label={fig:thread_idx_code}]
 // Map threads to output image coordinates
 int out_x = blockIdx.x * blockDim.x + threadIdx.x;
 int out_y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -53,7 +53,7 @@ For each of the $K$ seeds, a parallel distance-update kernel is executed. Each G
 \section{Algorithmic Core (The Math Engines)}
 The performance-critical path of the pipeline lies in the pixel-to-centroid assignment kernels.
 
-\subsection{Templed Loop Unrolling}
+\subsection{Templated Loop Unrolling}
 To avoid code duplication between host and device, distance calculations utilize a templated math utility (\texttt{VectorMath<Dims>}). By passing the dimension count (5D) as a template parameter, the compiler is forced to perform complete loop unrolling (\texttt{\#pragma unroll}) \cite{CudaGuide}. The compiler expands the 5D feature loops into five sequential assembly operations, completely eliminating loop branch prediction overhead and instruction counters at runtime \cite{stroustrup2022tour, cook2012cuda}.
 
 \subsection{Hardware-Accelerated Intrinsics}\label{subsect:intrinsics}
@@ -63,7 +63,7 @@ To achieve maximum frame rate, the active kernels use specialized GPU hardware f
     \item \textbf{Fused Multiply-Add (FMA):} By enabling the \texttt{-use\_fast\_math} compiler flag, NVCC compiles distance calculations (such as $dist += diff \times diff$) into a single \texttt{\_\_fmaf()} instruction. This executes a multiply and an add in a single clock cycle, doubling floating-point throughput \cite{CudaGuide}.
 \end{itemize}
 
-Listing~\ref{fig:quantum_sim_code} shows the inner loop of the \texttt{QuantumEngine} assignment kernel, showing these optimizations in action.
+Code Snippet~\ref{fig:quantum_sim_code} shows the inner loop of the \texttt{QuantumEngine} assignment kernel, showing these optimizations in action.
 
 \begin{lstlisting}[caption={Quantum-inspired phase mapping and fast SFU cosine evaluation in \texttt{quantum\_engine.cu}.}, label={fig:quantum_sim_code}]
 // Map 5D features to phase orientations and compute global overlap
@@ -95,13 +95,13 @@ To achieve high-throughput clustering, the system minimizes global VRAM latency 
 \subsection{Two-Tier Shared Memory Atomics}
 During the centroid update phase, thousands of threads must add their pixel features to a running sum for each cluster. If every thread executed an \texttt{atomicAdd} call directly on global VRAM, the memory controller would stall. 
 
-To prevent this, a two-tier aggregation kernel is implemented, shown in Listing~\ref{fig:atomic_reduction_code}:
+To prevent this, a two-tier aggregation kernel is implemented, shown in Code Snippet~\ref{fig:atomic_reduction_code}:
 \begin{enumerate}
     \item \textbf{Local Reduction:} Threads within a block aggregate their pixel sums into low-latency, on-chip shared memory (\texttt{\_\_shared\_\_}) using fast atomic operations.
     \item \textbf{Global Reduction:} Once all threads in the block synchronize, a single designated thread per block executes an \texttt{atomicAdd} to write the block's sub-total into the global VRAM buffer. This reduces global memory traffic by a factor equal to the block size ($256\times$), eliminating VRAM contention \cite{CudaGuide, cook2012cuda}.
 \end{enumerate}
 
-\begin{lstlisting}[caption={Two-tier local-to-global atomic reduction in \texttt{base\_kmeans\_engine.cu}.}, label={fig:atomic_reduction_code}]
+\begin{lstlisting}[caption={Two-tier local-to-global atomic reduction in \texttt{base\_kmeans\_\allowbreak engine.cu}.}, label={fig:atomic_reduction_code}]
 // 1. Accumulate into block-local shared memory
 atomicAdd(&s_counts[cluster], 1);
 for (int d = 0; d < 5; ++d) {

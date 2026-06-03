@@ -87,4 +87,5 @@ desktop.ini
 *.bcf
 *.lof
 *.lot
-*.auxlock
+*.auxlock
+*.lol

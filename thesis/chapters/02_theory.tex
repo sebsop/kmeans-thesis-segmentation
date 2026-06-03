@@ -68,7 +68,7 @@ Efficiently utilizing the GPU requires managing its multi-tiered memory to avoid
     \item \textbf{Registers:} These private, zero-latency storage spaces serve each thread. High register usage per thread limits block concurrency on the SM, which reduces overall GPU occupancy \cite{CudaGuide, cook2012cuda}.
 \end{itemize}
 
-\subsection{Parallel Strided Downsampling Theory}
+\subsection{Parallel Strided Downsampling Theory}\label{subsect:downsampling_theory}
 To eliminate CPU-bound preprocessing bottlenecks and achieve deterministic execution latency, a strided downsampling preprocessor is implemented directly in the CUDA kernel. Instead of using CPU resizing, the GPU downsamples the image as it is loaded.
 
 For a stride $S \in [1, 16] \subset \mathbb{Z}^+$, a naive implementation would launch a thread for every pixel and skip inactive ones using a modulo check: $\text{Active}(idx) = (idx \pmod{S} == 0)$. This causes severe warp divergence \cite{cook2012cuda} and slow, uncoalesced memory reads \cite{CudaGuide}.
