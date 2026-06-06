@@ -194,16 +194,26 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
         static float displayTotalMs = 0.0f;
         static float displayAvg = 0.0f;
         static float displayTheoretical = 0.0f;
+        static float maxTotalMsSinceUpdate = 0.0f;
+        static float maxFpsSinceUpdate = 0.0f;
+
+        // Track the maximum latency seen since the last UI update to avoid missing spikes
+        maxTotalMsSinceUpdate = std::max(maxTotalMsSinceUpdate, totalPipelineTimeMs);
+        // Track the maximum FPS seen to capture peak pipeline speed
+        maxFpsSinceUpdate = std::max(maxFpsSinceUpdate, workerFps);
+
         static auto lastUpdateTime = std::chrono::high_resolution_clock::now();
         auto now = std::chrono::high_resolution_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdateTime).count() >
             constants::ui::REFRESH_FAST) {
-            displayFps = workerFps;
-            displayTotalMs = totalPipelineTimeMs;
+            displayFps = maxFpsSinceUpdate;
+            displayTotalMs = maxTotalMsSinceUpdate;
             displayMs = algoTimeMs;
             displayTheoretical = theoreticalFps;
             displayAvg = avgFps;
             lastUpdateTime = now;
+            maxTotalMsSinceUpdate = 0.0f;
+            maxFpsSinceUpdate = 0.0f;
         }
 
         ImGui::Text("Core K-Means Latency: %.2f ms", displayMs);

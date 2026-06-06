@@ -177,18 +177,19 @@ The GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a ligh
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{figures/control_panel.png}
+    \includegraphics[width=0.75\textwidth]{figures/control_panel.png}
     \caption[Dear ImGui Control Panel]{Dear ImGui control panel and live telemetry dashboard.}
     \label{fig:control_panel}
 \end{figure}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{figures/benchmark_metrics.png}
+    \includegraphics[width=0.75\textwidth]{figures/benchmark_metrics.png}
     \caption[Dear ImGui Benchmarking Telemetry and Speed Metrics]{Dear ImGui benchmarking metrics overlay showing only the comparative execution speed (latency/iterations) and cluster quality measurements for the classical (blue) vs. quantum-inspired (purple) implementations.}
     \label{fig:benchmark_metrics}
 \end{figure}
 
+\noindent\begin{minipage}{\linewidth}
 \section{System Interoperability and Communications}
 Achieving low latency requires optimizing both the physical transfers across the PCIe bus and the thread synchronization within the application layer.
 
@@ -201,6 +202,7 @@ Non-blocking asynchronous streams are also used via \texttt{cudaMemcpyAsync} \ci
 To keep the GUI running smoothly, the \texttt{ClusteringManager} executes on a dedicated worker thread, preventing heavy GPU computations from blocking the main GLFW render loop \cite{GLFWdocs}. 
 
 Data transfer across this thread boundary is managed using a mutex-protected state machine (\texttt{std::mutex} and \texttt{std::scoped\_lock}) \cite{williams2019c++}. This thread-safe bridge ensures that the UI thread can pull and render the latest visual results, while the worker thread concurrently clusters the next frame, providing flicker-free rendering. The sequence of this multi-threaded execution is visualized in Figure~\ref{fig:thread_sync}. This asynchronous pipeline structure is translated into highly optimized C++/CUDA code in the next chapter, which details the underlying kernel implementations and GPU memory optimization strategies.
+\end{minipage}
 
 \begin{figure}[htbp]
 \centering

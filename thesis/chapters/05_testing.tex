@@ -13,6 +13,7 @@ The testing suite compiles into a dedicated executable, \texttt{all\_tests}, whi
 
 All tests execute successfully, achieving a $100\%$ pass rate across the suite.
 
+\noindent\begin{minipage}{\linewidth}
 \section{Unit and Robustness Testing}
 To guarantee mathematical correctness and stability under extreme operational conditions, unit and robustness tests were implemented targeting the GPU kernels.
 
@@ -25,6 +26,7 @@ Iterative stability is also tested through the \texttt{ClassicalConvergence} and
 A common issue in K-Means is the empty cluster problem, where a centroid is assigned zero pixels during an iteration \cite{aloise2017strategies}, causing a divide-by-zero error during centroid updates. The \texttt{EmptyClusterRobustness} and \texttt{QuantumEmptyClusterRobustness} tests verify that the system detects empty clusters and handles them safely. By placing starting centroids far away from any data points, the tests confirm that the kernels remain stable and do not produce NaN (Not a Number) values, which would otherwise crash the GPU visualization pipeline.
 
 Additionally, the \texttt{HighKAssignment} and \texttt{QuantumHighK} tests evaluate system behavior at the maximum configuration of $K=40$ clusters. This confirms that the shared memory used by the CUDA kernels does not exceed physical hardware bounds, preventing kernel launch failures \cite{CudaGuide}.
+\end{minipage}
 
 \section{Cross-Backend Parity and Floating-Point Drift}
 To verify the GPU implementations, a parity protocol is established that compares GPU results against CPU-calculated ground truths using identical data inputs.
