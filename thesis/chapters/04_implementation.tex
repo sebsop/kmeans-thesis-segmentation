@@ -40,7 +40,7 @@ if (out_x < out_cols && out_y < out_rows) {
 A thread block size of $16 \times 16$ ($256$ threads per block) is selected. In the NVIDIA Blackwell architecture, this block size maximizes SM occupancy \cite{CudaGuide}. It provides a balanced distribution of registers per thread, allowing the hardware scheduler to hide memory latency by keeping warps highly active without running out of registers \cite{CudaGuide, cook2012cuda}.
 
 \section{Implementation of Initialization Strategies}
-The system supports two initialization strategies: Random and K-Means++.
+The system supports two initialization strategies: Random and K-Means++ (selectable at runtime via the benchmarking configuration dashboard detailed in Section~\ref{subsect:ui_telemetry}).
 
 \subsection{CPU Random Initialization}
 For the baseline, the random initialization is implemented on the CPU. Because raw image data is staged in host memory via OpenCV \cite{Bradski2000}, selecting $K$ random starting pixels takes $O(K)$ time. Executing this on the CPU is near-instantaneous and avoids the PCIe transfer penalty of uploading raw index selections to the GPU, making it highly efficient.

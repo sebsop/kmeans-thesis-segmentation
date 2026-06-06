@@ -2,13 +2,97 @@
 {\itshape Achieving real-time video segmentation requires a design that decouples computational execution from user interaction. A high-level overview of the architectural decisions behind this framework is presented, detailing how a modular pipeline separates the classical and quantum-inspired clustering engines. This decoupled backend integrates with an interactive, immediate-mode user interface, enabling real-time parameter tuning and direct performance comparisons without introducing latency in the rendering loop.}
 
 \section{Architectural Overview}
-The segmentation framework is designed as a high-throughput, asynchronous pipeline that processes live camera feeds with minimal latency. To keep the user interface responsive during heavy GPU calculations, the application decouples the GUI from the computational backend. This separation is implemented using a multi-threaded architecture with a dedicated worker thread, as shown in Figure~\ref{fig:sys_arch}.
+The segmentation framework is designed as a high-throughput, asynchronous pipeline that processes live camera feeds with minimal latency. To keep the user interface responsive during heavy GPU calculations, the application decouples the GUI from the computational backend. This separation is implemented using a multi-threaded architecture with a dedicated worker thread, as shown in Figure~\ref{fig:system_architecture}.
 
 \begin{figure}[htbp]
-    \centering
-    % \includegraphics[width=0.7\textwidth]{figures/system_architecture.png}
-    \caption[High-Level GUI and CUDA Worker Thread Partitioning]{High-level architectural partitioning between the GUI thread and the CUDA worker thread.}
-    \label{fig:sys_arch}
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance = 1.0cm and 0.8cm,
+    auto,
+    % Box Styles
+    layerBox/.style = {rectangle, draw, rounded corners=4, line width=1.2pt, inner sep=0.5cm},
+    nodeBox/.style = {rectangle, draw, rounded corners=2, minimum height=0.8cm, fill=white, text width=3.2cm, align=center, font=\small},
+    subBox/.style = {rectangle, draw, dashed, rounded corners=2, minimum height=1.4cm, text width=4.5cm, align=center, font=\small},
+    % Arrow Style
+    dataLine/.style = {-{Stealth[scale=1.2]}, line width=1pt, draw=black!80}
+]
+
+    % ==========================================
+    % LAYER 1: WORKER & CUDA PIPELINE (TOP PANEL)
+    % ==========================================
+    \node[nodeBox, fill=purple!10, draw=purple!80] (CV) {Worker Thread Loop \\ (OpenCV Capture)};
+    \node[nodeBox, fill=purple!10, draw=purple!80, right=of CV] (Prep) {Preprocessor Staging \\ (Strided Prep)};
+    \node[subBox, fill=cyan!8, draw=cyan!60!black, right=of Prep] (DMA) {Asynchronous DMA \\ \scriptsize cudaMemcpyAsync over stream};
+    \node[subBox, fill=green!5, draw=green!50, right=of DMA] (GPU) {GPU Device Kernels \\ \scriptsize K-Means Engines};
+
+    \path[dataLine] (CV) -- (Prep);
+    \path[dataLine] (Prep) -- (DMA);
+    \path[dataLine] (DMA) -- (GPU);
+
+    % ==========================================
+    % LAYER 2: SYNCHRONIZATION BRIDGE (MIDDLE PANEL)
+    % ==========================================
+    \node[nodeBox, fill=orange!10, draw=orange!80, below=3.0cm of CV] (CfgL) {std::scoped\_lock \\ (m\_configMutex)};
+    \node[nodeBox, fill=orange!10, draw=orange!80, below=3.0cm of GPU] (DataL) {std::scoped\_lock \\ (m\_dataMutex)};
+
+    % ==========================================
+    % LAYER 3: UI THREAD (BOTTOM PANEL)
+    % ==========================================
+    \node[nodeBox, fill=blue!10, draw=blue!80, below=3.0cm of CfgL] (GLFW) {GLFW Context \\ (Event Loop)};
+    \node[nodeBox, fill=blue!10, draw=blue!80, below=3.0cm of DataL] (Views) {GUI Dashboards \\ (Panels \& Overlays)};
+    \path (GLFW.center) -- (Views.center) coordinate[midway] (MidUI);
+    \node[nodeBox, fill=blue!10, draw=blue!80] (ImGui) at (MidUI) {Dear ImGui \\ (Immediate Mode)};
+
+    \path[dataLine] (GLFW) -- (ImGui);
+    \path[dataLine] (ImGui) -- (Views);
+
+    % Coordinates for container top clearance
+    \path (CV.north) ++(0,0.8) coordinate (L1Top);
+    \path (CfgL.north) ++(0,0.8) coordinate (L2Top);
+    \path (GLFW.north) ++(0,0.8) coordinate (L3Top);
+
+    % ==========================================
+    % BACKGROUND CONTAINERS
+    % ==========================================
+    \begin{pgfonlayer}{background}
+        % Layer 2 first so L1 can reference its extents
+        \node[layerBox, fill=orange!5, draw=orange!60,
+              fit=(CfgL) (DataL) (L2Top)
+                  (GPU.south east |- DataL) (CV.south west |- CfgL)] (L2) {};
+
+        % Layer 1 — forced to match L2's horizontal extents
+        \node[layerBox, fill=purple!5, draw=purple!60,
+              fit=(CV) (GPU) (L1Top)
+                  (L2.north west |- CV) (L2.north east |- GPU)] (L1) {};
+
+        % Layer 3 — forced to match L2's horizontal extents
+        \node[layerBox, fill=blue!5, draw=blue!60,
+              fit=(GLFW) (Views) (ImGui) (L3Top)
+                  (L2.south west |- GLFW) (L2.south east |- Views)] (L3) {};
+    \end{pgfonlayer}
+
+    % Layer titles
+    \node[purple!80, font=\bfseries\small, anchor=north west, xshift=0.3cm, yshift=-0.2cm] at (L1.north west) {Worker \& CUDA Pipeline Core};
+    \node[orange!80, font=\bfseries\small, anchor=north west, xshift=0.3cm, yshift=-0.2cm] at (L2.north west) {Thread Synchronization Bridge};
+    \node[blue!80, font=\bfseries\small, anchor=north west, xshift=0.225cm, yshift=-0.2cm] at (L3.north west) {UI Thread (Main Render Loop)};
+
+    % ==========================================
+    % INTER-LAYER ROUTING LINES
+    % ==========================================
+    \draw[dataLine, color=orange!80!black] (GLFW.north) -- (CfgL.south)
+        node[text width=2.8cm, pos=0.6, left, xshift=3.2cm, font=\scriptsize\sf] {1. Mutates Parameters (optional)};
+    \draw[dataLine, color=purple!80] (CfgL.north) -- (CV.south)
+        node[text width=2.8cm, pos=0.6, left, xshift=3.2cm, font=\scriptsize\sf] {2. Updates Hyperparameters (optional)};
+    \draw[dataLine, color=orange!80!black] (GPU.south) -- (DataL.north)
+        node[text width=3.5cm, pos=0.5, right, font=\scriptsize\sf] {3. Commits Staged VRAM Data};
+    \draw[dataLine, color=blue!70!black] (DataL.south) -- (GLFW.north)
+        node[sloped, above, pos=0.5, font=\scriptsize\sf] {4. Pulls Textures};
+
+\end{tikzpicture}%
+}
+\caption{Dual-Threaded Architecture with Asynchronous CUDA Pipeline Staging}
+\label{fig:system_architecture}
 \end{figure}
 
 \subsection{Technological Stack}
@@ -81,21 +165,26 @@ The \texttt{StridedDataPreprocessor} is the bridge between OpenCV's CPU buffers 
 
 The preprocessor organizes the features into an AoS format, where the five features ($B, G, R, x, y$) for each pixel are stored contiguously. Although this AoS layout introduces a strided access pattern across the warp (as threads access memory with a stride of five elements), it maximizes $L_1$/$L_2$ cache line utilization for individual threads. Because a single thread requires all five features simultaneously for its distance calculation, fetching the first coordinate pulls the remaining contiguous features into the cache line, minimizing subsequent global VRAM transactions and hiding memory latency \cite{CudaGuide}.
 
-\subsection{User Interface and Telemetry Layer}
-The GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a lightweight control layer that runs directly inside the GLFW \cite{GLFWdocs} loop. Decoupling is maintained by the \texttt{UIManager} class, which manages three main components shown in Figure~\ref{fig:ui_dashboard}:
+\subsection{User Interface and Telemetry Layer}\label{subsect:ui_telemetry}
+The GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a lightweight control layer that runs directly inside the GLFW \cite{GLFWdocs} loop. Decoupling is maintained by the \texttt{UIManager} class, which manages three main components:
 \begin{itemize}
-    \item \textbf{VideoFeedUI:} Renders the real-time segmented GPU textures asynchronously.
-    \item \textbf{ControlPanelUI:} Provides widgets to adjust the cluster count ($K$), stride parameter, and learning interval. It also handles engine switching, displays live telemetry (FPS, engine latency, and render times), and provides the control trigger to initiate the side-by-side benchmark comparison.
-    \item \textbf{BenchmarkOverlayUI:} Renders a full-screen overlay showing the original still frame alongside both segmented engine outputs. It displays comparative telemetry (quality metrics, latencies, and iteration counts) and provides controls to tune parameters ($K$, stride $S$, and seeding strategy), toggle centroids, and trigger reruns on the frozen frame using shared seeds.
+    \item \textbf{VideoFeedUI:} Renders the real-time segmented GPU textures asynchronously. Representative segmented output frames and visual comparisons are detailed in Section~\ref{subsect:cross_dataset_quality_telemetry} and Case Study I (Section~\ref{subsect:case_study_1}).
+    \item \textbf{ControlPanelUI:} Provides widgets to adjust the cluster count ($K$), stride parameter ($S$), and learning interval. It also handles engine switching, provides buttons to toggle centroid overlays and reset centroid coordinates, displays live telemetry (FPS, engine latency, and render times), and provides the control trigger to initiate the side-by-side benchmark comparison. The layout of this control dashboard and its integrated telemetry readouts are displayed in Figure~\ref{fig:control_panel}.
+    \item \textbf{BenchmarkOverlayUI:} Renders a full-screen overlay showing the original still frame alongside both segmented engine outputs. It displays comparative telemetry (quality metrics, latencies, and iteration counts) and provides controls to tune parameters (such as the cluster count $K$, stride $S$, and seeding strategies), toggle centroid rendering, and trigger reruns on the frozen frame using shared seeds. The execution speed and cluster quality comparison window is shown in Figure~\ref{fig:benchmark_metrics}.
 \end{itemize}
 
 \begin{figure}[htbp]
     \centering
-    %\includegraphics[width=0.9\textwidth]{figures/dashboard_active.png}
-    \vspace{0.8em}
-    %\includegraphics[width=0.9\textwidth]{figures/dashboard_benchmark.png}
-    \caption[Dear ImGui Dashboard and Telemetry Overlay]{The Dear ImGui user interface, displaying (top) the active video feed and control panel, and (bottom) the side-by-side benchmarking overlay.}
-    \label{fig:ui_dashboard}
+    \includegraphics[width=0.7\textwidth]{figures/control_panel.png}
+    \caption[Dear ImGui Control Panel]{Dear ImGui control panel and live telemetry dashboard.}
+    \label{fig:control_panel}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/benchmark_metrics.png}
+    \caption[Dear ImGui Benchmarking Telemetry and Speed Metrics]{Dear ImGui benchmarking metrics overlay showing only the comparative execution speed (latency/iterations) and cluster quality measurements for the classical (blue) vs. quantum-inspired (purple) implementations.}
+    \label{fig:benchmark_metrics}
 \end{figure}
 
 \section{System Interoperability and Communications}
@@ -112,8 +201,99 @@ To keep the GUI running smoothly, the \texttt{ClusteringManager} executes on a d
 Data transfer across this thread boundary is managed using a mutex-protected state machine (\texttt{std::mutex} and \texttt{std::scoped\_lock}) \cite{williams2019c++}. This thread-safe bridge ensures that the UI thread can pull and render the latest visual results, while the worker thread concurrently clusters the next frame, providing flicker-free rendering. The sequence of this multi-threaded execution is visualized in Figure~\ref{fig:thread_sync}. This asynchronous pipeline structure is translated into highly optimized C++/CUDA code in the next chapter, which details the underlying kernel implementations and GPU memory optimization strategies.
 
 \begin{figure}[htbp]
-    \centering
-    % \includegraphics[width=0.75\textwidth]{figures/thread_synchronization_sequence.png}
-    \caption[Asynchronous Synchronization Sequence between GUI and Worker Threads]{Sequence diagram illustrating asynchronous synchronization between the main GUI thread and the clustering worker.}
-    \label{fig:thread_sync}
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{tikzpicture}[
+    font=\small,
+    lifeline/.style={draw, thick, dashed, gray!60},
+    actor/.style={rectangle, draw, rounded corners=3, fill=white, minimum width=2.6cm,
+                  minimum height=0.7cm, align=center, font=\small\bfseries, line width=1pt},
+    msg/.style={-{Stealth[scale=1.1]}, line width=0.8pt},
+    retmsg/.style={-{Stealth[scale=1.1]}, line width=0.8pt, dashed},
+    activation/.style={rectangle, draw, fill=gray!15, minimum width=0.22cm},
+    notelabel/.style={rectangle, draw=gray!50, fill=yellow!12, rounded corners=2,
+                      text width=3.2cm, align=left, font=\scriptsize, inner sep=4pt}
+]
+
+% ── Actors ──────────────────────────────────────────────────────────────
+\def\GuiX{0}
+\def\MutX{5.2}
+\def\WrkX{10.4}
+\def\TopY{0}
+\def\BotY{-11.2}
+
+\node[actor, draw=blue!70,  fill=blue!8 ] (GUI) at (\GuiX, \TopY) {GUI Thread};
+\node[actor, draw=orange!80, fill=orange!8] (MTX) at (\MutX, \TopY) {Mutex Bridge};
+\node[actor, draw=purple!70, fill=purple!8] (WRK) at (\WrkX, \TopY) {Worker Thread};
+
+% ── Lifelines ────────────────────────────────────────────────────────────
+\draw[lifeline] (\GuiX, \TopY-0.35) -- (\GuiX, \BotY);
+\draw[lifeline] (\MutX, \TopY-0.35) -- (\MutX, \BotY);
+\draw[lifeline] (\WrkX, \TopY-0.35) -- (\WrkX, \BotY);
+
+% ── Messages ─────────────────────────────────────────────────────────────
+% 1. GUI acquires config lock
+\draw[msg, color=blue!70]
+    (\GuiX, -1.2) -- (\MutX, -1.2)
+    node[midway, above, font=\scriptsize] {lock(m\_configMutex)};
+
+% 2. GUI writes parameters
+\draw[msg, color=blue!70]
+    (\GuiX, -2.2) -- (\MutX, -2.2)
+    node[midway, above, font=\scriptsize] {write hyperparameters};
+
+% 3. GUI releases lock
+\draw[retmsg, color=blue!60]
+    (\MutX, -3.0) -- (\GuiX, -3.0)
+    node[midway, above, font=\scriptsize] {unlock};
+
+% 4. Worker polls / acquires config lock
+\draw[msg, color=purple!70]
+    (\WrkX, -4.0) -- (\MutX, -4.0)
+    node[midway, above, font=\scriptsize] {lock(m\_configMutex)};
+
+% 5. Worker reads updated params
+\draw[retmsg, color=purple!60]
+    (\MutX, -4.8) -- (\WrkX, -4.8)
+    node[midway, above, font=\scriptsize] {read hyperparameters};
+
+% 6. Worker releases config lock
+\draw[retmsg, color=purple!60]
+    (\MutX, -5.6) -- (\WrkX, -5.6)
+    node[midway, above, font=\scriptsize] {unlock};
+
+% 7. Worker runs CUDA kernels (self-arrow)
+\draw[msg, color=purple!80]
+    (\WrkX, -6.4) -- ++(0.9,0) -- ++(0,-0.6) -- ++(-0.9,0)
+    node[pos=1.0, right=0.95cm, font=\scriptsize, text width=1.8cm] {run K-Means kernels};
+
+% 8. Worker acquires data lock
+\draw[msg, color=purple!70]
+    (\WrkX, -7.6) -- (\MutX, -7.6)
+    node[midway, above, font=\scriptsize] {lock(m\_dataMutex)};
+
+% 9. Worker commits VRAM result
+\draw[msg, color=purple!70]
+    (\WrkX, -8.4) -- (\MutX, -8.4)
+    node[midway, above, font=\scriptsize] {commit staged VRAM data};
+
+% 10. Worker releases data lock
+\draw[retmsg, color=purple!60]
+    (\MutX, -9.2) -- (\WrkX, -9.2)
+    node[midway, above, font=\scriptsize] {unlock};
+
+% 11. GUI pulls texture
+\draw[msg, color=blue!70]
+    (\GuiX, -10.2) -- (\MutX, -10.2)
+    node[midway, above, font=\scriptsize] {lock(m\_dataMutex)};
+\draw[retmsg, color=blue!60]
+    (\MutX, -10.8) -- (\GuiX, -10.8)
+    node[midway, above, font=\scriptsize] {pull texture \& unlock};
+
+\end{tikzpicture}%
+}
+\caption[Asynchronous Synchronization Sequence between GUI and Worker Threads]{%
+    Sequence diagram illustrating asynchronous synchronization between
+    the main GUI thread and the clustering worker.}
+\label{fig:thread_sync}
 \end{figure}

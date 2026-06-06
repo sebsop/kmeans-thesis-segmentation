@@ -277,11 +277,17 @@ void Application::run() {
         cv::Mat displayOriginal;
         cv::Mat displaySegmented;
         float displayTotalMs = 0.0f;
+        float displayWorkerFps = 0.0f;
+        float displayAlgoTimeMs = 0.0f;
+        uint32_t displayProcessedFrames = 0;
         {
             std::scoped_lock<std::mutex> lock(m_dataMutex);
             displayOriginal = m_latestOriginal;
             displaySegmented = m_latestSegmented;
             displayTotalMs = m_totalPipelineTimeMs;
+            displayWorkerFps = m_currentWorkerFps;
+            displayAlgoTimeMs = m_currentAlgoTimeMs;
+            displayProcessedFrames = m_processedFrames;
         }
 
         UIDataContext ctx{.latestOriginal = displayOriginal,
@@ -290,10 +296,10 @@ void Application::run() {
                           .configMutex = m_configMutex,
                           .showCentroids = m_showCentroids,
                           .forceReset = m_forceReset,
-                          .currentWorkerFps = m_currentWorkerFps,
-                          .currentAlgoTimeMs = m_currentAlgoTimeMs,
+                          .currentWorkerFps = displayWorkerFps,
+                          .currentAlgoTimeMs = displayAlgoTimeMs,
                           .totalPipelineTimeMs = displayTotalMs,
-                          .processedFrames = m_processedFrames,
+                          .processedFrames = displayProcessedFrames,
                           .benchmarkRunner = m_benchmarkRunner};
 
         m_uiManager->render(ctx);
