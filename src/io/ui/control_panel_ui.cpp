@@ -226,7 +226,7 @@ void ControlPanelUI::render(UIDataContext& ctx, float panelWidth, bool& benchTex
 
         ImGui::Text("Raw Engine Speed: %.1f FPS", displayTheoretical);
         showHelpMarker("The maximum throughput of the core clustering engine alone if it executed on every single "
-                       "frame without temporal caching.");
+                       "frame without temporal caching (1000ms / Core K-Means Latency).");
 
         ImGui::Text("Actual Frame Rate: %.1f FPS", displayFps);
         showHelpMarker(
