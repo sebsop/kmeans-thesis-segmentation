@@ -1,7 +1,7 @@
 \chapter{System Architecture and Design}
 {\itshape Achieving real-time video segmentation requires a design that decouples computational execution from user interaction. A high-level overview of the architectural decisions behind this framework is presented, detailing how a modular pipeline separates the classical and quantum-inspired clustering engines. This decoupled backend integrates with an interactive, immediate-mode user interface, enabling real-time parameter tuning and direct performance comparisons without introducing latency in the rendering loop.}
 
-\section{Architectural Overview}
+\section{Architectural Overview and Design Patterns}
 The segmentation framework is designed as a high-throughput, asynchronous pipeline that processes live camera feeds with minimal latency. To keep the user interface responsive during heavy GPU calculations, the application decouples the GUI from the computational backend. This separation is implemented using a multi-threaded architecture with a dedicated worker thread, as shown in Figure~\ref{fig:system_architecture}.
 
 \begin{figure}[!htbp]
@@ -98,7 +98,6 @@ The segmentation framework is designed as a high-throughput, asynchronous pipeli
 \subsection{Technological Stack}
 The framework is built using C++20 and the NVIDIA CUDA toolkit \cite{CudaGuide} to handle the intense processing demands of 5D pixel clustering. C++20 features like \texttt{std::span} are used to pass memory-safe views of host-resident buffers without the overhead of deep copies \cite{stroustrup2022tour}. This high-performance stack allows the system to process hundreds of thousands of pixels in parallel, bypassing the traditional single-threaded CPU bottlenecks.
 
-\noindent\begin{minipage}{\linewidth}
 \subsection{Thread Partitioning and Asynchronous Pipeline}
 To achieve real-time performance, the application runs on two main threads that communicate asynchronously:
 \begin{itemize}
@@ -107,9 +106,7 @@ To achieve real-time performance, the application runs on two main threads that 
 \end{itemize}
 
 The execution follows a clean four-stage data lifecycle. First, a new frame is captured using OpenCV \cite{Bradski2000} and uploaded to the GPU as a 5D feature set. Second, the \texttt{ClusteringManager} dispatches the active \texttt{KMeansEngine} to run optimized CUDA kernels for pixel assignment. Third, instead of transferring pixel labels back to the CPU, a custom kernel re-colors the pixels directly on the GPU. Finally, the processed frame is transferred back to host memory using page-locked (pinned) memory (allocated via \texttt{cudaMallocHost}) to minimize PCIe transfer overhead, and the UI thread uploads it to an OpenGL texture for real-time rendering \cite{CudaGuide}.
-\end{minipage}
 
-\section{Design Patterns and Core Principles}
 To prevent coupling between the user interface and high-performance computation, specific software design patterns are used to separate the GUI from the underlying mathematical engines. This structural isolation ensures the system remains modular, extensible, and easy to maintain \cite{gamma1995design}.
 
 \subsection{Creational and Structural Patterns}
@@ -145,7 +142,7 @@ To keep the frame rate stable, the iterative centroid learning phase is decouple
 
 The preprocessor samples the frame at regular spatial strides $S \in [1, 16]$. This reduces the total number of points in the learning feature space by a factor of $S^2$, substantially reducing computational complexity. Statistically, by the Law of Large Numbers, this uniform subsampling of thousands of pixels remains highly representative of the image's overall color-spatial distribution, ensuring that the estimated centroids approximate the true global cluster centers with high fidelity \cite{mouton2020stride}. The resulting sparse manifold is uploaded to the GPU as a contiguous memory block, which enables fast, coalesced memory access \cite{CudaGuide}.
 
-\section{Component Specifications}
+\section{Component Specifications and Thread Interoperability}
 The C++/CUDA implementation is organized into highly modular classes to isolate parallel mathematical solvers from the dashboard user interface. This separation of concerns ensures that the performance-critical GPU kernel execution remains decoupled from frontend rendering logic.
 
 \subsection{ClusteringManager (The Orchestrator)}
@@ -190,7 +187,6 @@ The GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a ligh
 \end{figure}
 
 \noindent\begin{minipage}{\linewidth}
-\section{System Interoperability and Communications}
 Achieving low latency requires optimizing both the physical transfers across the PCIe bus and the thread synchronization within the application layer. This requires combining asynchronous host-device memory operations with thread-safe data structures.
 
 \subsection{Host-Device Boundary: Heterogeneous Communication}

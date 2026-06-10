@@ -76,7 +76,7 @@ For a stride $S \in [1, 16] \subset \mathbb{Z}^+$, a naive implementation would 
 
 For this downsampling execution, the GPU grid is scaled to the exact downsampled size $W_{\text{out}} = \lceil W/S \rceil$ and $H_{\text{out}} = \lceil H/S \rceil$. Each thread $(x_{\text{out}}, y_{\text{out}})$ maps directly to the input array at $x_{\text{in}} = x_{\text{out}} \cdot S$ and $y_{\text{in}} = y_{\text{out}} \cdot S$. This ensures all threads are active and eliminates divergence \cite{CudaGuide, cook2012cuda}.
 
-\section{Quantum Machine Learning and NISQ Limitations}
+\section{Quantum-Inspired Emulation and Hardware Constraints}
 Developing hybrid algorithms requires balancing the theoretical speedups of quantum representations against the qubit limits and hardware noise of NISQ co-processors.
 
 \subsection{The NISQ Era and Physical Hardware Constraints}
@@ -92,10 +92,7 @@ However, using a real QPU or a python simulator in a live video pipeline is impo
     \item \textbf{API and Network Latency:} Sending circuits to a remote QPU introduces network overhead, job queue delays, and transpilation latency, taking hundreds of milliseconds or seconds \cite{fraunhofer2025quantum}. This violates real-time frame pacing, which is quantified by metrics like Circuit Layer Operations Per Second (CLOPS) \cite{wack2021qualityspeedscalekey}.
     \item \textbf{Quantum Measurement Sampling Delay:} Quantum measurements must be repeated thousands of times (shots) to reconstruct stable probabilities, introducing execution latency that scales with the number of samples required to reduce shot noise \cite{bharti2022noisy}.
 \end{itemize}
-Since real QPUs and cloud-based simulators are too slow, quantum behaviors are simulated deterministically using parallelized GPU kernels.
-
-\section{Quantum-Inspired Computing and the SWAP Test}
-The simulated SWAP test bypasses physical quantum hardware constraints and network delays by executing the mathematical state-overlap formula directly on classical CUDA cores, mapping the theoretical quantum calculations to parallel GPU threads.
+Since real QPUs and cloud-based simulators are too slow, quantum behaviors are simulated deterministically using parallelized GPU kernels. The simulated SWAP test bypasses physical quantum hardware constraints and network delays by executing the mathematical state-overlap formula directly on classical CUDA cores, mapping the theoretical quantum calculations to parallel GPU threads.
 
 
 \subsection{Quantum Overlap and the SWAP Test Circuit}

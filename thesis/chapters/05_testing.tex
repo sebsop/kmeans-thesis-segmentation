@@ -1,7 +1,7 @@
 \chapter{Verification and Testing}
 {\itshape A verification pipeline is established to confirm that the classical and quantum-inspired engines are mathematically correct and stable. The automated unit-testing suite is detailed next, followed by the CPU-GPU parity protocol and latency profiling.}
 
-\section{Automated Testing Environment}
+\section{Automated Verification and Robustness Testing}
 The core algorithms were verified using GTest \cite{googletest} to test C++ code and CUDA kernels without launching the full GUI application. GTest was chosen because it integrates smoothly with CMake and supports CUDA-based test fixtures. These fixtures automatically reset the GPU and clear device memory before each test, ensuring a clean state and preventing memory leaks from affecting subsequent test results.
 
 The testing suite compiles into a dedicated executable, \texttt{all\_tests}, which mirrors the C++ project structure:
@@ -13,7 +13,6 @@ The testing suite compiles into a dedicated executable, \texttt{all\_tests}, whi
 
 All tests execute successfully, achieving a $100\%$ pass rate across the suite.
 
-\section{Unit and Robustness Testing}
 To guarantee mathematical correctness and stability under extreme operational conditions, unit and robustness tests were implemented to target the GPU kernels and verify host-device memory coordination.
 
 \subsection{Mathematical Correctness and Convergence}
@@ -26,14 +25,14 @@ A common issue in K-Means is the empty cluster problem, where a centroid is assi
 
 Additionally, the \texttt{HighKAssignment} and \texttt{QuantumHighK} tests evaluate system behavior at the maximum configuration of $K=40$ clusters. This confirms that the shared memory used by the CUDA kernels does not exceed physical hardware bounds, preventing kernel launch failures \cite{CudaGuide}.
 
-\section{Cross-Backend Parity and Floating-Point Drift}
+\subsection{Cross-Backend Parity and Numerical Drift}
 To verify the GPU implementations, a parity protocol is established that compares GPU results against CPU-calculated ground truths using identical data inputs.
 
 During parity testing, small numerical differences (on the order of $10^{-6}$) are expected in the final centroid coordinates due to floating-point drift. This occurs because the CPU and GPU perform float arithmetic differently \cite{CudaGuide, cook2012cuda}. The CPU's floating-point unit often calculates intermediate values in 64-bit or 80-bit precision before rounding back to 32-bit (FP32), while the GPU maintains a strict, high-speed 32-bit pipeline \cite{CudaGuide}. 
 
 Moreover, compiler optimizations like FMA combine multiplications and additions into a single step on the GPU, which alters rounding boundaries compared to sequential CPU steps \cite{CudaGuide}. To handle this hardware-specific behavior, the GTest suite \cite{googletest} uses the \texttt{EXPECT\_NEAR} macro with a tolerance of $10^{-5}$, verifying that the GPU assignments remain mathematically equivalent to the CPU baseline.
 
-\section{Performance Benchmarking and Latency Profiling}
+\section{Performance Profiling and Experimental Reproducibility}
 To measure the pipeline speed and stage latency under real-world conditions, the classical engine was profiled in real-time on a live VGA video feed ($N = 307,200$). By utilizing the system's temporal consistency (warm-starting the current frame's centroids from the previous frame's converged centroids), the optimization iterations are significantly reduced. The resulting sub-millisecond stage latencies and corresponding theoretical frame rates, calculated as the mathematical average of 21 recorded telemetry runs for each configuration, are summarized in Table~\ref{tab:telemetry}.
 
 \begin{table}[htbp]
@@ -57,7 +56,7 @@ The telemetry shows that the pipeline is extremely efficient:
     \item \textbf{High-density feasibility:} In the heaviest configuration ($K=40, S=1$), which processes all $307,200$ pixels without downsampling, the total execution latency is only $3.86\text{ ms}$ (yielding $259\text{ FPS}$). This confirms that even under maximum computational load on a live video stream, the system operates with substantial processing headroom, leaving the GPU idle for a large portion of the camera's physical frame delivery window of $33.3\text{ ms}$ ($30\text{ FPS}$).
 \end{itemize}
 
-\section{Scientific Reproducibility}\label{sect:scientific_reproducibility}
+\label{sect:scientific_reproducibility}
 To ensure that experimental comparisons between the classical and quantum-inspired engines are fair and reproducible, a fixed-seed protocol is implemented. Because K-Means is a stochastic algorithm, varying initial centroids would introduce random noise into convergence and quality benchmarks.
 
 To eliminate this variance, random number generators are configured to use a fixed, global seed value (\texttt{STABLE\_RANDOM\_SEED = 42}). This seed is used to initialize the Mersenne Twister (\texttt{std::mt19937}) engines in the initializers \cite{matsumoto1998mersenne, stroustrup2022tour}, and the Monte Carlo sampling logic in the metrics runner \cite{shutaywi2021silhouette}. This cross-platform consistency guarantees that the starting centroid configurations and subset selections are identical across multiple runs, ensuring comparative benchmarks are scientific and reliable. With these rigorous reproducibility controls established, the next chapter presents the comparative experimental results and detailed quality evaluations of the classical and quantum-inspired engines.

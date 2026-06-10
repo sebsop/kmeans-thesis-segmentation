@@ -1,7 +1,7 @@
 \chapter{Conclusions and Future Work}\label{chap:conclusions}
 {\itshape Real-time, GPU-accelerated video segmentation connects high-level computer vision with performance-constrained execution hardware. This summary details the primary software implementations, empirical results, and future research directions for the classical and quantum-inspired clustering pipelines.}
 
-\section{Summary of Contributions}
+\section{Summary and Key Findings}
 The real-time, GPU-accelerated 5D image and video segmentation pipeline developed in this work integrates classical and quantum-inspired K-Means engines. The primary contributions include:
 \begin{enumerate}
     \item \textbf{High-Performance CUDA Pipeline:} An optimized 5D preprocessor and solver in CUDA C++ operating on the BGR-XY manifold \cite{cook2012cuda}. By mapping threads directly to strided grids and caching centroids in low-latency shared memory, the implementation eliminates warp divergence and coalesces VRAM transactions. This design achieves a theoretical throughput of up to $750\text{ FPS}$ on an RTX 5070 Ti, exceeding the $120\text{ FPS}$ ($8.33\text{ ms}$) real-time video requirement \cite{jerald2009scene}.
@@ -9,7 +9,6 @@ The real-time, GPU-accelerated 5D image and video segmentation pipeline develope
     \item \textbf{Asynchronous Diagnostics:} An interactive Dear ImGui user interface dashboard \cite{ImGui} and background benchmarking manager. This framework allows on-demand parameter modification (such as cluster count $K$ and stride $S$) and asynchronously calculates execution metrics (latency, iteration counts, WCSS \cite{lloyd1982least}, the Davies-Bouldin ($\mathcal{D}\mathcal{B}$) index \cite{davies1979cluster}, and Monte Carlo-approximated Silhouette scores \cite{rousseeuw1987silhouettes}) on a background thread to prevent display loop stutter.
 \end{enumerate}
 
-\section{Key Empirical Findings}
 Empirical evaluations show both engines are viable for real-time edge deployment, with core optimization latency remaining under $3.9\text{ ms}$ ($259\text{ FPS}$) on an NVIDIA RTX 5070 Ti. The quantum-inspired backend achieves complete functional equivalence to classical Euclidean K-Means \cite{lloyd1982least}, producing identical boundaries and quality metrics across all lighting environments. This parity is guaranteed by the monotonic nature of the cosine-squared mapping over the $[0, \pi/4]$ phase range.
 
 Additionally, compiling the angular distance function into the hardware intrinsic \texttt{\_\_cosf()} offloads execution to the GPU's SFUs \cite{cook2012cuda}. This design maintains performance parity with standard ALUs and enables the quantum-inspired engine to run slightly faster under low-density loads.
