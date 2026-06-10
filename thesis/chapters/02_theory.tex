@@ -49,13 +49,13 @@ The Silhouette Coefficient $s(\mathbf{x}) \in [-1, 1]$ evaluates how well each p
 Calculating this metric exactly for a full VGA frame ($N = 307,200$ pixels) is computationally impractical for an interactive application context. Because the Silhouette score requires finding the pairwise distance between every single pixel, the total number of operations scales quadratically as $\frac{N(N-1)}{2}$, yielding $\frac{307,200 \times 307,200}{2} \approx 47.19$ billion distance calculations per frame. Executing roughly 47 billion calculations in a real-time $120\text{ FPS}$ or more pipeline (with a strict budget of $8.33\text{ ms}$ or less) is impossible. To bypass this bottleneck, a Monte Carlo approximation is used, sampling a random, uniform subset of $M=2,000$ pixels \cite{shutaywi2021silhouette}. This reduces the complexity to $\mathcal{O}(M^2)$ pairwise checks within the subset, which runs in less than a millisecond on a background thread \cite{williams2019c++}, while remaining highly accurate.
 
 \section{Parallel Computing and GPU Architectures via CUDA}
-To process the 5D color-spatial manifold in real time, the execution pipeline must run on parallel GPU threads and utilize on-chip caches.
+To process the 5D color-spatial manifold in real time, the execution pipeline must shift from sequential CPU execution to parallel GPU threads. This allows simultaneous distance calculations while leveraging low-latency on-chip caches to bypass global memory bottlenecks.
 
 \subsection{Computational Complexity Constraints of Sequential Architectures}
 Running K-Means sequentially on a CPU is slower than on a GPU for real-time video \cite{farivar2008parallel}. For the same VGA frame size ($N = 307,200$), executing $K=8$ clusters over $I=15$ iterations requires the CPU to perform over $36.8$ million calculations per frame ($N \times K \times I = 36,864,000$). To achieve the target frame rate of $120\text{ FPS}$, the CPU must complete this in under $8.33\text{ ms}$, which is very difficult due to memory latency and single-core bottlenecks \cite{cook2012cuda}.
 
 \subsection{The CUDA Execution Paradigm and Thread Hierarchy}
-To solve this, calculations are offloaded to the GPU using CUDA \cite{CudaGuide}. CUDA uses the SIMT model, allowing thousands of threads to process different pixels at the same time \cite{cook2012cuda}. The GPU organizes these threads into a hierarchy \cite{CudaGuide}:
+To reach this latency target, calculations are offloaded to the GPU using CUDA \cite{CudaGuide}. CUDA uses the SIMT model, allowing thousands of threads to process different pixels at the same time \cite{cook2012cuda}. The GPU organizes these threads into a hierarchy \cite{CudaGuide}:
 \begin{itemize}
     \item \textbf{Grids and Blocks:} Launching a kernel initializes a \textit{Grid}, divided into \textit{Thread Blocks}. Threads in the same block run on the same Streaming Multiprocessor (SM), allowing them to share low-latency local cache and synchronize using hardware barriers \cite{CudaGuide,cook2012cuda}.
     \item \textbf{Warps:} At the hardware level, threads execute in groups of $32$ called \textit{Warps} \cite{cook2012cuda}. If threads in a warp take different execution paths (like an \texttt{if-else} branch), they serialize \cite{cook2012cuda}. This warp divergence reduces GPU utilization, so keeping thread execution paths uniform is a key goal \cite{cook2012cuda}.
@@ -95,7 +95,7 @@ However, using a real QPU or a python simulator in a live video pipeline is impo
 Since real QPUs and cloud-based simulators are too slow, quantum behaviors are simulated deterministically using parallelized GPU kernels.
 
 \section{Quantum-Inspired Computing and the SWAP Test}
-The simulated SWAP test bypasses physical quantum hardware delays by executing the state-overlap calculations directly on classical CUDA cores.
+The simulated SWAP test bypasses physical quantum hardware constraints and network delays by executing the mathematical state-overlap formula directly on classical CUDA cores, mapping the theoretical quantum calculations to parallel GPU threads.
 
 
 \subsection{Quantum Overlap and the SWAP Test Circuit}

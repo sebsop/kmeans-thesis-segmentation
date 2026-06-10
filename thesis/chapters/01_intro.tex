@@ -24,7 +24,7 @@ Designing a real-time, comparative 5D clustering framework introduces three majo
 \end{enumerate}
 
 \section{Thesis Objectives}
-This thesis develops and validates a high-throughput, GPU-accelerated C++/CUDA (Compute Unified Device Architecture) framework for real-time 5D picture segmentation. The specific objectives are to:
+This thesis develops and validates a high-throughput, GPU-accelerated C++ and CUDA (Compute Unified Device Architecture) framework for real-time 5D image segmentation. The specific objectives are to:
 \begin{itemize}
     \item \textbf{Build an Asynchronous Pipeline:} Implement a multi-threaded execution model in C++20 that decouples raw video frame acquisition (OpenCV \cite{Bradski2000}) from the GPU computational backend to target high-speed processing of at least $120\text{ FPS}$ ($8.33\text{ ms}$ processing budget per frame) while keeping the Graphical User Interface (GUI) highly responsive.
     \item \textbf{Implement Interchangeable GPU Engines:} Develop modular, parallel computational backends for both classical Euclidean distance and quantum-inspired fidelity metrics within a clean Strategy design pattern \cite{gamma1995design}.
@@ -57,5 +57,5 @@ The rest of this thesis is organized as follows:
     \item \textbf{Chapter 7 (Conclusions and Future Work):} Summarizes the engineering findings and outlines future optimization routes on embedded systems and physical QPUs.
 \end{itemize}
 
-\section{Declaration of Generative AI Usage}
+\section*{Declaration of Generative AI Usage}
 During the preparation of this work, the author used Google Gemini in order to improve language readability, assist in structuring the chapter outlines, and refine the articulation of technical concepts. Regarding the software implementation, the technology assisted in maintaining code quality and offering guidance for algorithmic performance optimization. After using this tool, the author reviewed and edited the content as needed, and takes full responsibility for both the text and the final implementation of the thesis.

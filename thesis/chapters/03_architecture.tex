@@ -110,7 +110,7 @@ The execution follows a clean four-stage data lifecycle. First, a new frame is c
 \end{minipage}
 
 \section{Design Patterns and Core Principles}
-Specific software design patterns are used to decouple mathematical engines from the GUI, ensuring the system is modular and easy to maintain \cite{gamma1995design}.
+To prevent coupling between the user interface and high-performance computation, specific software design patterns are used to separate the GUI from the underlying mathematical engines. This structural isolation ensures the system remains modular, extensible, and easy to maintain \cite{gamma1995design}.
 
 \subsection{Creational and Structural Patterns}
 The creation and interchangeability of the components are decoupled using the following structural principles:
@@ -126,7 +126,7 @@ For asynchronous execution and clean resource handling, the system implements:
 \begin{itemize}
     \item \textbf{Command Pattern:} Benchmark requests are encapsulated into \texttt{Benchmark\allowbreak Command} objects. This allows for queuing and executing performance comparisons asynchronously without locking the UI \cite{gamma1995design}.
     \item \textbf{Observer Pattern:} The \texttt{BenchmarkRunner} is a subject that broadcasts benchmark results to the GUI as they complete, keeping the benchmarking engine decoupled from the UI widgets \cite{gamma1995design}.
-    \item \textbf{Resource Acquisition Is Initialization (RAII):} The \texttt{CudaAssignmentContext} manages the lifetime of all GPU resources. It handles the automatic allocation and deterministic release of device memory (VRAM) and page-locked host memory, preventing memory leaks in high-frequency loops \cite{stroustrup2022tour}.
+    \item \textbf{Resource Acquisition Is Initialization (RAII):} The \texttt{CudaAssignment\allowbreak Context} manages the lifetime of all GPU resources. It handles the automatic allocation and deterministic release of device memory (VRAM) and page-locked host memory, preventing memory leaks in high-frequency loops \cite{stroustrup2022tour}.
 \end{itemize}
 
 \section{Feature Space and Data Engineering}
@@ -146,7 +146,7 @@ To keep the frame rate stable, the iterative centroid learning phase is decouple
 The preprocessor samples the frame at regular spatial strides $S \in [1, 16]$. This reduces the total number of points in the learning feature space by a factor of $S^2$, substantially reducing computational complexity. Statistically, by the Law of Large Numbers, this uniform subsampling of thousands of pixels remains highly representative of the image's overall color-spatial distribution, ensuring that the estimated centroids approximate the true global cluster centers with high fidelity \cite{mouton2020stride}. The resulting sparse manifold is uploaded to the GPU as a contiguous memory block, which enables fast, coalesced memory access \cite{CudaGuide}.
 
 \section{Component Specifications}
-The C++/CUDA implementation is organized into modular classes that separate the parallel mathematical solvers from the dashboard user interface.
+The C++/CUDA implementation is organized into highly modular classes to isolate parallel mathematical solvers from the dashboard user interface. This separation of concerns ensures that the performance-critical GPU kernel execution remains decoupled from frontend rendering logic.
 
 \subsection{ClusteringManager (The Orchestrator)}
 The \texttt{ClusteringManager} coordinates the entire segmentation lifecycle. It implements the Pimpl idiom to isolate raw CUDA device pointers from the rest of the application \cite{stroustrup2022tour, meyers2014effective}. The manager also handles temporal consistency across frames: it caches the converged centroids from the previous video frame to use as the starting seeds for the current frame. This warm-start strategy significantly reduces the number of iterations needed for convergence in live streams.
@@ -191,7 +191,7 @@ The GUI dashboard is implemented using Dear ImGui \cite{ImGui}, providing a ligh
 
 \noindent\begin{minipage}{\linewidth}
 \section{System Interoperability and Communications}
-Achieving low latency requires optimizing both the physical transfers across the PCIe bus and the thread synchronization within the application layer.
+Achieving low latency requires optimizing both the physical transfers across the PCIe bus and the thread synchronization within the application layer. This requires combining asynchronous host-device memory operations with thread-safe data structures.
 
 \subsection{Host-Device Boundary: Heterogeneous Communication}
 The main bottleneck in heterogeneous computing is the latency of transferring data across the PCIe bus \cite{CudaGuide}. To minimize this, page-locked (pinned) host memory is used \cite{CudaGuide, cook2012cuda}. Pinned memory enables the GPU to use DMA to copy features directly from host memory without CPU intervention \cite{CudaGuide}. 

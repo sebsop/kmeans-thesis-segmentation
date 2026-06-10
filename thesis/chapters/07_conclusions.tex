@@ -15,9 +15,9 @@ Empirical evaluations show both engines are viable for real-time edge deployment
 Additionally, compiling the angular distance function into the hardware intrinsic \texttt{\_\_cosf()} offloads execution to the GPU's SFUs \cite{cook2012cuda}. This design maintains performance parity with standard ALUs and enables the quantum-inspired engine to run slightly faster under low-density loads.
 
 \section{Future Research Directions}
-Several research directions remain open:
+Future work can extend this framework in three main areas:
 \begin{itemize}
-    \item \textbf{Temporal Tracking:} To resolve frame-by-frame initialization shifts (such as the halo effect and detail loss shown in Figure~\ref{fig:jitter_sequence}), future systems can integrate Hungarian association \cite{kuhn1955hungarian} or optical flow tracking \cite{szeliski2022computer} to ensure inter-frame boundary consistency.
-    \item \textbf{QPU Execution:} Porting the angular phase mapping to physical NISQ hardware \cite{preskill2018quantum, bharti2022noisy} would allow the SWAP test to run natively in $\mathcal{O}(1)$ complexity once state preparation latencies and QPU error rates subside.
-    \item \textbf{Edge Profiling:} Benchmarking the kernels on embedded platforms like NVIDIA Jetson to measure power efficiency and thermal behavior under edge constraints, utilizing memory-restricted optimization strategies \cite{slimani2019k}.
+    \item \textbf{Spatiotemporal Continuity:} Frame-by-frame centroid drift can be mitigated by incorporating temporal tracking. Subsequent implementations can integrate generalized flow tracking \cite{szeliski2022computer, chauhan2013moving} or topological association \cite{kuhn1955hungarian} to maintain boundary stability across sequential frames while respecting real-time latency constraints.
+    \item \textbf{Native Quantum Hardware Execution:} With the maturation of QPUs \cite{preskill2018quantum, bharti2022noisy}, the simulated phase-mapped distance metrics can be ported to physical quantum hardware. This allows for direct evaluation of state-preparation latency, superposition, and entanglement in practical clustering tasks.
+    \item \textbf{Edge Device Deployment:} Running high-throughput parallel clustering on resource-constrained embedded systems \cite{slimani2019k} introduces new hardware constraints. Future analysis must quantify the limits of power efficiency, thermal throttling, and memory bandwidth when scaling 5D manifolds on low-wattage architectures.
 \end{itemize}

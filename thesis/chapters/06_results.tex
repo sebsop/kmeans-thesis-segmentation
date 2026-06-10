@@ -2,10 +2,10 @@
 {\itshape Comparing the classical and quantum-inspired K-Means engines requires evaluating execution latency, throughput, and GPU utilization against clustering quality metrics (WCSS, the Davies-Bouldin ($\mathcal{D}\mathcal{B}$) index, and Silhouette score). This evaluation includes analyzing visual segmentation quality and temporal stability under varying lighting conditions.}
 
 \section{System Throughput and Latency Scaling}
-Execution throughput and stage latency scale as functions of both the target cluster count $K$ and the spatial downsampling stride $S$.
+Execution throughput and stage latency scale as functions of both the target cluster count $K$ and the spatial downsampling stride $S$. These parameters dictate the arithmetic workload and total threads scheduled per iteration.
 
 \subsection{Hyperparameter Latency Benchmarks}
-To evaluate GPU scaling under heavy workloads \cite{farivar2008parallel, cook2012cuda}, the algorithms were tested on a static $640 \times 480$ video frame of a textured workspace under constant studio lighting. The scene contains small objects, textures, and color gradients, requiring more iterations to converge than standard test images. The K-Means++ algorithm \cite{arthur2007k} was used for initialization to isolate the execution paths of the two engines. For each run, both engines started from the same initial centroids and processed the same image frame. Table~\ref{tab:latency_benchmarks} compares the average core execution latency and convergence iteration counts over 21 runs.
+To evaluate GPU scaling under heavy workloads \cite{farivar2008parallel, cook2012cuda}, the algorithms were tested on a static $640 \times 480$ frame of a textured workspace under constant lighting. The scene contains small objects, textures, and color gradients, requiring more iterations to converge than a less textured, uniform video feed. The K-Means++ algorithm \cite{arthur2007k} was used for initialization to ensure identical starting centroids for both engines. Table~\ref{tab:latency_benchmarks} compares the average execution latency and convergence iteration counts over 21 runs.
 
 \begin{table}[H]
 \centering
@@ -29,11 +29,11 @@ Three main architectural features of NVIDIA GPUs explain the small latency diffe
 \begin{enumerate}
     \item \textbf{Special Function Units (SFUs):} As detailed in Section~\ref{subsect:intrinsics}, the quantum-inspired engine offloads trigonometric calculations to the GPU's dedicated SFUs using the hardware-accelerated intrinsic \texttt{\_\_cosf()} (see Code Snippet~\ref{fig:quantum_sim_code}). This hardware-level execution bypasses standard ALU arithmetic emulation, keeping phase projection overhead low \cite{CudaGuide, cook2012cuda}.
     \item \textbf{Memory Bandwidth Bottleneck:} Global memory access (reading pixel values and centroid locations) dominates the execution time for both engines. Since the GPU hides arithmetic latency by scheduling threads while waiting for memory fetches, the additional trigonometric calculations in the quantum-inspired engine do not significantly slow down overall execution \cite{CudaGuide, farivar2008parallel}.
-    \item \textbf{Camera I/O Bottleneck and GPU Utilization:} On an NVIDIA GeForce RTX 5070 Ti, average GPU utilization is approximately 40\% (spiking to 43\%) in the heaviest configuration ($K=40, S=1$). The camera's hardware frame rate (capped at 30 FPS) limits this utilization. The camera delivers a new frame every $33.3\text{ ms}$, and the engine requires only $26.6\text{ ms}$ (classical) or $27.9\text{ ms}$ (quantum) to process it, leaving the GPU idle for the remainder of the frame interval. In the lighter configuration ($K=3, S=8$), the core execution time is under $2\text{ ms}$, leaving the GPU idle for over 90\% of the frame window. Average GPU utilization here is 30--35\%, representing the overhead of rendering the ImGui interface and maintaining the OpenGL window context. This constraint requires using offline throughput calculations to estimate the maximum performance boundaries of the hardware.
+    \item \textbf{Camera I/O Bottleneck and GPU Utilization:} On an NVIDIA GeForce RTX 5070 Ti, average GPU utilization is approximately 40\% (spiking to 43\%) in the heaviest configuration ($K=40, S=1$). The camera's hardware frame rate (capped at 30 FPS) limits this utilization. The camera delivers a new frame every $33.3\text{ ms}$, and the engine requires only $26.6\text{ ms}$ (classical) or $27.9\text{ ms}$ (quantum) to process it, leaving the GPU idle for the remainder of the frame interval. In the lighter configuration ($K=3, S=8$), the core execution time is under $2\text{ ms}$, leaving the GPU idle for over 90\% of the frame window. Average GPU utilization here is 30-35\%, representing the overhead of rendering the ImGui interface and maintaining the OpenGL window context. This constraint requires using offline throughput calculations to estimate the maximum performance boundaries of the hardware.
 \end{enumerate}
 
 \section{Centroid Convergence and Optimization Landscape}
-The number of iterations required to reach stability depends directly on how the engine's distance metric shapes the optimization gradient.
+The number of iterations required to reach final numerical stability depends directly on how each engine's distance metric shapes the optimization gradient and drives the centroid update path.
 
 \subsection{Iteration Count and Convergence Velocity}\label{subsect:convergence_velocity}
 The number of iterations required to reach stability ($\Delta\boldsymbol{\mu} < 10^{-5}$, representing standard numerical convergence criteria \cite{lloyd1982least}) was measured under the balanced configuration ($K=8$, $S=4$). Using identical initialization seeds and input frames, the classical engine required an average of $41.81$ iterations to converge, while the quantum-inspired engine converged in $41.43$ iterations.
@@ -111,7 +111,7 @@ Table~\ref{tab:quality_metrics} shows that the quantum-inspired engine achieves 
 This parity indicates that the angular phase encoding is mathematically consistent. Although the quantum-inspired metric maps features onto a non-linear Hilbert hypersphere \cite{scholkopf1998nonlinear, lloyd2013quantum} (which introduces steep boundary gradients and flat gradients near centroids), the class discrimination performance is unaffected. The monotonic property of the squared-cosine similarity preserves the relative ordering of pixel distances during optimization, preventing color-gradient anomalies and noise-induced clustering degradation. The non-linear topography is a stable functional equivalent to classical Euclidean distance under both lighting conditions.
 
 \section{Visual Quality and Temporal Stability}
-Visual quality is evaluated by comparing how both engines resolve boundaries under static lighting and across consecutive video frames.
+Visual quality is evaluated by comparing how both active clustering engines resolve segment boundaries under static lighting conditions and maintain temporal stability across consecutive real-time video frames.
 
 \subsection{Case Study I: Chromatic Noise \& Edge Boundaries}\label{subsect:case_study_1}
 Case Study I (Figure~\ref{fig:case_study_1}) compares the full-frame visual outputs of the classical and quantum-inspired engines under Scene A (Studio) and Scene B (Low-Light).
@@ -228,11 +228,11 @@ Selecting the engine for live deployment requires balancing throughput, converge
 \centering
 \caption[System Trade-Off Matrix: Classical Euclidean vs. Quantum-Inspired]{System trade-off matrix between Classical Euclidean and Quantum-Inspired K-Means.}
 \label{tab:tradeoff_matrix}
-\begin{tabular}{p{2.8cm}p{6.0cm}p{6.0cm}}
+\begin{tabular}{p{2.5cm}p{5.5cm}p{6.0cm}}
 \hline
 \textbf{Dimension} & \textbf{Classical Euclidean Engine} & \textbf{Quantum-Inspired Engine} \\ \hline
 \textbf{Latency} & Slight advantage at high densities (optimized ALU arithmetic). & Slight advantage at low or balanced densities (hardware-accelerated SFU intrinsics). \\ \hline
-\textbf{Convergence} & Constant linear gradient; 11--89 iterations to converge. & Non-linear trigonometric gradient; identical 11--89 iterations to converge. \\ \hline
+\textbf{Convergence} & Constant linear gradient; between 11 to 89 iterations to converge. & Non-linear trigonometric gradient; identical 11-89 iterations to converge. \\ \hline
 \textbf{Rigorous Math} & Standard Euclidean minimization of spatial-color distance. & Emulates multi-qubit state overlap via angular phase encoding. \\ \hline
 \textbf{Visual Quality} & Baseline quality; subject to K-Means++ seeding shifts. & Complete functional equivalence; identical boundaries and quality metrics. \\ \hline
 \end{tabular}
