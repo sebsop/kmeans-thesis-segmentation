@@ -80,10 +80,10 @@ The segmentation framework is designed as a high-throughput, asynchronous pipeli
     % ==========================================
     % INTER-LAYER ROUTING LINES
     % ==========================================
-    \draw[dataLine, color=orange!80!black] (GLFW.north) -- (CfgL.south)
+    \draw[dataLine, color=orange!80!black, dashed] (GLFW.north) -- (CfgL.south)
         node[text width=2.8cm, pos=0.6, left, xshift=3.2cm, font=\scriptsize\sf] {1. Mutates Parameters (optional)};
     \draw[dataLine, color=purple!80] (CfgL.north) -- (CV.south)
-        node[text width=2.8cm, pos=0.6, left, xshift=3.2cm, font=\scriptsize\sf] {2. Updates Hyperparameters (optional)};
+        node[text width=2.8cm, pos=0.6, left, xshift=3.2cm, font=\scriptsize\sf] {2. Reads Hyperparameters};
     \draw[dataLine, color=orange!80!black] (GPU.south) -- (DataL.north)
         node[text width=3.5cm, pos=0.5, right, font=\scriptsize\sf] {3. Commits Staged VRAM Data};
     \draw[dataLine, color=blue!70!black] (DataL.south) -- (GLFW.north)

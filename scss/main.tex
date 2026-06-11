@@ -6,18 +6,21 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, backgrounds}
+\usepackage{listings}
+\renewcommand{\lstlistingname}{Code Snippet}
+\usepackage{url}
 
 \begin{document}
 
-\title{GPU-Accelerated 5D K-Means Image Segmentation with Quantum-Inspired State Overlap Emulation\\
-{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured for https://ieeexplore.ieee.org and should not be used}
-}
+\title{Real-Time Quantum-Inspired 5D K-Means Image Segmentation}
 
-\author{\IEEEauthorblockN{Given Name Surname}
-\IEEEauthorblockA{\textit{Department Name} \\
-\textit{Organization}\\
-City, Country \\
-email@domain.com}
+\author{\IEEEauthorblockN{Sebastian Șoptelea}
+\IEEEauthorblockA{\textit{Centre for the Study of Complexity} \\
+\textit{Babeș-Bolyai University}\\
+Cluj-Napoca, Romania \\
+sebastian.soptelea1@stud.ubbcluj.ro}
 }
 
 \maketitle
@@ -27,7 +30,7 @@ email@domain.com}
 \end{abstract}
 
 \begin{IEEEkeywords}
-GPU Acceleration, CUDA, 5D K-Means, Quantum-Inspired Computing, SWAP Test, Real-Time Video Segmentation
+GPU Acceleration, 5D K-Means, Quantum-Inspired Computing, SWAP Test, Real-Time Video Segmentation
 \end{IEEEkeywords}
 
 \input{chapters/01_intro.tex}
