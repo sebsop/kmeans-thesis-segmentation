@@ -1,12 +1,12 @@
-# Real-Time Hybrid Quantum-Classical K-Means Segmentation
+# Real-Time Quantum-Inspired 5D K-Means Image Segmentation
 
-A high-performance computer vision system for real-time image segmentation, featuring a custom hybrid architecture that bridges classical GPU acceleration (CUDA) with quantum-inspired distance metrics.
+A high-performance computer vision system for real-time image segmentation, featuring a GPU-accelerated architecture (CUDA) utilizing quantum-inspired distance metrics.
 
 ## Academic Context
 
 This project was developed as the core practical component for my **Bachelor's Thesis at Babeș-Bolyai University**. 
 
-Having started my journey into Quantum Computing during my second year of study and subsequently completing various projects in the field, integrating quantum principles into my final thesis was a personal "must-have." This project represents a convergence of my interests in high-performance computing, artificial intelligence, and quantum mechanics, serving as a foundation for my future research goals in **Quantum Machine Learning (QML)**.
+Having started my journey into Quantum Computing during my second year of study and subsequently completing various projects in the field, integrating quantum principles into my final thesis was a personal "must-have." This project represents a convergence of my interests in high-performance computing, computer vision, and quantum mechanics, serving as a foundation for my future research goals in **Quantum Machine Learning (QML)**.
 
 The fundamental architecture evolved from a previous academic project completed during my *Parallel and Distributed Programming* course: [Real-Time Parallel K-Means Image Segmentation](https://github.com/sebsop/realtime-parallel-kmeans-segmentation). While that work focused on distributed CPU parallelization (MPI/OpenMP), this thesis shifts the focus toward maximizing single-node throughput via low-level CUDA optimization and the exploration of non-Euclidean quantum-inspired similarity metrics.
 
@@ -16,12 +16,12 @@ This repository implements a highly modular, professional-grade C++/CUDA pipelin
 
 ### Key Features
 
-*   **Hybrid Engine Architecture**: Hot-swap between a highly optimized Classical CUDA engine and a Quantum-inspired emulation engine in real-time.
+*   **Modular Engine Architecture**: Hot-swap between a highly optimized Classical CUDA engine and a Quantum-inspired emulation engine in real-time.
 *   **Quantum-Inspired Metric**: Implements a simulated Swap-Test interference approximation to calculate vector similarity using Hilbert-space phase overlap rather than standard Euclidean distance.
 *   **High-Performance CUDA Backend**: Custom CUDA kernels for spatial preprocessing, K-Means++ initialization, and massive parallel pixel assignment utilizing shared memory optimization.
 *   **Scientific Benchmarking**: Integrated real-time metric calculation including approximated Silhouette Scores, Davies-Bouldin Index, and Within-Cluster Sum of Squares (WCSS).
 *   **Modern UI Integration**: Decoupled, thread-safe Dear ImGui interface providing dynamic parameter control, live telemetry, and side-by-side visual comparison.
-*   **Audit-Ready Codebase**: Comprehensive Doxygen documentation, strict C++17 adherence, RAII resource management, and a robust GoogleTest verification suite.
+*   **Audit-Ready Codebase**: Comprehensive Doxygen documentation, strict C++20 adherence, RAII resource management, and a robust GoogleTest verification suite.
 
 ## Architecture Highlights
 
@@ -35,7 +35,7 @@ The system is designed with strict separation of concerns, utilizing modern soft
 
 ### Prerequisites
 
-*   C++17 compatible compiler (MSVC / GCC / Clang)
+*   C++20 compatible compiler (MSVC / GCC / Clang)
 *   CMake 3.20+
 *   NVIDIA CUDA Toolkit 12.x+
 *   OpenCV 4.x
@@ -128,8 +128,7 @@ kmeans-thesis-segmentation
 │  │  │  ├─ control_panel_ui.cpp
 │  │  │  └─ video_feed_ui.cpp
 │  │  └─ ui_manager.cpp
-│  ├─ main.cpp
-│  └─ vendor/                    # Third-party dependencies (ImGui, etc.)
+│  └─ main.cpp
 └─ tests
    ├─ backend
    │  └─ cuda_kernels_tests.cu
