@@ -60,7 +60,7 @@ Maximum frame rates are achieved by leveraging specialized GPU hardware features
 
 The inner loop of the \texttt{QuantumEngine} assignment kernel demonstrates these hardware optimizations in Code Snippet~\ref{fig:quantum_sim_code}.
 
-\begin{lstlisting}[float=htbp, caption={Quantum-inspired phase mapping and fast SFU cosine evaluation in \texttt{quantum\_engine.cu} (lines 68-82).}, label={fig:quantum_sim_code}]
+\begin{lstlisting}[float=htbp, caption={Quantum-inspired phase mapping and fast SFU cosine evaluation in \texttt{quantum\_engine.cu} (lines 68-81).}, label={fig:quantum_sim_code}]
 // Map 5D features to phase orientations and compute global overlap
 float target_prob = 1.0f;
 #pragma unroll
@@ -95,7 +95,7 @@ This serialization is prevented by implementing a two-tier aggregation kernel, s
     \item \textbf{Global Reduction:} Once all threads in the block synchronize, a single designated thread per block executes an \texttt{atomicAdd} to write the block's sub-total into the global VRAM buffer. This reduces global memory traffic by a factor equal to the block size ($256\times$), eliminating VRAM contention \cite{CudaGuide, cook2012cuda}.
 \end{enumerate}
 
-\begin{lstlisting}[float=htbp, caption={Two-tier local-to-global atomic reduction in \texttt{base\_kmeans\_\allowbreak engine.cu} (lines 79-98).}, label={fig:atomic_reduction_code}]
+\begin{lstlisting}[float=htbp, caption={Two-tier local-to-global atomic reduction in \texttt{base\_kmeans\_\allowbreak engine.cu} (lines 79-99).}, label={fig:atomic_reduction_code}]
 // 1. Accumulate into block-local shared memory
 atomicAdd(&s_counts[cluster], 1);
 for (int d = 0; d < 5; ++d) {

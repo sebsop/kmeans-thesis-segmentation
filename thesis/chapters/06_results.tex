@@ -127,7 +127,7 @@ Case Study I (Figure~\ref{fig:case_study_1}) compares the full-frame visual outp
 \end{minipage}\hfill
 \begin{minipage}{0.32\textwidth}
   \centering
-  \includegraphics[width=\textwidth]{figures/scene_a.png}
+  \includegraphics[width=\textwidth]{figures/scene_a_classical.png}
   \vspace{0.25em}
   {\small Scene A: Classical}
 \end{minipage}\hfill
@@ -217,9 +217,9 @@ While static segmentations appear identical, video feeds reveal temporal consist
 \label{fig:jitter_sequence}
 \end{figure}
 
-The sequence highlights a temporal consistency challenge in frame-by-frame independent clustering driven by initialization variance. In Frames $t$ and $t+2$, the background curtain is segmented using two clusters: one for the deep shadow and one for the ambient monitor glow. In Frame $t+1$, however, variations in the initial K-Means++ centroid seeds cause both engines to allocate a third cluster to the curtain, creating a halo around the monitor glow.
+The sequence highlights a temporal consistency challenge driven by initialization variance. In Frames $t$ and $t+2$, the curtain is segmented using two clusters: one for shadow and one for monitor glow. In Frame $t+1$, however, K-Means++ seed variations cause both engines to allocate a third cluster to the curtain, creating a halo.
 
-Because this extra cluster is used on the background, fewer centroids resolve foreground details. In Frame $t+1$, the blue cup loses detail in its reflection compared to Frames $t$ and $t+2$. This identical shift in both backends shows that temporal consistency is dominated by initialization seeding and centroid allocation rather than metric topography.
+Because this extra cluster is used on the background, fewer centroids resolve foreground details. In Frame $t+1$, the blue cup loses reflection detail compared to adjacent frames. This identical shift proves temporal consistency is driven by centroid initialization rather than metric topography.
 
 \subsection{System Trade-Off Analysis}
 Selecting the engine for live deployment requires balancing throughput, convergence, and mathematical representation. Table~\ref{tab:tradeoff_matrix} summarizes the performance profiles of the classical Euclidean and quantum-inspired backends.
