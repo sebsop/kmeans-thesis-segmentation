@@ -89,3 +89,6 @@ desktop.ini
 *.lot
 *.auxlock
 *.lol
+
+thesis/
+scss/
