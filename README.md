@@ -161,4 +161,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 **Sebastian Soptelea**  
 Babeș-Bolyai University  
 Email: [sebastian.soptelea@proton.me](mailto:sebastian.soptelea@proton.me)  
-GitHub: [@sebsop](https://github.com/sebsop)
+GitHub: [\@sebsop](https://github.com/sebsop)

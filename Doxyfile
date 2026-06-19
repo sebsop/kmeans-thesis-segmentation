@@ -1,0 +1,88 @@
+# Doxyfile 1.9.0 - Configuration for K-Means Thesis Segmentation
+
+# --- Project Settings ---
+PROJECT_NAME           = "Real-Time Quantum-Inspired 5D K-Means Image Segmentation"
+PROJECT_NUMBER         = "1.0.0"
+PROJECT_BRIEF          = "High-performance GPU-accelerated image segmentation with quantum-inspired similarity metrics"
+OUTPUT_DIRECTORY       = docs/doxygen
+CREATE_SUBDIRS         = NO
+ALLOW_UNICODE_NAMES    = YES
+OUTPUT_LANGUAGE        = English
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+
+# --- Build Options ---
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_PRIV_VIRTUAL   = NO
+EXTRACT_PACKAGE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = NO
+EXTRACT_ANON_NSPACES   = NO
+RESOLVE_UNNAMED_PARS   = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+HIDE_FRIEND_COMPOUNDS  = NO
+HIDE_IN_BODY_DOCS      = NO
+INTERNAL_DOCS          = NO
+CASE_SENSE_NAMES       = SYSTEM
+
+# --- Input Configuration ---
+INPUT                  = README.md LICENSE docs include src
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          = *.cpp *.hpp *.h *.cu *.cuh *.md LICENSE
+RECURSIVE              = YES
+EXCLUDE                = build out .vs
+EXCLUDE_SYMLINKS       = NO
+EXCLUDE_PATTERNS       = */imgui/* */glfw/* */googletest/*
+USE_MDFILE_AS_MAINPAGE = README.md
+
+# --- Source Browsing ---
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+SOURCE_TOOLTIPS        = YES
+USE_HTAGS              = NO
+VERBATIM_HEADERS       = YES
+
+# --- Parser Customization ---
+# Treat CUDA (.cu/.cuh) files as C++ files for syntax parsing
+EXTENSION_MAPPING      = cu=C++ cuh=C++ LICENSE=md
+
+# --- HTML Output Settings ---
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_COLORSTYLE_HUE    = 260
+HTML_COLORSTYLE_SAT    = 60
+HTML_COLORSTYLE_VALUE  = 90
+HTML_DYNAMIC_MENUS     = YES
+HTML_DYNAMIC_SECTIONS  = YES
+HTML_INDEX_NUM_CLASSIFIERS = 1
+GENERATE_DOCSET        = NO
+GENERATE_HTMLHELP      = NO
+GENERATE_CHI           = NO
+GENERATE_QHP           = NO
+GENERATE_ECLIPSEHELP   = NO
+DISABLE_INDEX          = NO
+GENERATE_TREEVIEW      = YES
+ENUM_VALUES_ALIGN_BYTES = 2
+USE_MATHJAX            = YES
+MATHJAX_FORMAT         = HTML-CSS
+MATHJAX_RELPATH        = https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/
+MATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols
+HTML_EXTRA_FILES       = LICENSE
+
+# --- LaTeX Output Settings ---
+GENERATE_LATEX         = NO
+LATEX_OUTPUT           = latex
+LATEX_CMD_NAME         = latex
+MAKEINDEX_CMD_NAME     = makeindex
+COMPACT_LATEX          = NO
+PAPER_TYPE             = a4
+EXTRA_PACKAGES         = amsmath amssymb
+LATEX_PDFLATEX         = YES

@@ -151,9 +151,22 @@ if(CLANG_FORMAT_EXE)
         COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${ALL_SOURCE_FILES}
         COMMENT "Formatting all source/test files (excluding vendor) with clang-format..."
     )
-else()
-    message(WARNING "clang-format not found. The 'format' target will not be available.")
 endif()
+
+# Doxygen Documentation Target
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    add_custom_target(
+        doc
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Generating API documentation with Doxygen..."
+        VERBATIM
+    )
+else()
+    message(STATUS "Doxygen not found. The 'doc' target will not be available.")
+endif()
+
 
 # --- 7. Target Definition: Core Logic Library ---
 add_library(kmeans_core

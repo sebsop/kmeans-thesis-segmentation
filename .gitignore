@@ -16,6 +16,7 @@
 /logs/
 /src/vendor/
 assets/icon.ico # Keep original source, but ignore local caches
+/docs/doxygen/
 
 # --- C++/CUDA Build Artifacts ---
 *.o
@@ -92,3 +93,5 @@ desktop.ini
 
 thesis/
 scss/
+presentation/
+/presentation_slides.md
