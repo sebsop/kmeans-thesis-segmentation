@@ -93,5 +93,21 @@ desktop.ini
 
 thesis/
 scss/
-presentation/
-/presentation_slides.md
+/presentation_slides.md
+
+# Allow presentation source and compiled PDFs
+!/presentation.pdf
+!/presentation + notes.pdf
+!/presentation/
+!/presentation/presentation.tex
+
+# Keep auxiliary LaTeX files ignored inside presentation/
+/presentation/*.aux
+/presentation/*.log
+/presentation/*.nav
+/presentation/*.out
+/presentation/*.snm
+/presentation/*.toc
+/presentation/*.synctex.gz
+/presentation/*.fdb_latexmk
+/presentation/*.fls
